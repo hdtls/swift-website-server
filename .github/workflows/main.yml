@@ -1,9 +1,9 @@
-name: Build test and push Docker images
+name: 'Build test and push Docker images'
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - '*'
 
 jobs:
   # Run tests.
@@ -30,11 +30,11 @@ jobs:
     # needs: test
 
     runs-on: ubuntu-18.04
-    
+
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build and push Docker images
+      - name: 'Build and push Docker images'
         uses: docker/build-push-action@v1.1.0
         with:
           # Username used to log in to a Docker registry. If not set then no login will occur
