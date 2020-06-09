@@ -1,15 +1,24 @@
-import XCTest
 @testable import App
+import XCTVapor
 
 final class AppTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(AppTests().text, "Hello, World!")
+
+    func testFileLoading() throws {
+
+        let app = Application(.testing)
+        defer { app.shutdown() }
+        try bootstrap(app)
+
+        try app.testable()
+            .test(.GET, "resume", afterResponse: {
+                XCTAssertEqual($0.status, HTTPStatus.ok)
+            })
+            .test(.GET, "", afterResponse: {
+                XCTAssertEqual($0.status, HTTPStatus.notFound)
+            })
     }
 
     static var allTests = [
-        ("testExample", testExample),
+        ("testFileLoading", testFileLoading),
     ]
 }

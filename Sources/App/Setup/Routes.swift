@@ -3,5 +3,5 @@ import Vapor
 /// Register your application's routes here.
 public func routes(_ app: Application) throws {
 
-    try app.register(collection: API.init())
+    try app.register(collection: FilesCollection.init())
 }
