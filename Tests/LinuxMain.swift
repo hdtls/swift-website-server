@@ -1,7 +1,7 @@
 import XCTest
 
-import website_backendTests
+import AppTests
 
 var tests = [XCTestCaseEntry]()
-tests += website_backendTests.allTests()
+tests += AppTests.allTests()
 XCTMain(tests)
