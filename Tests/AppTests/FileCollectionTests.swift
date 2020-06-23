@@ -1,5 +1,5 @@
-@testable import App
 import XCTVapor
+@testable import App
 
 final class AppTests: XCTestCase {
 
@@ -9,8 +9,7 @@ final class AppTests: XCTestCase {
         defer { app.shutdown() }
         try bootstrap(app)
 
-        try app.testable()
-            .test(.GET, "resume", afterResponse: {
+        try app.test(.GET, "resume", afterResponse: {
                 XCTAssertEqual($0.status, HTTPStatus.ok)
             })
             .test(.GET, "", afterResponse: {
