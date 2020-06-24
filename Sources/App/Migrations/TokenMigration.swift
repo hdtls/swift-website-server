@@ -13,19 +13,25 @@
 
 import Fluent
 
-class TokenMigration: Migration {
+extension Token {
     
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(Token.schema)
-            .field("id", .uuid, .identifier(auto: true))
-            .field("user_id", .uuid, .references(User.schema, "id"))
-            .field("token", .string, .required)
-            .unique(on: "token")
-            .field("expires_date", .date)
-            .create()
-    }
+    static let migration: Migration = .init()
     
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(Token.schema).delete()
+    class Migration: Fluent.Migration {
+        
+        func prepare(on database: Database) -> EventLoopFuture<Void> {
+            database.schema(Token.schema)
+                .id()
+                .field("user_id", .uuid, .references(User.schema, "id"))
+                .field("token", .string, .required)
+                .unique(on: "token")
+                .field("expires_date", .date)
+                .field("created_at", .datetime, .required)
+                .create()
+        }
+        
+        func revert(on database: Database) -> EventLoopFuture<Void> {
+            database.schema(Token.schema).delete()
+        }
     }
 }

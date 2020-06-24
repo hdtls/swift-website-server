@@ -13,19 +13,28 @@
 
 import Fluent
 
-class UserMigration: Migration {
+extension User {
 
-    func prepare(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(User.schema)
-            .field("id", .uuid, .identifier(auto: true))
-            .field("username", .string, .required)
-            .unique(on: "username")
-            .field("pwd_hash", .string, .required)
-            .create()
+    static let migration: Migration = .init()
+
+    class Migration: Fluent.Migration {
+
+        func prepare(on database: Database) -> EventLoopFuture<Void> {
+            database.schema(User.schema)
+                .id()
+                .field("username", .string, .required)
+                .unique(on: "username")
+                .field("pwd", .string, .required)
+                .field("phone", .string)
+                .field("email_address", .string)
+                .field("about_me", .string)
+                .field("created_at", .datetime, .required)
+                .field("updated_at", .datetime, .required)
+                .create()
+        }
+
+        func revert(on database: Database) -> EventLoopFuture<Void> {
+            database.schema(User.schema).delete()
+        }
     }
-
-    func revert(on database: Database) -> EventLoopFuture<Void> {
-        database.schema(User.schema).delete()
-    }
-
 }

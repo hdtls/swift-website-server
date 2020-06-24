@@ -21,7 +21,7 @@ final class Token: Model {
     @ID(key: .id)
     var id: UUID?
 
-    @Parent(key: "user_id")
+    @Parent(key: .userId)
     var user: User
 
     @Field(key: "token")
@@ -30,9 +30,12 @@ final class Token: Model {
     @Field(key: "expires_date")
     var expiresAt: Date?
 
+    @Timestamp(key: "created_at", on: .create)
+    var createdAt: Date?
+
     required init() {}
 
-    init(id: UUID? = nil, userId: User.IDValue, token: String, expiresAt: Date?) {
+    init(id: Token.IDValue? = nil, userId: User.IDValue, token: String, expiresAt: Date?) {
         self.id = id
         self.$user.id = userId
         self.token = token
