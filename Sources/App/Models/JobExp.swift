@@ -16,7 +16,7 @@ import Fluent
 
 class JobExp: Model {
 
-    static let schema: String = "job_exps"
+    static let schema: String = "job_experiances"
 
     // MARK: Properties
     @ID()
