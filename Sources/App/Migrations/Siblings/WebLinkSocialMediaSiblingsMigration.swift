@@ -15,6 +15,8 @@ import Fluent
 
 extension WebLinkSocialMediaSiblings {
 
+    static let migration: Migration = .init()
+
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {

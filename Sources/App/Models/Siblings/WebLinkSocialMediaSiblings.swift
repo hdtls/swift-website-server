@@ -1,9 +1,15 @@
+//===----------------------------------------------------------------------===//
 //
-//  File.swift
-//  
+// This source file is part of the website-backend open source project
 //
-//  Created by melvyn on 6/25/20.
+// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Licensed under Apache License v2.0
 //
+// See LICENSE for license information
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
 
 import Vapor
 import Fluent

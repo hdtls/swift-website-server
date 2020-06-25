@@ -50,7 +50,7 @@ extension SocialMedia {
 extension SocialMedia {
 
     enum MediaType: String, Codable, CaseIterable {
-        static var name: FieldKey = "social_media_type"
+        static var name: FieldKey = "type"
         case twitter
         case facebook
         case githup
