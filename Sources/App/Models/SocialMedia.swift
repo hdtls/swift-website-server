@@ -18,23 +18,27 @@ class SocialMedia: Model {
 
     static var schema: String = "social_medias"
 
-    @ID(key: .id)
+    // MARK: Properties
+    @ID()
     var id: UUID?
 
     @Enum(key: FieldKeys.type.rawValue)
     var type: MediaType
 
+    // MARK: Relations
     @Siblings(through: WebLinkSocialMediaSiblings.self, from: \.$socialMedia, to: \.$webLink)
     var webLinkOwners: [WebLink]
 
+    // MARK: Initializer
     required init() {}
 
-    init(id: SocialMedia.IDValue?, type: SocialMedia.MediaType) {
+    init(id: SocialMedia.IDValue? = nil, type: SocialMedia.MediaType) {
         self.id = id
         self.type = type
     }
 }
 
+// MARK: Field keys
 extension SocialMedia {
 
     enum FieldKeys: FieldKey {
@@ -42,6 +46,7 @@ extension SocialMedia {
     }
 }
 
+// MARK: Meida tpye defination
 extension SocialMedia {
 
     enum MediaType: String, Codable, CaseIterable {

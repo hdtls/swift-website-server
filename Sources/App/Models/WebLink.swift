@@ -18,18 +18,21 @@ class WebLink: Model {
 
     static var schema: String = "web_links"
 
+    // MARK: Properties
     @ID()
     var id: UUID?
-
-    @Parent(key: FieldKeys.user.rawValue)
-    var user: User
 
     @Field(key: FieldKeys.url.rawValue)
     var url: String
 
+    // MARK: Relations
+    @Parent(key: FieldKeys.user.rawValue)
+    var user: User
+
     @Siblings(through: WebLinkSocialMediaSiblings.self, from: \.$webLink, to: \.$socialMedia)
     var socialMedias: [SocialMedia]
 
+    // MARK: Initializer
     required init() {}
 
     init(id: WebLink.IDValue? = nil, userId: User.IDValue, url: String) {
@@ -39,6 +42,7 @@ class WebLink: Model {
     }
 }
 
+// MARK: Field keys
 extension WebLink {
 
     enum FieldKeys: FieldKey {

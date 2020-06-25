@@ -18,24 +18,24 @@ final class Token: Model {
 
     static let schema: String = "tokens"
 
-    @ID(key: .id)
+    // MARK: Properties
+    @ID()
     var id: UUID?
 
-    @Parent(key: .userId)
-    var user: User
-
-    @Field(key: "token")
+    @Field(key: FieldKeys.token.rawValue)
     var token: String
 
-    @Field(key: "expires_date")
+    @Field(key: FieldKeys.expiresAt.rawValue)
     var expiresAt: Date?
 
-    @Timestamp(key: "created_at", on: .create)
-    var createdAt: Date?
+    // MARK: Relations
+    @Parent(key: FieldKeys.user.rawValue)
+    var user: User
 
+    // MARK: Initializer
     required init() {}
 
-    init(id: Token.IDValue? = nil, userId: User.IDValue, token: String, expiresAt: Date?) {
+    init(id: Token.IDValue? = nil, userId: User.IDValue, token: String, expiresAt: Date? = nil) {
         self.id = id
         self.$user.id = userId
         self.token = token
@@ -43,6 +43,17 @@ final class Token: Model {
     }
 }
 
+// MARK: Field keys
+extension Token {
+
+    enum FieldKeys: FieldKey {
+        case user
+        case token
+        case expiresAt = "expires_at"
+    }
+}
+
+// MARK: Authentication
 extension Token: ModelTokenAuthenticatable {
 
     static var valueKey = \Token.$token
@@ -62,6 +73,7 @@ extension Token {
 
     convenience init(_ user: User) throws {
         self.init(
+            id: nil,
             userId: try user.requireID(),
             token: [UInt8].random(count: 16).base64,
             expiresAt: Token.calender.date(byAdding: .year, value: 1, to: Date())

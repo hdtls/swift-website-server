@@ -12,15 +12,18 @@ class WebLinkSocialMediaSiblings: Model {
 
     static var schema: String = "web_link_social_media_siblings"
 
+    // MARK: Properties
     @ID()
     var id: UUID?
 
+    // MARK: Relations
     @Parent(key: FieldKeys.webLink.rawValue)
     var webLink: WebLink
 
     @Parent(key: FieldKeys.socialMedia.rawValue)
     var socialMedia: SocialMedia
 
+    // MARK: Initializer
     required init() {}
 
     init(id: WebLinkSocialMediaSiblings.IDValue? = nil, webLink: WebLink.IDValue, socialMedia: SocialMedia.IDValue) {
@@ -30,6 +33,7 @@ class WebLinkSocialMediaSiblings: Model {
     }
 }
 
+// MARK: Field keys
 extension WebLinkSocialMediaSiblings {
 
     enum FieldKeys: FieldKey, CaseIterable {
