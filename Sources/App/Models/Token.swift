@@ -53,7 +53,6 @@ extension Token {
     }
 }
 
-// MARK: Authentication
 extension Token: ModelTokenAuthenticatable {
 
     static var valueKey = \Token.$token
