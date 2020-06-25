@@ -10,3 +10,27 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+
+import Fluent
+
+extension EduExp {
+
+    static let migration: Migration = .init()
+
+    class Migration: Fluent.Migration {
+
+        func prepare(on database: Database) -> EventLoopFuture<Void> {
+            database.schema(EduExp.schema)
+                .id()
+                .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
+                .field(FieldKeys.startAt.rawValue, .string, .required)
+                .field(FieldKeys.endAt.rawValue, .string, .required)
+                .field(FieldKeys.education.rawValue, .string, .required)
+                .create()
+        }
+
+        func revert(on database: Database) -> EventLoopFuture<Void> {
+            database.schema(EduExp.schema).delete()
+        }
+    }
+}
