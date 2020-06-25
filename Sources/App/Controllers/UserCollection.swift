@@ -17,14 +17,9 @@ class UserCollection: RouteCollection {
 
     func boot(routes: RoutesBuilder) throws {
         let users = routes.grouped("users")
-        users.on(.POST, use: create)
-
-        let pwdProtectedRoutes = users.grouped(User.authenticator())
-        pwdProtectedRoutes.on(.POST, "login", use: login)
-
-        let tokenProtectedRoutes = users.grouped(Token.authenticator())
-        tokenProtectedRoutes.on(.GET, use: index)
-        tokenProtectedRoutes.on(.GET, ":userID", use: index)
+        users.on(.POST, use: create(_:))
+        users.on(.GET, use: queryAllUsers(_:))
+        users.on(.GET, ":userID", use: queryUser(_:))
     }
 
     func create(_ req: Request) throws -> EventLoopFuture<AuthorizeMsg> {
@@ -56,35 +51,35 @@ class UserCollection: RouteCollection {
             })
     }
 
-    /// Query user from `ID` or `username`.
-    func index(_ req: Request) -> EventLoopFuture<[User.Body]> {
+    func queryUser(_ req: Request) -> EventLoopFuture<User.Body> {
+        return queryAllUsers(req).map({ $0.first }).unwrap(or: Abort.init(.notFound))
+    }
 
-        guard let userID = req.parameters.get("userID") else {
-            return User.query(on: req.db).all().map({ $0.map(User.Body.init) })
+    /// Query users, if `userID` exist add `userID` to filter .
+    func queryAllUsers(_ req: Request) -> EventLoopFuture<[User.Body]> {
+
+        var queryBuilder = User.query(on: req.db)
+
+        // Logged in user can query `User` by `id` or unique property `username`.
+        // User ID has higher priority to be used for query.
+        if let userID = req.parameters.get("userID", as: User.IDValue.self) {
+            queryBuilder = queryBuilder.filter(\.$id, .equal, userID)
+        } else if let userID = req.parameters.get("userID") {
+            queryBuilder = queryBuilder.filter(\.$username, .equal, userID)
         }
 
-        guard let userId = User.IDValue.init(userID) else {
-            return User.query(on: req.db)
-                .filter(\.$username, .equal, userID)
-                .all()
-                .map({ $0.map(User.Body.init) })
+        // Include job experiances to query.
+        if req.parameters.get("include_job_exp") ?? false {
+            queryBuilder.with(\.$jobExps)
         }
 
-        return User.query(on: req.db)
-            .filter(\.$id, .equal, userId)
+        // Include edu experiances to query.
+        if req.parameters.get("include_edu_exp") ?? false {
+            queryBuilder.with(\.$eduExps)
+        }
+
+        return queryBuilder
             .all()
             .map({ $0.map(User.Body.init) })
     }
-
-
-    func login(_ req: Request) throws -> EventLoopFuture<AuthorizeMsg> {
-        let user = try req.auth.require(User.self)
-        let token = try Token.init(user)
-
-        return token.save(on: req.db)
-            .map({
-                AuthorizeMsg.init(user: User.Body.init(user), token: token)
-            })
-    }
-
 }
