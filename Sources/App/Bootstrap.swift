@@ -1,6 +1,8 @@
 import Vapor
 import Fluent
-import FluentSQLiteDriver
+import FluentMySQLDriver
+
+typealias Env = Environment
 
 /// Called before your application initializes.
 public func bootstrap(_ app: Application) throws {
@@ -26,11 +28,21 @@ public func bootstrap(_ app: Application) throws {
     app.middleware.use(CORSMiddleware.init())
     app.middleware.use(FileMiddleware.init(publicDirectory: app.directory.publicDirectory))
 
-    app.databases.use(.sqlite(.memory), as: .sqlite)
+    app.databases.use(.mysql(
+        hostname: Env.get("DB_HOST") ?? "127.0.0.1",
+        username: Env.get("DB_USERNAME") ?? "vapor",
+        password: Env.get("DB_PASSWORD") ?? "654321",
+        database: Env.get("DB_NAME") ?? "website",
+        tlsConfiguration: .none
+        ), as: .mysql)
 
-    app.migrations.add(UserMigration.init())
-    app.migrations.add(TokenMigration.init())
+    app.migrations.add(User.migration)
+    app.migrations.add(Token.migration)
+//    app.migrations.add(JobExp.migration)
+//    app.migrations.add(EduExp.migration)
+//    app.migrations.add(SocialMedia.migration)
 
+    try app.autoRevert().wait()
     try app.autoMigrate().wait()
 
     // Register routes
