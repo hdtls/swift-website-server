@@ -22,11 +22,10 @@ extension Token {
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(Token.schema)
                 .id()
-                .field("user_id", .uuid, .references(User.schema, "id"))
-                .field("token", .string, .required)
-                .unique(on: "token")
-                .field("expires_date", .date)
-                .field("created_at", .datetime, .required)
+                .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
+                .field(FieldKeys.token.rawValue, .string, .required)
+                .unique(on: FieldKeys.token.rawValue)
+                .field(FieldKeys.expiresAt.rawValue, .date)
                 .create()
         }
         

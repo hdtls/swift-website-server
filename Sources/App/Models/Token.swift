@@ -47,7 +47,7 @@ final class Token: Model {
 extension Token {
 
     enum FieldKeys: FieldKey {
-        case user
+        case user = "user_id"
         case token
         case expiresAt = "expires_at"
     }
