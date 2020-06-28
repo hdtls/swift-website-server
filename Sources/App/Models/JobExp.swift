@@ -14,7 +14,7 @@
 import Vapor
 import Fluent
 
-class JobExp: Model {
+final class JobExp: Model {
 
     static let schema: String = "job_experiances"
 
@@ -46,26 +46,6 @@ class JobExp: Model {
 
     // MARK: Initializer
     required init() {}
-
-    init(
-        id: JobExp.IDValue? = nil,
-        userId: User.IDValue,
-        company: String,
-        startAt: String,
-        endAt: String,
-        type: String? = nil,
-        department: String? = nil,
-        position: String? = nil
-    ) {
-        self.id = id
-        self.$user.id = userId
-        self.company = company
-        self.startAt = startAt
-        self.endAt = endAt
-        self.type = type
-        self.department = department
-        self.position = position
-    }
 }
 
 // MARK: Field keys
@@ -81,5 +61,60 @@ extension JobExp {
         case position
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+}
+
+extension JobExp: UserChild {
+
+    struct Coding: Content, Equatable {
+        // MARK: Properties
+        var id: JobExp.IDValue?
+        var company: String
+        var startAt: String
+        var endAt: String
+        var type: String?
+        var department: String?
+        var position: String?
+
+        // MARK: Relations
+        var userId: User.IDValue
+    }
+
+    var _$user: Parent<User> {
+        return $user
+    }
+
+    static func __converted(_ coding: Coding) throws -> JobExp {
+        let exp = JobExp.init()
+        exp.company = coding.company
+        exp.startAt = coding.startAt
+        exp.endAt = coding.endAt
+        exp.type = coding.type
+        exp.department = coding.department
+        exp.position = coding.position
+        exp.$user.id = coding.userId
+        return exp
+    }
+
+    func __merge(_ another: JobExp) throws {
+        company = another.company
+        startAt = another.startAt
+        endAt = another.endAt
+        type = another.type
+        department = another.department
+        position = another.position
+    }
+
+    func __reverted() throws -> Coding {
+        try Coding.init(
+            id: id,
+            company: company,
+            startAt: startAt,
+            endAt: endAt,
+            type: type,
+            department: department,
+            position: position,
+            userId: requireID()
+        )
     }
 }

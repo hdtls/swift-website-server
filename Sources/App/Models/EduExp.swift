@@ -14,7 +14,7 @@
 import Vapor
 import Fluent
 
-class EduExp: Model {
+final class EduExp: Model {
 
     static var schema: String = "education_experiances"
 
@@ -39,7 +39,7 @@ class EduExp: Model {
     required init() {}
 
     init(
-        id: EduExp.IDValue,
+        id: EduExp.IDValue? = nil,
         userId: User.IDValue,
         startAt: String,
         endAt: String,
@@ -61,5 +61,49 @@ extension EduExp {
         case startAt = "start_at"
         case endAt = "end_at"
         case education
+    }
+}
+
+extension EduExp: UserChild {
+
+    struct Coding: Content, Equatable {
+        // MARK: Properties
+        var id: EduExp.IDValue?
+        var startAt: String
+        var endAt: String
+        var education: String
+
+        // MARK: Relations
+        var userId: User.IDValue
+    }
+
+    var _$user: Parent<User> {
+        return $user
+    }
+
+    static func __converted(_ coding: Coding) throws -> EduExp {
+        let exp = EduExp.init()
+        exp.startAt = coding.startAt
+        exp.endAt = coding.endAt
+        exp.education = coding.education
+        exp.$user.id = coding.userId
+        return exp
+    }
+
+    func __merge(_ another: EduExp) throws {
+        startAt = another.startAt
+        endAt = another.endAt
+        education = another.education
+        $user.id = another.$user.id
+    }
+
+    func __reverted() throws -> Coding {
+        try Coding(
+            id: requireID(),
+            startAt: startAt,
+            endAt: endAt,
+            education: education,
+            userId: user.requireID()
+        )
     }
 }

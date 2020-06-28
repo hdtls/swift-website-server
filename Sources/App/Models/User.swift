@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Copyright © 2020 the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -20,16 +20,7 @@ protocol Credentials {
     var password: String { get set }
 }
 
-protocol UserOpenJSONProperties {
-    associatedtype IDValue: Codable, Hashable
-    var id: IDValue? { get set }
-    var username: String { get set }
-    var phone: String? { get set }
-    var emailAddress: String? { get set }
-    var aboutMe: String? { get set }
-}
-
-final class User: Model, UserOpenJSONProperties {
+final class User: Model {
 
     static let schema: String = "users"
 
@@ -108,6 +99,7 @@ final class User: Model, UserOpenJSONProperties {
         id: User.IDValue? = nil,
         username: String,
         pwd: String,
+        name: String? = nil,
         screenName: String? = nil,
         phone: String? = nil,
         emailAddress: String? = nil,
@@ -119,13 +111,12 @@ final class User: Model, UserOpenJSONProperties {
         profileImageUrl: String? = nil,
         profileBannerUrl: String? = nil,
         profileLinkColor: String? = nil,
-        profileTextColor: String? = nil,
-        createdAt: Date? = nil,
-        updatedAt: Date? = nil
+        profileTextColor: String? = nil
         ) {
         self.id = id
         self.username = username
         self.pwd = pwd
+        self.name = name
         self.screenName = screenName
         self.phone = phone
         self.emailAddress = emailAddress
@@ -138,8 +129,6 @@ final class User: Model, UserOpenJSONProperties {
         self.profileBannerUrl = profileBannerUrl
         self.profileLinkColor = profileLinkColor
         self.profileTextColor = profileTextColor
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
     }
 }
 
@@ -181,41 +170,116 @@ extension User: ModelAuthenticatable {
 extension Validatable where Self: Credentials {
     static func validations(_ validations: inout Validations) {
         validations.add("username", as: String.self, is: !.empty)
-        validations.add("password", as: String.self, is: .count(6...))
+        validations.add("password", as: String.self, is: .count(6...18))
     }
 }
 
-// MARK: User registration
+// MARK: User creation
 extension User {
 
-    struct Registration: Credentials, Content, Validatable {
+    struct Creation: Credentials, Content, Validatable {
         var username: String
         var password: String
     }
 
-    convenience init(_ registration: Registration) throws {
-        self.init(username: registration.username, pwd: try Bcrypt.hash(registration.password))
+    convenience init(_ creation: Creation) throws {
+        self.init(username: creation.username, pwd: try Bcrypt.hash(creation.password))
     }
 }
 
-// MARK: User public properties defination.
-extension User {
-    struct Body: UserOpenJSONProperties, Content {
+// MARK: User coding helper.
+extension User: Transfer {
 
-        typealias IDValue = User.IDValue
+    /// `Coding` use for updata user and make response to user query.
+    struct Coding: Content, Equatable {
 
-        var id: IDValue?
-        var username: String
+        // MARK: Properties
+        var id: User.IDValue?
+        /// `username` is optional for decoding, required by encoding.
+        /// - note: For decoding we will query default logged in user's username instead.
+        var username: String?
+        var name: String?
+        var screenName: String?
         var phone: String?
         var emailAddress: String?
         var aboutMe: String?
+        var location: String?
+        var profileBackgroundColor: String?
+        var profileBackgroundImageUrl: String?
+        var profileBackgroundTile: String?
+        var profileImageUrl: String?
+        var profileBannerUrl: String?
+        var profileLinkColor: String?
+        var profileTextColor: String?
 
-        init(_ user: User) {
-            id = user.id
-            username = user.username
-            phone = user.phone
-            emailAddress = user.emailAddress
-            aboutMe = user.aboutMe
-        }
+        // MARK: Relations
+        /// Links that user owned.
+        /// - note: Only use for encoding user model.
+        var webLinks: [WebLink.Coding]?
+
+        /// Education experiances
+        /// - seealso: `Coding.webLinks`
+        var eduExps: [EduExp.Coding]?
+
+        /// Jon experiances
+        /// - seealso: `Coding.webLinks`
+        var jobExps: [JobExp.Coding]?
+    }
+
+    static func __converted(_ coding: Coding) throws -> User {
+        let user = User.init()
+        user.name = coding.name
+        user.screenName = coding.screenName
+        user.phone = coding.phone
+        user.emailAddress = coding.emailAddress
+        user.aboutMe = coding.aboutMe
+        user.location = coding.location
+        user.profileBackgroundColor = coding.profileBackgroundColor
+        user.profileBackgroundImageUrl = coding.profileBackgroundImageUrl
+        user.profileBackgroundTile = coding.profileBackgroundTile
+        user.profileImageUrl = coding.profileImageUrl
+        user.profileBannerUrl = coding.profileBannerUrl
+        user.profileLinkColor = coding.profileLinkColor
+        user.profileTextColor = coding.profileTextColor
+        return user
+    }
+
+    func __merge(_ user: User) throws {
+        name = user.name
+        screenName = user.screenName
+        phone = user.phone
+        emailAddress = user.emailAddress
+        aboutMe = user.aboutMe
+        location = user.location
+        profileBackgroundColor = user.profileBackgroundColor
+        profileBackgroundImageUrl = user.profileBackgroundImageUrl
+        profileBackgroundTile = user.profileBackgroundTile
+        profileImageUrl = user.profileImageUrl
+        profileBannerUrl = user.profileBannerUrl
+        profileLinkColor = user.profileLinkColor
+        profileTextColor = user.profileTextColor
+    }
+    
+    func __reverted() throws -> Coding {
+        var coding = Coding.init()
+        coding.id = try requireID()
+        coding.username = username
+        coding.name = name
+        coding.screenName = screenName
+        coding.phone = phone
+        coding.emailAddress = emailAddress
+        coding.aboutMe = aboutMe
+        coding.location = location
+        coding.profileBackgroundColor = profileBackgroundColor
+        coding.profileBackgroundImageUrl = profileBackgroundImageUrl
+        coding.profileBackgroundTile = profileBackgroundTile
+        coding.profileImageUrl = profileImageUrl
+        coding.profileBannerUrl = profileBannerUrl
+        coding.profileLinkColor = profileLinkColor
+        coding.profileTextColor = profileTextColor
+        coding.webLinks = $webLinks.value?.compactMap({ try? $0.__reverted() })
+        coding.eduExps = $eduExps.value?.compactMap({ try? $0.__reverted() })
+        coding.jobExps = $jobExps.value?.compactMap({ try? $0.__reverted() })
+        return coding
     }
 }

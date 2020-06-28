@@ -14,7 +14,7 @@
 import Vapor
 import Fluent
 
-class WebLink: Model {
+final class WebLink: Model {
 
     static var schema: String = "web_links"
 
@@ -48,5 +48,27 @@ extension WebLink {
     enum FieldKeys: FieldKey {
         case user = "user_id"
         case url
+    }
+}
+
+extension WebLink: Transfer {
+
+    struct Coding: Content, Equatable {
+        var id: WebLink.IDValue?
+        var userId: User.IDValue
+        var url: String
+    }
+
+    static func __converted(_ coding: Coding) throws -> WebLink {
+        WebLink.init(userId: coding.userId, url: coding.url)
+    }
+
+    func __merge(_ another: WebLink) throws {
+        $user.id = another.$user.id
+        url = another.url
+    }
+
+    func __reverted() throws -> Coding {
+        try Coding.init(id: requireID(), userId: $user.id, url: url)
     }
 }

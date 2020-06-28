@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Copyright © 2020 the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -18,14 +18,29 @@ class UserCollection: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let users = routes.grouped("users")
         users.on(.POST, use: create(_:))
+
+        // User query `users/:userID`
         users.on(.GET, use: queryAllUsers(_:))
         users.on(.GET, ":userID", use: queryUser(_:))
+
+        let trusted = users.grouped([
+            User.authenticator(),
+            Token.authenticator(),
+            User.guardMiddleware(),
+            Token.guardMiddleware()
+        ])
+        // User update `users/:userID`
+        trusted.on(.PUT, ":userID", use: update(_:))
     }
 
+    /// Register new user with `User.Creation` msg. when success a new user and token is registed.
+    /// - seealso: `User.Creation` for more creation content info.
+    /// - note: We make `username` unique so if the `username` already taken an `conflic` statu will be
+    /// send to custom.
     func create(_ req: Request) throws -> EventLoopFuture<AuthorizeMsg> {
-        try User.Registration.validate(req)
+        try User.Creation.validate(req)
         
-        let user = try User.init(req.content.decode(User.Registration.self))
+        let user = try User.init(req.content.decode(User.Creation.self))
 
         var token: Token!
 
@@ -33,30 +48,40 @@ class UserCollection: RouteCollection {
             .filter(\.$username, .equal, user.username)
             .first()
             .flatMap({
-                // If there is already have a user and username same as `user.username` just throw a msg.
+                // If there is already have a user and username same as
+                // `user.username` just throw a msg.
                 guard $0 == nil else {
-                    return req.eventLoop.makeFailedFuture(Abort.init(.conflict, reason: "Username already taken"))
+                    let error = Abort(.conflict, reason: "Username already taken")
+                    return req.eventLoop.makeFailedFuture(error)
                 }
                 return user.save(on: req.db)
             })
             .flatMap({
                 guard let unsafeToken = try? Token.init(user) else {
-                    return req.eventLoop.makeFailedFuture(Abort.init(.internalServerError))
+                    return req.eventLoop.makeFailedFuture(Abort(.internalServerError))
                 }
                 token = unsafeToken
                 return token.save(on: req.db)
             })
-            .map({
-                AuthorizeMsg.init(user: User.Body.init(user), token: token)
+            .flatMapThrowing({
+                try AuthorizeMsg.init(user: user.__reverted(), token: token)
             })
     }
 
-    func queryUser(_ req: Request) -> EventLoopFuture<User.Body> {
-        return queryAllUsers(req).map({ $0.first }).unwrap(or: Abort.init(.notFound))
+    /// Query user with specified`userID`.
+    /// - seealso: `UserCollection.queryAllUsers(_:)`
+    func queryUser(_ req: Request) -> EventLoopFuture<User.Coding> {
+        queryAllUsers(req)
+            .map({ $0.first })
+            .unwrap(or: Abort.init(.notFound))
     }
 
-    /// Query users, if `userID` exist add `userID` to filter .
-    func queryAllUsers(_ req: Request) -> EventLoopFuture<[User.Body]> {
+    /// Query users, if `userID` exist add `userID` to filter . there are three query parameters,
+    /// `include_job_exp`:  default is `false`, if `true` the result of user will include user's job experiances.
+    /// `include_edu_exp`:  default is `false`, if `true` the result of user will include user's education experiances.
+    /// `include_web_links`:  default is `false`, if `true` the result of user will include user's web links.
+    /// - note: This is a mix function the `userID` is optional value.
+    func queryAllUsers(_ req: Request) -> EventLoopFuture<[User.Coding]> {
 
         var queryBuilder = User.query(on: req.db)
 
@@ -68,18 +93,45 @@ class UserCollection: RouteCollection {
             queryBuilder = queryBuilder.filter(\.$username, .equal, userID)
         }
 
-        // Include job experiances to query.
-        if req.parameters.get("include_job_exp") ?? false {
+        // Include job experiances to query if the key `include_job_exp` exist.
+        if (try? req.query.get(Bool.self, at: "include_job_exp")) ?? false {
             queryBuilder.with(\.$jobExps)
         }
 
-        // Include edu experiances to query.
-        if req.parameters.get("include_edu_exp") ?? false {
+        // Include edu experiances to query if the key `include_job_exp` exist.
+        if (try? req.query.get(Bool.self, at: "include_edu_exp")) ?? false {
             queryBuilder.with(\.$eduExps)
+        }
+
+        if (try? req.query.get(Bool.self, at: "include_web_links")) ?? false {
+            queryBuilder.with(\.$webLinks) {
+                $0.with(\.$socialMedias)
+            }
         }
 
         return queryBuilder
             .all()
-            .map({ $0.map(User.Body.init) })
+            .flatMapEachThrowing({
+                try $0.__reverted()
+            })
+    }
+
+    /// Update exists user with `User.Coding` which contain all properties that user need updated.
+    func update(_ req: Request) throws -> EventLoopFuture<User.Coding> {
+        let userId = try req.auth.require(User.self).requireID()
+        let upgrade = try User.__converted(try req.content.decode(User.Coding.self))
+        var coding: User.Coding!
+
+        return User.find(userId, on: req.db)
+            .unwrap(or: Abort.init(.notFound))
+            .flatMapThrowing({ user -> User in
+                try user.__merge(upgrade)
+                coding = try user.__reverted()
+                return user
+            })
+            .flatMap({
+                $0.update(on: req.db)
+            })
+            .map({ coding })
     }
 }

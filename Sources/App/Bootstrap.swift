@@ -7,6 +7,8 @@ typealias Env = Environment
 /// Called before your application initializes.
 public func bootstrap(_ app: Application) throws {
 
+    app.http.server.configuration.port = 8181
+    
     // JSON configuration
     let encoder = JSONEncoder()
     encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -19,31 +21,26 @@ public func bootstrap(_ app: Application) throws {
     ContentConfiguration.global.use(encoder: encoder, for: .json)
     ContentConfiguration.global.use(decoder: decoder, for: .json)
 
-    // Http server settins
-    if app.environment == .development {
-        app.http.server.configuration.port = 8181
-    }
-
     // Middlewares configuration
     app.middleware.use(CORSMiddleware.init())
     app.middleware.use(FileMiddleware.init(publicDirectory: app.directory.publicDirectory))
 
     app.databases.use(.mysql(
-        hostname: Env.get("DB_HOST") ?? "127.0.0.1",
-        username: Env.get("DB_USERNAME") ?? "vapor",
-        password: Env.get("DB_PASSWORD") ?? "654321",
-        database: Env.get("DB_NAME") ?? "website",
+        hostname: "127.0.0.1",
+        port: app.environment == .testing ? 3308 : (app.environment == .development ? 3307 : 3306),
+        username: "vapor",
+        password: "vapor.mysql",
+        database: "website",
         tlsConfiguration: .none
         ), as: .mysql)
 
     app.migrations.add(User.migration)
     app.migrations.add(Token.migration)
-//    app.migrations.add(JobExp.migration)
-//    app.migrations.add(EduExp.migration)
-//    app.migrations.add(SocialMedia.migration)
-
-    try app.autoRevert().wait()
-    try app.autoMigrate().wait()
+    app.migrations.add(EduExp.migration)
+    app.migrations.add(JobExp.migration)
+    app.migrations.add(WebLink.migration)
+    app.migrations.add(SocialMedia.migration)
+    app.migrations.add(WebLinkSocialMediaSiblings.migration)
 
     // Register routes
     try routes(app)

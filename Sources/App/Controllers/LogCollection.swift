@@ -25,9 +25,9 @@ class LogCollection: RouteCollection {
         let token = try Token.init(user)
 
         return token.save(on: req.db)
-            .map({
-                AuthorizeMsg.init(user: User.Body.init(user), token: token)
-            })
+        .flatMapThrowing({
+            try AuthorizeMsg.init(user: user.__reverted(), token: token)
+        })
     }
 
     func logOut(_ req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {

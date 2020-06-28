@@ -14,10 +14,10 @@
 import Vapor
 
 struct AuthorizeMsg: Content {
-    let user: User.Body
+    let user: User.Coding
     let accessToken: String
 
-    init(user: User.Body, token: Token) {
+    init(user: User.Coding, token: Token) {
         self.user = user
         self.accessToken = token.token
     }
