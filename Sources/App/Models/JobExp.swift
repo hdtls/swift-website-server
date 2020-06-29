@@ -59,8 +59,6 @@ extension JobExp {
         case type
         case department
         case position
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
     }
 }
 
@@ -77,7 +75,7 @@ extension JobExp: UserChild {
         var position: String?
 
         // MARK: Relations
-        var userId: User.IDValue
+        var userId: User.IDValue?
     }
 
     var _$user: Parent<User> {
@@ -92,7 +90,6 @@ extension JobExp: UserChild {
         exp.type = coding.type
         exp.department = coding.department
         exp.position = coding.position
-        exp.$user.id = coding.userId
         return exp
     }
 
@@ -107,14 +104,14 @@ extension JobExp: UserChild {
 
     func __reverted() throws -> Coding {
         try Coding.init(
-            id: id,
+            id: requireID(),
             company: company,
             startAt: startAt,
             endAt: endAt,
             type: type,
             department: department,
             position: position,
-            userId: requireID()
+            userId: $user.id
         )
     }
 }

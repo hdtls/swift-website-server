@@ -74,7 +74,7 @@ extension EduExp: UserChild {
         var education: String
 
         // MARK: Relations
-        var userId: User.IDValue
+        var userId: User.IDValue?
     }
 
     var _$user: Parent<User> {
@@ -86,7 +86,6 @@ extension EduExp: UserChild {
         exp.startAt = coding.startAt
         exp.endAt = coding.endAt
         exp.education = coding.education
-        exp.$user.id = coding.userId
         return exp
     }
 
@@ -94,7 +93,6 @@ extension EduExp: UserChild {
         startAt = another.startAt
         endAt = another.endAt
         education = another.education
-        $user.id = another.$user.id
     }
 
     func __reverted() throws -> Coding {
@@ -103,7 +101,7 @@ extension EduExp: UserChild {
             startAt: startAt,
             endAt: endAt,
             education: education,
-            userId: user.requireID()
+            userId: $user.id
         )
     }
 }
