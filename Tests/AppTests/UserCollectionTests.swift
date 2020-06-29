@@ -24,45 +24,7 @@ class UserCollectionTests: XCTestCase {
         try app.autoRevert().wait()
         try app.autoMigrate().wait()
     }
-
-    func assertUser(_ username: String = "test",
-                    _ password: String = "111111",
-                    completion: ((String) throws -> Void)? = nil ) throws {
-
-        try app.test(.POST, "users", beforeRequest: {
-            try $0.content.encode(User.Creation.init(username: username, password: password))
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-
-            let authorizeMsg = try $0.content.decode(AuthorizeMsg.self)
-
-            XCTAssertNotNil(authorizeMsg.accessToken)
-            XCTAssertNotNil(authorizeMsg.user)
-            XCTAssertNotNil(authorizeMsg.user.id)
-            XCTAssertEqual(authorizeMsg.user.username, username)
-            XCTAssertNil(authorizeMsg.user.name)
-            XCTAssertNil(authorizeMsg.user.screenName)
-            XCTAssertNil(authorizeMsg.user.phone)
-            XCTAssertNil(authorizeMsg.user.emailAddress)
-            XCTAssertNil(authorizeMsg.user.aboutMe)
-            XCTAssertNil(authorizeMsg.user.location)
-            XCTAssertNil(authorizeMsg.user.profileBackgroundColor)
-            XCTAssertNil(authorizeMsg.user.profileBackgroundImageUrl)
-            XCTAssertNil(authorizeMsg.user.profileBackgroundTile)
-            XCTAssertNil(authorizeMsg.user.profileImageUrl)
-            XCTAssertNil(authorizeMsg.user.profileBannerUrl)
-            XCTAssertNil(authorizeMsg.user.profileLinkColor)
-            XCTAssertNil(authorizeMsg.user.profileTextColor)
-            XCTAssertNil(authorizeMsg.user.webLinks)
-            XCTAssertNil(authorizeMsg.user.eduExps)
-            XCTAssertNil(authorizeMsg.user.jobExps)
-
-            try autoreleasepool {
-                try completion?("Bearer " + authorizeMsg.accessToken)
-            }
-        })
-    }
-
+    
     func testCreateWithInvalidUsername() throws {
         defer { app.shutdown() }
 
@@ -89,7 +51,7 @@ class UserCollectionTests: XCTestCase {
         let username = "test"
         let password = "111111"
 
-        try assertUser(username, password)
+        try registUserAndLoggedIn(app)
 
         try app.test(.POST, "users", beforeRequest: {
             try $0.content.encode(User.Creation.init(username: username, password: password))
@@ -100,7 +62,7 @@ class UserCollectionTests: XCTestCase {
 
     func testCreate() throws {
         defer { app.shutdown() }
-        try assertUser()
+        try registUserAndLoggedIn(app)
     }
 
     func testQueryWithInvalidUserID() throws {
@@ -114,7 +76,7 @@ class UserCollectionTests: XCTestCase {
     func testQueryWithUserID() throws {
         defer { app.shutdown() }
 
-        try assertUser()
+        try registUserAndLoggedIn(app)
 
         try app.test(.GET, "users/test", afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -145,7 +107,7 @@ class UserCollectionTests: XCTestCase {
     func testQueryWithUserIDAndQueryParameters() throws {
         defer { app.shutdown() }
 
-        try assertUser()
+        try registUserAndLoggedIn(app)
 
         let query = "?include_web_links=true&include_edu_exp=true&include_job_exp=true"
         try app.test(.GET, "users/test" + query, afterResponse: {
@@ -183,7 +145,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertEqual(try! $0.content.decode([User.Coding].self).count, 0)
         })
 
-        try assertUser()
+        try registUserAndLoggedIn(app)
 
         try app.test(.GET, "users", afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -195,7 +157,7 @@ class UserCollectionTests: XCTestCase {
     func testUpdateWithUnauthorized() throws {
         defer { app.shutdown() }
 
-        try assertUser()
+        try registUserAndLoggedIn(app)
 
         try app.test(.PUT, "users/test", beforeRequest: {
             try $0.content.encode(
@@ -214,9 +176,9 @@ class UserCollectionTests: XCTestCase {
     func testUpdate() throws {
         defer { app.shutdown() }
 
-        try assertUser(completion: {
+        try registUserAndLoggedIn(app, completion: { [weak app] in
             let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-            try self.app.test(.PUT, "users/test", headers: headers, beforeRequest: {
+            try app?.test(.PUT, "users/test", headers: headers, beforeRequest: {
 
                 try $0.content.encode(
                     User.Coding.init(
@@ -252,39 +214,4 @@ class UserCollectionTests: XCTestCase {
             })
         })
     }
-
-    func testLoginWithWrongMsg() throws {
-        defer { app.shutdown() }
-
-        try assertUser()
-
-        let wrongPasswordHeader = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTEx"))
-        let wrongUsernameHeader = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDE6MTExMTEx"))
-
-        try app.test(.POST, "login", headers: wrongPasswordHeader, afterResponse: {
-            XCTAssertEqual($0.status, .unauthorized)
-        }).test(.POST, "login", headers: wrongUsernameHeader, afterResponse: {
-            XCTAssertEqual($0.status, .unauthorized)
-        })
-    }
-
-    func testLogin() throws {
-        defer { app.shutdown() }
-
-        try assertUser()
-        
-        let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTE="
-        ))
-        try app.test(.POST, "login", headers: headers, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-        })
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-    
 }
