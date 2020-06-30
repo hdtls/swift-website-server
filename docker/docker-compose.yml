@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  # Some other service connecting to mysql
+
+  website:
+    image: mysql:5.7.30
+    environment:
+      - MYSQL_USER=vapor
+      - MYSQL_PASSWORD=vapor.mysql
+      - MYSQL_ROOT_PASSWORD=root.mysql
+      - MYSQL_DATABASE=website
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - 3306:3306
+
+  website_develop:
+    image: mysql:5.7.30
+    environment:
+      - MYSQL_USER=vapor
+      - MYSQL_PASSWORD=vapor.mysql
+      - MYSQL_ROOT_PASSWORD=root.mysql
+      - MYSQL_DATABASE=website
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - 3307:3306
+
+  website_testing:
+    image: mysql:5.7.30
+    environment:
+      - MYSQL_USER=vapor
+      - MYSQL_PASSWORD=vapor.mysql
+      - MYSQL_ROOT_PASSWORD=root.mysql
+      - MYSQL_DATABASE=website
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+       - 3308:3306

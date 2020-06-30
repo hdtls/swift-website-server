@@ -1,6 +1,6 @@
 FROM swift:5.2 as builder
-LABEL maintainer="Akii MEL <dev@akii.me>"
-LABEL Description="Docker Container for Akii's Website."
+LABEL maintainer="Eli Zhang <eli.z.prol@gmail.com>"
+LABEL Description="Docker Container for website."
 
 WORKDIR /build
 
@@ -22,6 +22,5 @@ ENV APP_SERVE_MODE=$APP_SERVE_MODE \
     APP_SERVE_PORT=$APP_SERVE_PORT
 
 COPY --from=builder /build/bin/Run .
-COPY --from=builder /build/Public ./Public
 
 ENTRYPOINT ./Run serve --env $APP_SERVE_MODE --hostname 0.0.0.0 --port $APP_SERVE_PORT
