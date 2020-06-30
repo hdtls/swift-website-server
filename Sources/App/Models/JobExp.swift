@@ -22,43 +22,55 @@ final class JobExp: Model {
     @ID()
     var id: UUID?
 
-    @Field(key: FieldKeys.company.rawValue)
-    var company: String
+    @Field(key: FieldKeys.title.rawValue)
+    var title: String
 
-    @Field(key: FieldKeys.startAt.rawValue)
-    var startAt: String
+    @Field(key: FieldKeys.companyName.rawValue)
+    var companyName: String
 
-    @Field(key: FieldKeys.endAt.rawValue)
-    var endAt: String
+    @Field(key: FieldKeys.location.rawValue)
+    var location: String
 
-    @Field(key: FieldKeys.type.rawValue)
-    var type: String?
+    @Field(key: FieldKeys.startDate.rawValue)
+    var startDate: String
 
-    @Field(key: FieldKeys.department.rawValue)
-    var department: String?
+    @Field(key: FieldKeys.endDate.rawValue)
+    var endDate: String
 
-    @Field(key: FieldKeys.position.rawValue)
-    var position: String?
+    @Siblings(through: JobExpIndustrySiblings.self, from: \.$jobExp, to: \.$industry)
+    var industry: [Industry]
+
+    @Field(key: FieldKeys.headline.rawValue)
+    var headline: String?
+
+    @Field(key: FieldKeys.responsibilities.rawValue)
+    var responsibilities: String?
+
+    @Field(key: FieldKeys.media.rawValue)
+    var media: String?
 
     // MARK: Relations
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
 
     // MARK: Initializer
-    required init() {}
+    init() {}
 }
 
 // MARK: Field keys
 extension JobExp {
 
     enum FieldKeys: FieldKey {
+        case title
+        case companyName = "campany_name"
+        case location
+        case startDate = "from"
+        case endDate = "to"
+        case industry
+        case headline
+        case responsibilities
+        case media
         case user = "user_id"
-        case company
-        case startAt = "start_at"
-        case endAt = "end_at"
-        case type
-        case department
-        case position
     }
 }
 
@@ -67,50 +79,64 @@ extension JobExp: UserChild {
     struct Coding: Content, Equatable {
         // MARK: Properties
         var id: JobExp.IDValue?
-        var company: String
-        var startAt: String
-        var endAt: String
-        var type: String?
-        var department: String?
-        var position: String?
+        var title: String
+        var companyName: String
+        var location: String
+        var startDate: String
+        var endDate: String
+        var headline: String?
+        var responsibilities: String?
+        var media: String?
 
         // MARK: Relations
-        var userId: User.IDValue?
+        var industry: [Industry.Coding]
+        var userId: User.IDValue
     }
 
     var _$user: Parent<User> {
         return $user
     }
 
+
+    /// Convert `Coding` to `JobExp`, used for decoding request content.
+    /// - note: `user` and `industry` eager loading property will set on route operation.
     static func __converted(_ coding: Coding) throws -> JobExp {
         let exp = JobExp.init()
-        exp.company = coding.company
-        exp.startAt = coding.startAt
-        exp.endAt = coding.endAt
-        exp.type = coding.type
-        exp.department = coding.department
-        exp.position = coding.position
+        exp.title = coding.title
+        exp.companyName = coding.companyName
+        exp.location = coding.location
+        exp.startDate = coding.startDate
+        exp.endDate = coding.endDate
+        exp.headline = coding.headline
+        exp.responsibilities = coding.responsibilities
+        exp.media = coding.media
         return exp
     }
 
     func __merge(_ another: JobExp) {
-        company = another.company
-        startAt = another.startAt
-        endAt = another.endAt
-        type = another.type
-        department = another.department
-        position = another.position
+        title = another.title
+        companyName = another.companyName
+        location = another.location
+        startDate = another.startDate
+        endDate = another.endDate
+        headline = another.headline
+        responsibilities = another.responsibilities
+        media = another.media
+        industry = another.industry
     }
 
     func __reverted() throws -> Coding {
         try Coding.init(
             id: requireID(),
-            company: company,
-            startAt: startAt,
-            endAt: endAt,
-            type: type,
-            department: department,
-            position: position,
+            title: title,
+            companyName: companyName,
+            location: location,
+            startDate: startDate,
+            endDate: endDate,
+            headline: headline,
+            responsibilities: responsibilities,
+            media: media,
+            industry: industry.compactMap({ try? $0.__reverted() }),
             userId: $user.id
         )
     }

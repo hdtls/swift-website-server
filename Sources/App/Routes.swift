@@ -24,4 +24,5 @@ public func routes(_ app: Application) throws {
     try app.register(collection: LogCollection.init())
     try app.register(collection: SocialNetworkingServiceCollection.init())
     try app.register(collection: SocialCollection.init())
+    try app.register(collection: IndustryCollection.init())
 }

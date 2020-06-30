@@ -13,28 +13,22 @@
 
 import Fluent
 
-extension JobExp {
+extension Industry {
 
     static let migration: Migration = .init()
 
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(JobExp.schema)
+            database.schema(Industry.schema)
                 .id()
                 .field(FieldKeys.title.rawValue, .string, .required)
-                .field(FieldKeys.companyName.rawValue, .string, .required)
-                .field(FieldKeys.location.rawValue, .string)
-                .field(FieldKeys.startDate.rawValue, .string, .required)
-                .field(FieldKeys.endDate.rawValue, .string, .required)
-                .field(FieldKeys.headline.rawValue, .string)
-                .field(FieldKeys.media.rawValue, .string)
-                .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
+                .unique(on: FieldKeys.title.rawValue)
                 .create()
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(JobExp.schema).delete()
+            database.schema(Industry.schema).delete()
         }
     }
 }

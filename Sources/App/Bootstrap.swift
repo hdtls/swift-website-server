@@ -53,6 +53,7 @@ public func bootstrap(_ app: Application) throws {
     app.migrations.add(JobExp.migration)
     app.migrations.add(Social.migration)
     app.migrations.add(SocialNetworkingService.migration)
+    app.migrations.add(Industry.migration)
 
     // Register routes
     try routes(app)
