@@ -16,26 +16,6 @@ import XCTVapor
 
 let socialNetworkingService = SocialNetworkingService.Coding.init(type: .twitter, html: "<div></div>")
 
-func assertCreateNetworkingService(
-    _ app: Application,
-    service: SocialNetworkingService.Coding = socialNetworkingService,
-    completion: ((SocialNetworkingService.IDValue) throws -> Void)? = nil) throws {
-
-    try app.test(.POST, "social/services", beforeRequest: {
-        try $0.content.encode(socialNetworkingService)
-    }, afterResponse: {
-        XCTAssertEqual($0.status, .ok)
-
-        let coding = try $0.content.decode(SocialNetworkingService.Coding.self)
-        XCTAssertNotNil(coding.id)
-        XCTAssertNotNil(coding.type)
-        XCTAssertEqual(coding.html, socialNetworkingService.html)
-        XCTAssertNil(coding.imageUrl)
-
-        try completion?(coding.id!)
-    })
-}
-
 class SocialNetworkingSereviceCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)

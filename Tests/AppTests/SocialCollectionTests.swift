@@ -14,28 +14,6 @@
 import XCTVapor
 @testable import App
 
-
-func assertCreateSocial(_ app: Application, completion: ((HTTPHeaders, Social.Coding) throws -> Void)? = nil) throws {
-    try assertCreateNetworkingService(app, completion: { [unowned app] serviceID in
-        try registUserAndLoggedIn(app, completion: { headers in
-            try app.test(.POST, "social", headers: headers, beforeRequest: {
-                try $0.content.encode(Social.Coding.init(url: "https://twitter.com/uid", networkingServiceId: serviceID))
-            }, afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Social.Coding.self)
-
-                XCTAssertNotNil(coding.id)
-                XCTAssertNotNil(coding.userId)
-                XCTAssertEqual(coding.url, "https://twitter.com/uid")
-                XCTAssertNotNil(coding.networkingService)
-                XCTAssertEqual(coding.networkingService?.id, serviceID)
-
-                try completion?(headers, coding)
-            })
-        })
-    })
-}
-
 class SocialCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)

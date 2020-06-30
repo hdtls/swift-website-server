@@ -14,37 +14,6 @@
 import XCTVapor
 @testable import App
 
-func registUserAndLoggedIn(
-    _ app: Application,
-    _ username: String = "test",
-    _ password: String = "111111",
-    completion: ((HTTPHeaders) throws -> Void)? = nil
-) throws {
-
-    try app.test(.POST, "users", beforeRequest: {
-        try $0.content.encode(User.Creation.init(username: username, password: password))
-    }, afterResponse: {
-        XCTAssertEqual($0.status, .ok)
-
-        let authorizeMsg = try $0.content.decode(AuthorizeMsg.self)
-
-        XCTAssertNotNil(authorizeMsg.accessToken)
-        XCTAssertNotNil(authorizeMsg.user)
-        XCTAssertNotNil(authorizeMsg.user.id)
-        XCTAssertEqual(authorizeMsg.user.username, username)
-        XCTAssertNil(authorizeMsg.user.name)
-        XCTAssertNil(authorizeMsg.user.screenName)
-        XCTAssertNil(authorizeMsg.user.phone)
-        XCTAssertNil(authorizeMsg.user.emailAddress)
-        XCTAssertNil(authorizeMsg.user.aboutMe)
-        XCTAssertNil(authorizeMsg.user.location)
-        XCTAssertNil(authorizeMsg.user.eduExps)
-        XCTAssertNil(authorizeMsg.user.jobExps)
-
-        try completion?(HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken)))
-    })
-}
-
 class UserCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)
@@ -131,10 +100,12 @@ class UserCollectionTests: XCTestCase {
     func testQueryWithUserIDAndQueryParameters() throws {
         defer { app.shutdown() }
 
-        try registUserAndLoggedIn(app)
+        var headers: HTTPHeaders?
+        try registUserAndLoggedIn(app, completion: { headers = $0 })
+        XCTAssertNotNil(headers)
 
-        let query = "?include_web_links=true&include_edu_exp=true&include_job_exp=true"
-        try app.test(.GET, "users/test" + query, afterResponse: {
+        let query = "?include_social=true&include_edu_exp=true&include_job_exp=true"
+        try app.test(.GET, "users/test\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
 
@@ -151,6 +122,41 @@ class UserCollectionTests: XCTestCase {
             XCTAssertEqual(user.eduExps, [])
             XCTAssertEqual(user.jobExps, [])
         })
+
+        var social: Social.Coding?
+        try assertCreateSocial(app, headers: headers, completion: { (_, s) in
+            social = s
+        })
+        XCTAssertNotNil(social)
+
+        func assertSuccess(_ response: XCTHTTPResponse) throws {
+            XCTAssertEqual(response.status, .ok)
+        }
+
+        try app.test(.POST, "exp/jobs", headers: headers!, beforeRequest: {
+            try $0.content.encode(jobExpCoding)
+        }, afterResponse: assertSuccess)
+        .test(.POST, "exp/edu", headers: headers!, beforeRequest: {
+            try $0.content.encode(eduExpCoding)
+        }, afterResponse: assertSuccess)
+        .test(.GET, "users/test\(query)", afterResponse: {
+            XCTAssertEqual($0.status, .ok)
+            XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
+
+            let user = try! $0.content.decode(User.Coding.self)
+            XCTAssertNotNil(user.id)
+            XCTAssertEqual(user.username, "test")
+            XCTAssertNil(user.name)
+            XCTAssertNil(user.screenName)
+            XCTAssertNil(user.phone)
+            XCTAssertNil(user.emailAddress)
+            XCTAssertNil(user.aboutMe)
+            XCTAssertNil(user.location)
+            XCTAssertNotNil(user.social?.first)
+            XCTAssertNotNil(user.eduExps?.first)
+            XCTAssertNotNil(user.jobExps?.first)
+        })
+
     }
 
     func testQueryAll() throws {
