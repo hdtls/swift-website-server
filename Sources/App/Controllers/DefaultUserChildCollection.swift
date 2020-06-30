@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -40,7 +40,7 @@ extension UserChildCollection {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
 
-        guard let id = req.parameters.get(idKey, as: T.IDValue.self) else {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
 
@@ -66,7 +66,7 @@ extension UserChildCollection {
         var coding = try req.content.decode(T.Coding.self)
         let upgrade = try T.__converted(coding)
 
-        guard let id = req.parameters.get(idKey, as: T.IDValue.self) else {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
         }
 
@@ -87,7 +87,7 @@ extension UserChildCollection {
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
-        guard let expID = req.parameters.get(idKey, as: T.IDValue.self) else {
+        guard let expID = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
         return T.query(on: req.db)
@@ -126,8 +126,8 @@ class DefaultUserChildCollection<T: UserChild>: UserChildCollection {
 
         routes.on(.POST, use: create(_:))
         routes.on(.GET, use: readAll(_:))
-        routes.on(.GET, PathComponent.init(stringLiteral: ":" + idKey), use: read(_:))
-        routes.on(.PUT, PathComponent.init(stringLiteral: ":" + idKey), use: update(_:))
-        routes.on(.DELETE, PathComponent.init(stringLiteral: ":" + idKey), use: delete(_:))
+        routes.on(.GET, PathComponent.init(stringLiteral: ":" + restfulIDKey), use: read(_:))
+        routes.on(.PUT, PathComponent.init(stringLiteral: ":" + restfulIDKey), use: update(_:))
+        routes.on(.DELETE, PathComponent.init(stringLiteral: ":" + restfulIDKey), use: delete(_:))
     }
 }
