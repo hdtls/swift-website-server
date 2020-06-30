@@ -31,7 +31,7 @@ class SocialCollection: RestfulCollection {
 
         let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
         trusted.on(.GET, path, use: read)
-//        trusted.on(.PUT, path, use: update)
+        trusted.on(.PUT, path, use: update)
         trusted.on(.DELETE, path, use: delete)
     }
 
@@ -45,7 +45,7 @@ class SocialCollection: RestfulCollection {
             .flatMap({
                 // Make sure `$socialNetworkingService` has been eager loaded
                 // before try `model.__reverted()`.
-                model.$socialNetworkingService.get(on: req.db)
+                model.$networkingService.get(on: req.db)
             })
             .flatMapThrowing({ _ in
                 try model.__reverted()
@@ -60,7 +60,7 @@ class SocialCollection: RestfulCollection {
 
         return T.query(on: req.db)
             .filter(\._$id, .equal, id)
-            .with(\.$socialNetworkingService)
+            .with(\.$networkingService)
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMapThrowing({
@@ -70,7 +70,7 @@ class SocialCollection: RestfulCollection {
 
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.Coding]> {
         return T.query(on: req.db)
-            .with(\.$socialNetworkingService)
+            .with(\.$networkingService)
             .all()
             .flatMapEachThrowing({ try $0.__reverted() })
     }
@@ -85,7 +85,7 @@ class SocialCollection: RestfulCollection {
 
         return T.query(on: req.db)
             .filter(\._$id == id)
-            .with(\.$socialNetworkingService)
+            .with(\.$networkingService)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in

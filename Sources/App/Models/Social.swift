@@ -73,7 +73,7 @@ extension Social: UserChild {
         return social
     }
 
-    // Only `url` property can be change by user.
+    // Only `url` property can be update.
     func __merge(_ another: Social) {
         url = another.url
     }
