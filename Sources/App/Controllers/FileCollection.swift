@@ -16,14 +16,15 @@ import Vapor
 class FileCollection: RouteCollection {
 
     func boot(routes: RoutesBuilder) throws {
-
-        routes.on(.GET, ":fileID", use: index)
+        routes.on(.GET, "md/:fileID", use: query)
     }
 
-    func index(_ req: Request) -> Response {
+
+    /// Query md file  with name `fileID` in public fold.
+    func query(_ req: Request) -> Response {
 
         guard let fileID = req.parameters.get("fileID") else {
-            return Response.init(status: .internalServerError)
+            return Response.init(status: .notFound)
         }
 
         return req.fileio.streamFile(at: req.application.directory.publicDirectory + fileID)
