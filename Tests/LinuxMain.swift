@@ -1,8 +1,8 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the SwiftNIO open source project
+// This source file is part of the website-backend open source project
 //
-// Copyright (c) 2017-2018 Apple Inc. and the SwiftNIO project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -35,7 +35,7 @@ class LinuxMainRunnerImpl: LinuxMainRunner {
    func run() {
        XCTMain([
              testCase(EduExpCollectionTests.allTests),
-             testCase(FileCollectionTests.allTests),
+             testCase(IndustryCollectionTests.allTests),
              testCase(JobExpCollectionTests.allTests),
              testCase(LogCollectionTests.allTests),
              testCase(SocialCollectionTests.allTests),

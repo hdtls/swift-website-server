@@ -96,3 +96,21 @@ func assertCreateSocial(
         })
     })
 }
+
+@discardableResult
+func assertCreateIndustry(
+    _ app: Application,
+    completion: ((Industry.Coding) throws -> Void)? = nil
+) throws -> XCTApplicationTester {
+
+    return try app.test(.POST, Industry.schema, beforeRequest: {
+        try $0.content.encode(Industry.Coding.init(title: "International Trade & Development"))
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+
+        let coding = try $0.content.decode(Industry.Coding.self)
+        XCTAssertNotNil(coding.id)
+        XCTAssertEqual(coding.title, "International Trade & Development")
+        try completion?(coding)
+    })
+}
