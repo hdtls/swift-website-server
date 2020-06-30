@@ -29,8 +29,8 @@ final class Social: Model {
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
 
-    @Parent(key: FieldKeys.socialNetworkingService.rawValue)
-    var socialNetworkingService: SocialNetworkingService
+    @Parent(key: FieldKeys.networkingService.rawValue)
+    var networkingService: SocialNetworkingService
 
     // MARK: Initializer
     required init() {}
@@ -42,7 +42,7 @@ extension Social {
     enum FieldKeys: FieldKey {
         case user = "user_id"
         case url
-        case socialNetworkingService = "social_networking_service_id"
+        case networkingService = "networking_service_id"
     }
 }
 
@@ -57,17 +57,23 @@ extension Social: UserChild {
         var userId: User.IDValue?
         var url: String
 
-        /// `ID` of `socialNetworkingService` is require for create referance with `SocialNetworkingService`
-        var socialNetworkingService: SocialNetworkingService.Coding
+        /// `ID` of `networkingService` is require for create referance with `SocialNetworkingService`
+        /// This property only used for decoding. ignore by encoding.
+        var networkingServiceId: SocialNetworkingService.IDValue?
+        var networkingService: SocialNetworkingService.Coding?
     }
 
     static func __converted(_ coding: Coding) throws -> Social {
+        guard let serviceID = coding.networkingServiceId else {
+            throw Abort.init(.badRequest, reason: "Value required for key 'socialNetworkingService.id'")
+        }
         let social = Social.init()
         social.url = coding.url
-        social.$socialNetworkingService.id = coding.socialNetworkingService.id
+        social.$networkingService.id = serviceID
         return social
     }
 
+    // Only `url` property can be change by user.
     func __merge(_ another: Social) {
         url = another.url
     }
@@ -77,7 +83,7 @@ extension Social: UserChild {
             id: requireID(),
             userId: $user.id,
             url: url,
-            socialNetworkingService: socialNetworkingService.__reverted()
+            networkingService: networkingService.__reverted()
         )
     }
 }
