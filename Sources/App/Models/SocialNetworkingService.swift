@@ -32,7 +32,7 @@ final class SocialNetworkingService: Model {
     var html: String?
 
     // MARK: Relations
-    @Children(for: \.$socialNetworkingService)
+    @Children(for: \.$networkingService)
     var social: [Social]
 
     // MARK: Initializer
@@ -84,15 +84,15 @@ extension SocialNetworkingService {
 extension SocialNetworkingService: Transfer {
 
     struct Coding: Content, Equatable {
-        var id: SocialNetworkingService.IDValue
-        var type: SocialNetworkingService.ServiceType?
+        var id: SocialNetworkingService.IDValue?
+        var type: SocialNetworkingService.ServiceType
         var imageUrl: String?
         var html: String?
     }
 
     static func __converted(_ coding: Coding) throws -> SocialNetworkingService {
         let social = SocialNetworkingService.init()
-        social.type = coding.type ?? .undefine
+        social.type = coding.type
         social.imageUrl = coding.imageUrl
         social.html = coding.html
         return social
