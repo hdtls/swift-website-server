@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -93,7 +93,7 @@ extension JobExp: UserChild {
         return exp
     }
 
-    func __merge(_ another: JobExp) throws {
+    func __merge(_ another: JobExp) {
         company = another.company
         startAt = another.startAt
         endAt = another.endAt

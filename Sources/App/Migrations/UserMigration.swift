@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -31,13 +31,6 @@ extension User {
                 .field(FieldKeys.emailAddress.rawValue, .string)
                 .field(FieldKeys.aboutMe.rawValue, .string)
                 .field(FieldKeys.location.rawValue, .string)
-                .field(FieldKeys.profileBackgroundColor.rawValue, .string)
-                .field(FieldKeys.profileBackgroundImageUrl.rawValue, .string)
-                .field(FieldKeys.profileBackgroundTile.rawValue, .string)
-                .field(FieldKeys.profileImageUrl.rawValue, .string)
-                .field(FieldKeys.profileBannerUrl.rawValue, .string)
-                .field(FieldKeys.profileLinkColor.rawValue, .string)
-                .field(FieldKeys.profileTextColor.rawValue, .string)
                 .field(FieldKeys.createdAt.rawValue, .datetime, .required)
                 .field(FieldKeys.updatedAt.rawValue, .datetime, .required)
                 .create()

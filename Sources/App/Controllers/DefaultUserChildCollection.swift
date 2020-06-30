@@ -32,7 +32,7 @@ extension UserChildCollection {
         exp._$user.id = try user.requireID()
         return exp.save(on: req.db)
             .flatMapThrowing({
-              try exp.__reverted()
+                try exp.__reverted()
             })
     }
 
@@ -63,7 +63,7 @@ extension UserChildCollection {
 
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let userID = try req.auth.require(User.self).requireID()
-        var coding = try req.content.decode(T.Coding.self)
+        let coding = try req.content.decode(T.Coding.self)
         let upgrade = try T.__converted(coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
@@ -75,13 +75,14 @@ extension UserChildCollection {
             .filter(\._$id == id)
             .first()
             .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ exp -> T in
-                try exp.__merge(upgrade)
-                coding = try exp.__reverted()
-                return exp
+            .flatMap({ saved -> EventLoopFuture<T> in
+                saved.__merge(upgrade)
+                let newValue = saved
+                return saved.update(on: req.db).map({ newValue })
             })
-            .flatMap({ $0.update(on: req.db) })
-            .map({ coding })
+            .flatMapThrowing({
+                try $0.__reverted()
+            })
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {

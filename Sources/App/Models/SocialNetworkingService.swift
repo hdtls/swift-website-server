@@ -98,7 +98,7 @@ extension SocialNetworkingService: Transfer {
         return social
     }
 
-    func __merge(_ another: SocialNetworkingService) throws {
+    func __merge(_ another: SocialNetworkingService) {
         type = another.type
         imageUrl = another.imageUrl
         html = another.html

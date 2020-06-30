@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -15,13 +15,17 @@ import Vapor
 
 class UserCollection: RouteCollection {
 
-    func boot(routes: RoutesBuilder) throws {
-        let users = routes.grouped("users")
-        users.on(.POST, use: create(_:))
+    let restfulIDKey = "userID"
 
-        // User query `users/:userID`
-        users.on(.GET, use: queryAllUsers(_:))
-        users.on(.GET, ":userID", use: queryUser(_:))
+    func boot(routes: RoutesBuilder) throws {
+
+        let users = routes.grouped("users")
+
+        let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
+
+        users.on(.POST, use: create)
+        users.on(.GET, use: readAll)
+        users.on(.GET, path, use: read)
 
         let trusted = users.grouped([
             User.authenticator(),
@@ -29,8 +33,7 @@ class UserCollection: RouteCollection {
             User.guardMiddleware(),
             Token.guardMiddleware()
         ])
-        // User update `users/:userID`
-        trusted.on(.PUT, ":userID", use: update(_:))
+        trusted.on(.PUT, path, use: update)
     }
 
     /// Register new user with `User.Creation` msg. when success a new user and token is registed.
@@ -70,8 +73,8 @@ class UserCollection: RouteCollection {
 
     /// Query user with specified`userID`.
     /// - seealso: `UserCollection.queryAllUsers(_:)`
-    func queryUser(_ req: Request) -> EventLoopFuture<User.Coding> {
-        queryAllUsers(req)
+    func read(_ req: Request) -> EventLoopFuture<User.Coding> {
+        readAll(req)
             .map({ $0.first })
             .unwrap(or: Abort.init(.notFound))
     }
@@ -81,15 +84,15 @@ class UserCollection: RouteCollection {
     /// `include_edu_exp`:  default is `false`, if `true` the result of user will include user's education experiances.
     /// `include_web_links`:  default is `false`, if `true` the result of user will include user's web links.
     /// - note: This is a mix function the `userID` is optional value.
-    func queryAllUsers(_ req: Request) -> EventLoopFuture<[User.Coding]> {
+    func readAll(_ req: Request) -> EventLoopFuture<[User.Coding]> {
 
         var queryBuilder = User.query(on: req.db)
 
         // Logged in user can query `User` by `id` or unique property `username`.
         // User ID has higher priority to be used for query.
-        if let userID = req.parameters.get("userID", as: User.IDValue.self) {
+        if let userID = req.parameters.get(restfulIDKey, as: User.IDValue.self) {
             queryBuilder = queryBuilder.filter(\.$id, .equal, userID)
-        } else if let userID = req.parameters.get("userID") {
+        } else if let userID = req.parameters.get(restfulIDKey) {
             queryBuilder = queryBuilder.filter(\.$username, .equal, userID)
         }
 
@@ -103,9 +106,9 @@ class UserCollection: RouteCollection {
             queryBuilder.with(\.$eduExps)
         }
 
-        if (try? req.query.get(Bool.self, at: "include_web_links")) ?? false {
-            queryBuilder.with(\.$webLinks) {
-                $0.with(\.$socialMedias)
+        if (try? req.query.get(Bool.self, at: "include_social")) ?? false {
+            queryBuilder.with(\.$social) {
+                $0.with(\.$socialNetworkingService)
             }
         }
 
@@ -119,19 +122,18 @@ class UserCollection: RouteCollection {
     /// Update exists user with `User.Coding` which contain all properties that user need updated.
     func update(_ req: Request) throws -> EventLoopFuture<User.Coding> {
         let userId = try req.auth.require(User.self).requireID()
-        let upgrade = try User.__converted(try req.content.decode(User.Coding.self))
-        var coding: User.Coding!
+        let coding = try req.content.decode(User.Coding.self)
+        let upgrade = try User.__converted(coding)
 
         return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
-            .flatMapThrowing({ user -> User in
-                try user.__merge(upgrade)
-                coding = try user.__reverted()
-                return user
+            .flatMap({ saved -> EventLoopFuture<User> in
+                saved.__merge(upgrade)
+                let newValue = saved
+                return newValue.update(on: req.db).map({ newValue })
             })
-            .flatMap({
-                $0.update(on: req.db)
+            .flatMapThrowing({
+                try $0.__reverted()
             })
-            .map({ coding })
     }
 }

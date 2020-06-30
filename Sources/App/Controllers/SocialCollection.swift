@@ -12,7 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 import Vapor
-import enum Fluent.FieldKey
+import Fluent
 
 class SocialCollection: RestfulCollection {
 
@@ -31,7 +31,7 @@ class SocialCollection: RestfulCollection {
 
         let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
         trusted.on(.GET, path, use: read)
-        trusted.on(.PUT, path, use: update)
+//        trusted.on(.PUT, path, use: update)
         trusted.on(.DELETE, path, use: delete)
     }
 
@@ -76,21 +76,26 @@ class SocialCollection: RestfulCollection {
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        var coding = try req.content.decode(T.Coding.self)
+        let coding = try req.content.decode(T.Coding.self)
         let upgrade = try T.__converted(coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
         }
 
-        return T.find(id, on: req.db)
+        return T.query(on: req.db)
+            .filter(\._$id == id)
+            .with(\.$socialNetworkingService)
+            .first()
             .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ exp -> T in
-                try exp.__merge(upgrade)
-                coding = try exp.__reverted()
-                return exp
+            .flatMap({ saved -> EventLoopFuture<T> in
+                saved.__merge(upgrade)
+                let newValue = saved
+                return newValue.update(on: req.db)
+                    .map({ newValue })
             })
-            .flatMap({ $0.update(on: req.db) })
-            .map({ coding })
+            .flatMapThrowing({
+                try $0.__reverted()
+            })
     }
 }

@@ -23,7 +23,7 @@ protocol Transfer {
     static func __converted(_ coding: Coding) throws -> Self
 
     /// Merge value from another model. used to update exsit model.
-    func __merge(_ another: Self) throws
+    func __merge(_ another: Self)
 
     /// Revert model to `Coding` type to encode to response.
     func __reverted() throws -> Coding

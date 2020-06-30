@@ -64,7 +64,7 @@ extension RestfulCollection where T.IDValue: LosslessStringConvertible {
         let model = try T.__converted(coding)
         return model.save(on: req.db)
             .flatMapThrowing({
-              try model.__reverted()
+                try model.__reverted()
             })
     }
 
@@ -86,7 +86,7 @@ extension RestfulCollection where T.IDValue: LosslessStringConvertible {
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        var coding = try req.content.decode(T.Coding.self)
+        let coding = try req.content.decode(T.Coding.self)
         let upgrade = try T.__converted(coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
@@ -95,13 +95,14 @@ extension RestfulCollection where T.IDValue: LosslessStringConvertible {
 
         return T.find(id, on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ model -> T in
-                try model.__merge(upgrade)
-                coding = try model.__reverted()
-                return model
+            .flatMap({ saved -> EventLoopFuture<T> in
+                saved.__merge(upgrade)
+                let newValue = saved
+                return newValue.update(on: req.db).map({ newValue })
             })
-            .flatMap({ $0.update(on: req.db) })
-            .map({ coding })
+            .flatMapThrowing({
+                try $0.__reverted()
+            })
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {

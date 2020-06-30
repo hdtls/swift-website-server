@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -52,27 +52,6 @@ final class User: Model {
     @Field(key: FieldKeys.location.rawValue)
     var location: String?
 
-    @Field(key: FieldKeys.profileBackgroundColor.rawValue)
-    var profileBackgroundColor: String?
-
-    @Field(key: FieldKeys.profileBackgroundImageUrl.rawValue)
-    var profileBackgroundImageUrl: String?
-
-    @Field(key: FieldKeys.profileBackgroundTile.rawValue)
-    var profileBackgroundTile: String?
-
-    @Field(key: FieldKeys.profileImageUrl.rawValue)
-    var profileImageUrl: String?
-
-    @Field(key: FieldKeys.profileBannerUrl.rawValue)
-    var profileBannerUrl: String?
-
-    @Field(key: FieldKeys.profileLinkColor.rawValue)
-    var profileLinkColor: String?
-
-    @Field(key: FieldKeys.profileTextColor.rawValue)
-    var profileTextColor: String?
-
     @Timestamp(key: FieldKeys.createdAt.rawValue, on: .create)
     var createdAt: Date?
 
@@ -84,7 +63,7 @@ final class User: Model {
     var tokens: [Token]
 
     @Children(for: \.$user)
-    var webLinks: [WebLink]
+    var social: [Social]
 
     @Children(for: \.$user)
     var eduExps: [EduExp]
@@ -104,14 +83,7 @@ final class User: Model {
         phone: String? = nil,
         emailAddress: String? = nil,
         aboutMe: String? = nil,
-        location: String? = nil,
-        profileBackgroundColor: String? = nil,
-        profileBackgroundImageUrl: String? = nil,
-        profileBackgroundTile: String? = nil,
-        profileImageUrl: String? = nil,
-        profileBannerUrl: String? = nil,
-        profileLinkColor: String? = nil,
-        profileTextColor: String? = nil
+        location: String? = nil
         ) {
         self.id = id
         self.username = username
@@ -122,13 +94,6 @@ final class User: Model {
         self.emailAddress = emailAddress
         self.aboutMe = aboutMe
         self.location = location
-        self.profileBackgroundColor = profileBackgroundColor
-        self.profileBackgroundImageUrl = profileBackgroundImageUrl
-        self.profileBackgroundTile = profileBackgroundTile
-        self.profileImageUrl = profileImageUrl
-        self.profileBannerUrl = profileBannerUrl
-        self.profileLinkColor = profileLinkColor
-        self.profileTextColor = profileTextColor
     }
 }
 
@@ -144,13 +109,6 @@ extension User {
         case emailAddress = "email_address"
         case aboutMe = "about_me"
         case location
-        case profileBackgroundColor = "profile_background_color"
-        case profileBackgroundImageUrl = "profile_background_image_url"
-        case profileBackgroundTile = "profile_background_tile"
-        case profileImageUrl = "profile_image_url"
-        case profileBannerUrl = "profile_banner_url"
-        case profileLinkColor = "profile_link_color"
-        case profileTextColor = "profile_text_color"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -204,18 +162,11 @@ extension User: Transfer {
         var emailAddress: String?
         var aboutMe: String?
         var location: String?
-        var profileBackgroundColor: String?
-        var profileBackgroundImageUrl: String?
-        var profileBackgroundTile: String?
-        var profileImageUrl: String?
-        var profileBannerUrl: String?
-        var profileLinkColor: String?
-        var profileTextColor: String?
 
         // MARK: Relations
         /// Links that user owned.
         /// - note: Only use for encoding user model.
-        var webLinks: [WebLink.Coding]?
+        var social: [Social.Coding]?
 
         /// Education experiances
         /// - seealso: `Coding.webLinks`
@@ -234,30 +185,16 @@ extension User: Transfer {
         user.emailAddress = coding.emailAddress
         user.aboutMe = coding.aboutMe
         user.location = coding.location
-        user.profileBackgroundColor = coding.profileBackgroundColor
-        user.profileBackgroundImageUrl = coding.profileBackgroundImageUrl
-        user.profileBackgroundTile = coding.profileBackgroundTile
-        user.profileImageUrl = coding.profileImageUrl
-        user.profileBannerUrl = coding.profileBannerUrl
-        user.profileLinkColor = coding.profileLinkColor
-        user.profileTextColor = coding.profileTextColor
         return user
     }
 
-    func __merge(_ user: User) throws {
+    func __merge(_ user: User) {
         name = user.name
         screenName = user.screenName
         phone = user.phone
         emailAddress = user.emailAddress
         aboutMe = user.aboutMe
         location = user.location
-        profileBackgroundColor = user.profileBackgroundColor
-        profileBackgroundImageUrl = user.profileBackgroundImageUrl
-        profileBackgroundTile = user.profileBackgroundTile
-        profileImageUrl = user.profileImageUrl
-        profileBannerUrl = user.profileBannerUrl
-        profileLinkColor = user.profileLinkColor
-        profileTextColor = user.profileTextColor
     }
     
     func __reverted() throws -> Coding {
@@ -270,16 +207,10 @@ extension User: Transfer {
         coding.emailAddress = emailAddress
         coding.aboutMe = aboutMe
         coding.location = location
-        coding.profileBackgroundColor = profileBackgroundColor
-        coding.profileBackgroundImageUrl = profileBackgroundImageUrl
-        coding.profileBackgroundTile = profileBackgroundTile
-        coding.profileImageUrl = profileImageUrl
-        coding.profileBannerUrl = profileBannerUrl
-        coding.profileLinkColor = profileLinkColor
-        coding.profileTextColor = profileTextColor
-        coding.webLinks = $webLinks.value?.compactMap({ try? $0.__reverted() })
+        coding.social = $social.value?.compactMap({ try? $0.__reverted() })
         coding.eduExps = $eduExps.value?.compactMap({ try? $0.__reverted() })
         coding.jobExps = $jobExps.value?.compactMap({ try? $0.__reverted() })
+        coding.social = $social.value?.compactMap({ try? $0.__reverted() })
         return coding
     }
 }

@@ -68,7 +68,7 @@ extension Social: UserChild {
         return social
     }
 
-    func __merge(_ another: Social) throws {
+    func __merge(_ another: Social) {
         url = another.url
     }
 
