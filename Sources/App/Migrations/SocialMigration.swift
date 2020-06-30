@@ -24,7 +24,7 @@ extension Social {
                 .id()
                 .field(FieldKeys.user.rawValue, .uuid, .required)
                 .field(FieldKeys.url.rawValue, .string, .required)
-                .field(FieldKeys.socialNetworkingService.rawValue, .uuid, .required)
+                .field(FieldKeys.networkingService.rawValue, .uuid, .required)
                 .create()
         }
 

@@ -108,7 +108,7 @@ class UserCollection: RouteCollection {
 
         if (try? req.query.get(Bool.self, at: "include_social")) ?? false {
             queryBuilder.with(\.$social) {
-                $0.with(\.$socialNetworkingService)
+                $0.with(\.$networkingService)
             }
         }
 

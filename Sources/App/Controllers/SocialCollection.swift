@@ -14,9 +14,10 @@
 import Vapor
 import Fluent
 
-class SocialCollection: RestfulCollection {
-
+class SocialCollection: UserChildCollection {
     typealias T = Social
+
+    var pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
 
     func boot(routes: RoutesBuilder) throws {
         let trusted = routes.grouped("social").grouped([
@@ -53,13 +54,16 @@ class SocialCollection: RestfulCollection {
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+        let user = try req.auth.require(User.self)
+        let userID = try user.requireID()
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
 
         return T.query(on: req.db)
-            .filter(\._$id, .equal, id)
+            .filter(\._$id == id)
+            .filter(pidFieldKey, .equal, userID)
             .with(\.$networkingService)
             .first()
             .unwrap(or: Abort.init(.notFound))
@@ -69,13 +73,19 @@ class SocialCollection: RestfulCollection {
     }
 
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.Coding]> {
+        let user = try req.auth.require(User.self)
+        let userID = try user.requireID()
+
         return T.query(on: req.db)
+            .filter(pidFieldKey, .equal, userID)
             .with(\.$networkingService)
             .all()
             .flatMapEachThrowing({ try $0.__reverted() })
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+        let user = try req.auth.require(User.self)
+        let userID = try user.requireID()
         let coding = try req.content.decode(T.Coding.self)
         let upgrade = try T.__converted(coding)
 
@@ -85,6 +95,7 @@ class SocialCollection: RestfulCollection {
 
         return T.query(on: req.db)
             .filter(\._$id == id)
+            .filter(pidFieldKey, .equal, userID)
             .with(\.$networkingService)
             .first()
             .unwrap(or: Abort(.notFound))
