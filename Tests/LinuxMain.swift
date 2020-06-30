@@ -38,7 +38,7 @@ class LinuxMainRunnerImpl: LinuxMainRunner {
              testCase(FileCollectionTests.allTests),
              testCase(JobExpCollectionTests.allTests),
              testCase(LogCollectionTests.allTests),
-             testCase(SocialNetworkingSereviceTests.allTests),
+             testCase(SocialNetworkingSereviceCollectionTests.allTests),
              testCase(UserCollectionTests.allTests),
         ])
     }

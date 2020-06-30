@@ -14,6 +14,37 @@
 import XCTVapor
 @testable import App
 
+func registUserAndLoggedIn(
+    _ app: Application,
+    _ username: String = "test",
+    _ password: String = "111111",
+    completion: ((HTTPHeaders) throws -> Void)? = nil
+) throws {
+
+    try app.test(.POST, "users", beforeRequest: {
+        try $0.content.encode(User.Creation.init(username: username, password: password))
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+
+        let authorizeMsg = try $0.content.decode(AuthorizeMsg.self)
+
+        XCTAssertNotNil(authorizeMsg.accessToken)
+        XCTAssertNotNil(authorizeMsg.user)
+        XCTAssertNotNil(authorizeMsg.user.id)
+        XCTAssertEqual(authorizeMsg.user.username, username)
+        XCTAssertNil(authorizeMsg.user.name)
+        XCTAssertNil(authorizeMsg.user.screenName)
+        XCTAssertNil(authorizeMsg.user.phone)
+        XCTAssertNil(authorizeMsg.user.emailAddress)
+        XCTAssertNil(authorizeMsg.user.aboutMe)
+        XCTAssertNil(authorizeMsg.user.location)
+        XCTAssertNil(authorizeMsg.user.eduExps)
+        XCTAssertNil(authorizeMsg.user.jobExps)
+
+        try completion?(HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken)))
+    })
+}
+
 class UserCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)
@@ -91,14 +122,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
             XCTAssertNil(user.location)
-            XCTAssertNil(user.profileBackgroundColor)
-            XCTAssertNil(user.profileBackgroundImageUrl)
-            XCTAssertNil(user.profileBackgroundTile)
-            XCTAssertNil(user.profileImageUrl)
-            XCTAssertNil(user.profileBannerUrl)
-            XCTAssertNil(user.profileLinkColor)
-            XCTAssertNil(user.profileTextColor)
-            XCTAssertNil(user.webLinks)
+            XCTAssertNil(user.social)
             XCTAssertNil(user.eduExps)
             XCTAssertNil(user.jobExps)
         })
@@ -123,14 +147,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
             XCTAssertNil(user.location)
-            XCTAssertNil(user.profileBackgroundColor)
-            XCTAssertNil(user.profileBackgroundImageUrl)
-            XCTAssertNil(user.profileBackgroundTile)
-            XCTAssertNil(user.profileImageUrl)
-            XCTAssertNil(user.profileBannerUrl)
-            XCTAssertNil(user.profileLinkColor)
-            XCTAssertNil(user.profileTextColor)
-            XCTAssertEqual(user.webLinks, [])
+            XCTAssertEqual(user.social, [])
             XCTAssertEqual(user.eduExps, [])
             XCTAssertEqual(user.jobExps, [])
         })
@@ -151,6 +168,59 @@ class UserCollectionTests: XCTestCase {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
             XCTAssertEqual(try! $0.content.decode([User.Coding].self).count, 1)
+        })
+    }
+
+    func testQueryAfterAddChildrens() throws {
+        defer { app.shutdown() }
+
+        try registUserAndLoggedIn(app, completion: { [weak app] in
+            try app?.test(.POST, "exp/jobs", headers: $0, beforeRequest: {
+                try $0.content.encode(jobExpCoding)
+            }, afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+            }).test(.POST, "exp/edu", headers: $0, beforeRequest: {
+                try $0.content.encode(eduExpCoding)
+            }, afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+            })
+            .test(.GET, "users?include_edu_exp=true&include_job_exp=true", afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
+
+                let users = try $0.content.decode([User.Coding].self)
+                XCTAssertNotNil(users.first)
+
+                let user = users.first!
+
+                XCTAssertNotNil(user.id)
+                XCTAssertEqual(user.username, "test")
+                XCTAssertNil(user.name)
+                XCTAssertNil(user.screenName)
+                XCTAssertNil(user.phone)
+                XCTAssertNil(user.emailAddress)
+                XCTAssertNil(user.aboutMe)
+                XCTAssertNil(user.location)
+                XCTAssertEqual(user.eduExps!.count, 1)
+                XCTAssertEqual(user.jobExps!.count, 1)
+
+                let job = user.jobExps!.first!
+                XCTAssertNotNil(job.id)
+                XCTAssertNotNil(job.userId)
+                XCTAssertEqual(job.company, jobExpCoding.company)
+                XCTAssertEqual(job.startAt, jobExpCoding.startAt)
+                XCTAssertEqual(job.endAt, jobExpCoding.endAt)
+                XCTAssertNil(job.department)
+                XCTAssertNil(job.position)
+                XCTAssertNil(job.type)
+
+                let edu = user.eduExps!.first!
+                XCTAssertNotNil(edu.id)
+                XCTAssertNotNil(edu.userId)
+                XCTAssertEqual(edu.startAt, eduExpCoding.startAt)
+                XCTAssertEqual(edu.endAt, eduExpCoding.endAt)
+                XCTAssertEqual(edu.education, eduExpCoding.education)
+            })
         })
     }
 
@@ -176,9 +246,8 @@ class UserCollectionTests: XCTestCase {
     func testUpdate() throws {
         defer { app.shutdown() }
 
-        try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-            try app?.test(.PUT, "users/test", headers: headers, beforeRequest: {
+        try registUserAndLoggedIn(app, completion: { [unowned app] in
+            try app.test(.PUT, "users/test", headers: $0, beforeRequest: {
 
                 try $0.content.encode(
                     User.Coding.init(
@@ -201,14 +270,7 @@ class UserCollectionTests: XCTestCase {
                 XCTAssertEqual(user.emailAddress, "test@test.com")
                 XCTAssertEqual(user.aboutMe, "HELLO WORLD !!!")
                 XCTAssertNil(user.location)
-                XCTAssertNil(user.profileBackgroundColor)
-                XCTAssertNil(user.profileBackgroundImageUrl)
-                XCTAssertNil(user.profileBackgroundTile)
-                XCTAssertNil(user.profileImageUrl)
-                XCTAssertNil(user.profileBannerUrl)
-                XCTAssertNil(user.profileLinkColor)
-                XCTAssertNil(user.profileTextColor)
-                XCTAssertNil(user.webLinks)
+                XCTAssertNil(user.social)
                 XCTAssertNil(user.eduExps)
                 XCTAssertNil(user.jobExps)
             })

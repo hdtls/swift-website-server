@@ -35,6 +35,7 @@ extension UserCollectionTests {
                 ("testQueryWithUserID", testQueryWithUserID),
                 ("testQueryWithUserIDAndQueryParameters", testQueryWithUserIDAndQueryParameters),
                 ("testQueryAll", testQueryAll),
+                ("testQueryAfterAddChildrens", testQueryAfterAddChildrens),
                 ("testUpdateWithUnauthorized", testUpdateWithUnauthorized),
                 ("testUpdate", testUpdate),
            ]

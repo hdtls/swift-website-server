@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 the website-backend project authors
+// Copyright © 2020 Eli Zhang, and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -49,9 +49,7 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.POST, "exp/edu", headers: headers, beforeRequest: {
+            try app?.test(.POST, "exp/edu", headers: $0, beforeRequest: {
                 try $0.content.encode(eduExpCoding)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
@@ -70,9 +68,7 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.GET, "exp/edu/1", headers: headers, afterResponse: {
+            try app?.test(.GET, "exp/edu/1", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .notFound)
             })
         })
@@ -82,16 +78,14 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
             var eduID: String!
 
-            try app?.test(.POST, "exp/edu", headers: headers, beforeRequest: {
+            try app?.test(.POST, "exp/edu", headers: $0, beforeRequest: {
                 try $0.content.encode(eduExpCoding)
             }, afterResponse: {
                 let coding = try $0.content.decode(EduExp.Coding.self)
                 eduID = coding.id!.uuidString
-            }).test(.GET, "exp/edu/" + eduID, headers: headers, afterResponse: {
+            }).test(.GET, "exp/edu/" + eduID, headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
                 let coding = try $0.content.decode(EduExp.Coding.self)
@@ -108,19 +102,17 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.GET, "exp/edu", headers: headers, afterResponse: {
+            try app?.test(.GET, "exp/edu", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 let coding = try $0.content.decode([EduExp.Coding].self)
                 XCTAssertEqual(coding.count, 0)
             })
-            .test(.POST, "exp/edu", headers: headers, beforeRequest: {
+            .test(.POST, "exp/edu", headers: $0, beforeRequest: {
                 try $0.content.encode(eduExpCoding)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
             })
-            .test(.GET, "exp/edu", headers: headers, afterResponse: {
+            .test(.GET, "exp/edu", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 let coding = try $0.content.decode([EduExp.Coding].self)
                 XCTAssertEqual(coding.count, 1)
@@ -132,13 +124,11 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
             let education = "B.S.E"
 
             var eduID: String!
 
-            try app?.test(.POST, "exp/edu", headers: headers, beforeRequest: {
+            try app?.test(.POST, "exp/edu", headers: $0, beforeRequest: {
                 try $0.content.encode(eduExpCoding)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
@@ -146,7 +136,7 @@ class EduExpCollectionTests: XCTestCase {
                 eduID = coding.id!.uuidString
                 XCTAssertEqual(coding.education, eduExpCoding.education)
             })
-            .test(.PUT, "exp/edu/" + eduID, headers: headers, beforeRequest: {
+            .test(.PUT, "exp/edu/" + eduID, headers: $0, beforeRequest: {
                 try $0.content.encode(
                     EduExp.Coding.init(
                         startAt: eduExpCoding.startAt,
@@ -171,11 +161,9 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.POST, "exp/edu", headers: headers, beforeRequest: {
+            try app?.test(.POST, "exp/edu", headers: $0, beforeRequest: {
                 try $0.content.encode(eduExpCoding)
-            }).test(.DELETE, "exp/edu/1", headers: headers, afterResponse: {
+            }).test(.DELETE, "exp/edu/1", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .notFound)
             })
         })
@@ -185,16 +173,14 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
             var eduID: String!
 
-            try app?.test(.POST, "exp/edu", headers: headers, beforeRequest: {
+            try app?.test(.POST, "exp/edu", headers: $0, beforeRequest: {
                 try $0.content.encode(eduExpCoding)
             }, afterResponse: {
                 let coding = try $0.content.decode(EduExp.Coding.self)
                 eduID = coding.id!.uuidString
-            }).test(.DELETE, "exp/edu/" + eduID, headers: headers, afterResponse: {
+            }).test(.DELETE, "exp/edu/" + eduID, headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
             })
         })

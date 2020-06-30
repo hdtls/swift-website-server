@@ -49,9 +49,7 @@ class JobExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.POST, "exp/jobs", headers: headers, beforeRequest: {
+            try app?.test(.POST, "exp/jobs", headers: $0, beforeRequest: {
                 try $0.content.encode(jobExpCoding)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
@@ -72,10 +70,8 @@ class JobExpCollectionTests: XCTestCase {
     func testQueryWithInvalidJobID() throws {
         defer { app.shutdown() }
 
-        try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.GET, "exp/jobs/1", headers: headers, afterResponse: {
+        try registUserAndLoggedIn(app, completion: { [unowned app] in
+            try app.test(.GET, "exp/jobs/1", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .notFound)
             })
         })
@@ -85,16 +81,14 @@ class JobExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
             var jobID: String!
 
-            try app?.test(.POST, "exp/jobs", headers: headers, beforeRequest: {
+            try app?.test(.POST, "exp/jobs", headers: $0, beforeRequest: {
                 try $0.content.encode(jobExpCoding)
             }, afterResponse: {
                 let coding = try $0.content.decode(JobExp.Coding.self)
                 jobID = coding.id!.uuidString
-            }).test(.GET, "exp/jobs/" + jobID, headers: headers, afterResponse: {
+            }).test(.GET, "exp/jobs/" + jobID, headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
                 let coding = try $0.content.decode(JobExp.Coding.self)
@@ -113,20 +107,18 @@ class JobExpCollectionTests: XCTestCase {
     func testQueryAll() throws {
         defer { app.shutdown() }
 
-        try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.GET, "exp/jobs", headers: headers, afterResponse: {
+        try registUserAndLoggedIn(app, completion: { [unowned app] in
+            try app.test(.GET, "exp/jobs", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 let coding = try $0.content.decode([JobExp.Coding].self)
                 XCTAssertEqual(coding.count, 0)
             })
-            .test(.POST, "exp/jobs", headers: headers, beforeRequest: {
+            .test(.POST, "exp/jobs", headers: $0, beforeRequest: {
                 try $0.content.encode(jobExpCoding)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
             })
-            .test(.GET, "exp/jobs", headers: headers, afterResponse: {
+            .test(.GET, "exp/jobs", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 let coding = try $0.content.decode([JobExp.Coding].self)
                 XCTAssertEqual(coding.count, 1)
@@ -137,22 +129,20 @@ class JobExpCollectionTests: XCTestCase {
     func testUpdate() throws {
         defer { app.shutdown() }
 
-        try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
+        try registUserAndLoggedIn(app, completion: { [unowned app] in
             let department = "Development"
             let position = "iOS"
 
             var jobID: String!
 
-            try app?.test(.POST, "exp/jobs", headers: headers, beforeRequest: {
+            try app.test(.POST, "exp/jobs", headers: $0, beforeRequest: {
                 try $0.content.encode(jobExpCoding)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 let coding = try $0.content.decode(JobExp.Coding.self)
                 jobID = coding.id!.uuidString
             })
-            .test(.PUT, "exp/jobs/" + jobID, headers: headers, beforeRequest: {
+            .test(.PUT, "exp/jobs/" + jobID, headers: $0, beforeRequest: {
                 try $0.content.encode(
                     JobExp.Coding.init(
                         company: jobExpCoding.company,
@@ -181,12 +171,10 @@ class JobExpCollectionTests: XCTestCase {
     func testDeleteWithInvalidJobID() throws {
         defer { app.shutdown() }
 
-        try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
-            try app?.test(.POST, "exp/jobs", headers: headers, beforeRequest: {
+        try registUserAndLoggedIn(app, completion: { [unowned app] in
+            try app.test(.POST, "exp/jobs", headers: $0, beforeRequest: {
                 try $0.content.encode(jobExpCoding)
-            }).test(.DELETE, "exp/jobs/1", headers: headers, afterResponse: {
+            }).test(.DELETE, "exp/jobs/1", headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .notFound)
             })
         })
@@ -195,17 +183,15 @@ class JobExpCollectionTests: XCTestCase {
     func testDelete() throws {
         defer { app.shutdown() }
 
-        try registUserAndLoggedIn(app, completion: { [weak app] in
-            let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", $0))
-
+        try registUserAndLoggedIn(app, completion: { [unowned app] in
             var jobID: String!
 
-            try app?.test(.POST, "exp/jobs", headers: headers, beforeRequest: {
+            try app.test(.POST, "exp/jobs", headers: $0, beforeRequest: {
                 try $0.content.encode(jobExpCoding)
             }, afterResponse: {
                 let coding = try $0.content.decode(JobExp.Coding.self)
                 jobID = coding.id!.uuidString
-            }).test(.DELETE, "exp/jobs/" + jobID, headers: headers, afterResponse: {
+            }).test(.DELETE, "exp/jobs/" + jobID, headers: $0, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
             })
         })
