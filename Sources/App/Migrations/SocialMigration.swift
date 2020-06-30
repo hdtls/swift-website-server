@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -13,22 +13,23 @@
 
 import Fluent
 
-extension WebLink {
+extension Social {
 
     static let migration: Migration = .init()
     
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(WebLink.schema)
+            database.schema(Social.schema)
                 .id()
                 .field(FieldKeys.user.rawValue, .uuid, .required)
                 .field(FieldKeys.url.rawValue, .string, .required)
+                .field(FieldKeys.socialNetworkingService.rawValue, .uuid, .required)
                 .create()
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(WebLink.schema).delete()
+            database.schema(Social.schema).delete()
         }
     }
 }

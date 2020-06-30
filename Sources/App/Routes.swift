@@ -1,3 +1,16 @@
+//===----------------------------------------------------------------------===//
+//
+// This source file is part of the website-backend open source project
+//
+// Copyright © 2020 Eli Zhang and the website-backend project authors
+// Licensed under Apache License v2.0
+//
+// See LICENSE for license information
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
 import Vapor
 
 /// Register your application's routes here.
@@ -9,4 +22,6 @@ public func routes(_ app: Application) throws {
     try app.register(collection: DefaultUserChildCollection<JobExp>.init(path: "exp", "jobs"))
     try app.register(collection: DefaultUserChildCollection<EduExp>.init(path: "exp", "edu"))
     try app.register(collection: LogCollection.init())
+    try app.register(collection: SocialNetworkingServiceCollection.init())
+    try app.register(collection: SocialCollection.init())
 }

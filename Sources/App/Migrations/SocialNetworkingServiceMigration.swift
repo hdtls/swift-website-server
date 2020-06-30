@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -13,7 +13,7 @@
 
 import Fluent
 
-extension SocialMedia {
+extension SocialNetworkingService {
 
     static let migration: Migration = .init()
 
@@ -21,25 +21,27 @@ extension SocialMedia {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
 
-            var enumBuilder = database.enum(SocialMedia.MediaType.name.description)
+            var enumBuilder = database.enum(FieldKeys.type.rawValue.description)
 
-            SocialMedia.MediaType.allCases.forEach({
+            SocialNetworkingService.ServiceType.allCases.forEach({
                 enumBuilder = enumBuilder.case($0.rawValue)
             })
 
             return enumBuilder.create()
                 .flatMap({
-                    database.schema(SocialMedia.schema)
+                    database.schema(SocialNetworkingService.schema)
                         .id()
-                        .field(SocialMedia.MediaType.name, $0, .required)
+                        .field(FieldKeys.type.rawValue, $0, .required)
+                        .field(FieldKeys.imageUrl.rawValue, .string)
+                        .field(FieldKeys.html.rawValue, .string)
                         .create()
                 })
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(SocialMedia.schema).delete()
+            database.schema(SocialNetworkingService.schema).delete()
                 .flatMap({
-                    database.enum(SocialMedia.MediaType.name.description).delete()
+                    database.enum(FieldKeys.type.rawValue.description).delete()
                 })
         }
     }

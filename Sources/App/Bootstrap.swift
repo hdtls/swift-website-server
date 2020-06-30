@@ -1,3 +1,16 @@
+//===----------------------------------------------------------------------===//
+//
+// This source file is part of the website-backend open source project
+//
+// Copyright © 2020 Eli Zhang and the website-backend project authors
+// Licensed under Apache License v2.0
+//
+// See LICENSE for license information
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
 import Vapor
 import Fluent
 import FluentMySQLDriver
@@ -38,9 +51,8 @@ public func bootstrap(_ app: Application) throws {
     app.migrations.add(Token.migration)
     app.migrations.add(EduExp.migration)
     app.migrations.add(JobExp.migration)
-    app.migrations.add(WebLink.migration)
-    app.migrations.add(SocialMedia.migration)
-    app.migrations.add(WebLinkSocialMediaSiblings.migration)
+    app.migrations.add(Social.migration)
+    app.migrations.add(SocialNetworkingService.migration)
 
     // Register routes
     try routes(app)

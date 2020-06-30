@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -14,13 +14,13 @@
 import Vapor
 import Fluent
 
-/// ID path for uri
-let idKey = "id"
-
 /// Restful style route collection
 /// by default it provide `CRUD` method if `T.IDValue` is `LosslessStringConvertible`
 protocol RestfulCollection: RouteCollection {
     associatedtype T: Model, Transfer
+
+    /// ID path for uri
+    var restfulIDKey: String { get }
 
     /// Create new model
     /// This operation will decode request content with `T.Coding` and transfer it to type `T`
@@ -52,26 +52,29 @@ protocol RestfulCollection: RouteCollection {
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
+extension RestfulCollection {
+    var restfulIDKey: String { "id" }
+}
+
 /// Default `CRUD` implementation.
 extension RestfulCollection where T.IDValue: LosslessStringConvertible {
+
     func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let coding = try req.content.decode(T.Coding.self)
-        let exp = try T.__converted(coding)
-        return exp.save(on: req.db)
+        let model = try T.__converted(coding)
+        return model.save(on: req.db)
             .flatMapThrowing({
-              try exp.__reverted()
+              try model.__reverted()
             })
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
 
-        guard let id = req.parameters.get(idKey, as: T.IDValue.self) else {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
 
-        return T.query(on: req.db)
-            .filter(\._$id == id)
-            .first()
+        return T.find(id, on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({ try $0.__reverted() })
     }
@@ -86,23 +89,23 @@ extension RestfulCollection where T.IDValue: LosslessStringConvertible {
         var coding = try req.content.decode(T.Coding.self)
         let upgrade = try T.__converted(coding)
 
-        guard let id = req.parameters.get(idKey, as: T.IDValue.self) else {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
         }
 
         return T.find(id, on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ exp -> T in
-                try exp.__merge(upgrade)
-                coding = try exp.__reverted()
-                return exp
+            .flatMapThrowing({ model -> T in
+                try model.__merge(upgrade)
+                coding = try model.__reverted()
+                return model
             })
             .flatMap({ $0.update(on: req.db) })
             .map({ coding })
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        guard let id = req.parameters.get(idKey, as: T.IDValue.self) else {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
         return T.find(id, on: req.db)
