@@ -14,7 +14,7 @@
 import XCTVapor
 @testable import App
 
-let jobExpCoding = JobExp.Coding.init(company: "XXX", startAt: "2000-12-18", endAt: "now")
+var jobExpCoding = JobExp.Coding.init(title: "iOS Developer", companyName: "XXX", location: "XXX", startDate: "2020-02-20", endDate: "-", industry: [])
 
 class JobExpCollectionTests: XCTestCase {
 
@@ -57,12 +57,14 @@ class JobExpCollectionTests: XCTestCase {
                 let coding = try $0.content.decode(JobExp.Coding.self)
                 XCTAssertNotNil(coding.id)
                 XCTAssertNotNil(coding.userId)
-                XCTAssertEqual(coding.company, jobExpCoding.company)
-                XCTAssertEqual(coding.startAt, jobExpCoding.startAt)
-                XCTAssertEqual(coding.endAt, jobExpCoding.endAt)
-                XCTAssertNil(coding.department)
-                XCTAssertNil(coding.position)
-                XCTAssertNil(coding.type)
+                XCTAssertEqual(coding.title, jobExpCoding.title)
+                XCTAssertEqual(coding.companyName, jobExpCoding.companyName)
+                XCTAssertEqual(coding.location, jobExpCoding.location)
+                XCTAssertEqual(coding.startDate, jobExpCoding.startDate)
+                XCTAssertEqual(coding.endDate, jobExpCoding.endDate)
+                XCTAssertEqual(coding.industry.count, 0)
+                XCTAssertNil(coding.headline)
+                XCTAssertNil(coding.responsibilities)
             })
         })
     }
@@ -94,12 +96,12 @@ class JobExpCollectionTests: XCTestCase {
                 let coding = try $0.content.decode(JobExp.Coding.self)
                 XCTAssertNotNil(coding.id)
                 XCTAssertNotNil(coding.userId)
-                XCTAssertEqual(coding.company, jobExpCoding.company)
-                XCTAssertEqual(coding.startAt, jobExpCoding.startAt)
-                XCTAssertEqual(coding.endAt, jobExpCoding.endAt)
-                XCTAssertNil(coding.department)
-                XCTAssertNil(coding.position)
-                XCTAssertNil(coding.type)
+                XCTAssertEqual(coding.title, jobExpCoding.title)
+                XCTAssertEqual(coding.companyName, jobExpCoding.companyName)
+                XCTAssertEqual(coding.location, jobExpCoding.location)
+                XCTAssertEqual(coding.startDate, jobExpCoding.startDate)
+                XCTAssertEqual(coding.endDate, jobExpCoding.endDate)
+                XCTAssertEqual(coding.industry.count, 0)
             })
         })
     }
@@ -145,11 +147,12 @@ class JobExpCollectionTests: XCTestCase {
             .test(.PUT, "exp/jobs/" + jobID, headers: $0, beforeRequest: {
                 try $0.content.encode(
                     JobExp.Coding.init(
-                        company: jobExpCoding.company,
-                        startAt: jobExpCoding.startAt,
-                        endAt: jobExpCoding.endAt,
-                        department: department,
-                        position: position
+                        title: jobExpCoding.title,
+                        companyName: jobExpCoding.companyName,
+                        location: jobExpCoding.location,
+                        startDate: jobExpCoding.startDate,
+                        endDate: "2020-06-29",
+                        industry: []
                     )
                 )
             }, afterResponse: {
@@ -158,12 +161,14 @@ class JobExpCollectionTests: XCTestCase {
 
                 XCTAssertNotNil(coding.id)
                 XCTAssertNotNil(coding.userId)
-                XCTAssertEqual(coding.company, jobExpCoding.company)
-                XCTAssertEqual(coding.startAt, jobExpCoding.startAt)
-                XCTAssertEqual(coding.endAt, jobExpCoding.endAt)
-                XCTAssertEqual(coding.department, department)
-                XCTAssertEqual(coding.position, position)
-                XCTAssertNil(coding.type)
+                XCTAssertEqual(coding.title, jobExpCoding.title)
+                XCTAssertEqual(coding.companyName, jobExpCoding.companyName)
+                XCTAssertEqual(coding.location, jobExpCoding.location)
+                XCTAssertEqual(coding.startDate, jobExpCoding.startDate)
+                XCTAssertEqual(coding.endDate, "2020-06-29")
+                XCTAssertEqual(coding.industry.count, 0)
+                XCTAssertNil(coding.headline)
+                XCTAssertNotNil(coding.responsibilities)
             })
         })
     }

@@ -2,7 +2,7 @@
 //
 // This source file is part of the website-backend open source project
 //
-// Copyright © 2020 Netbot Ltd. and the website-backend project authors
+// Copyright © 2020 Eli Zhang and the website-backend project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE for license information
@@ -213,12 +213,15 @@ class UserCollectionTests: XCTestCase {
                 let job = user.jobExps!.first!
                 XCTAssertNotNil(job.id)
                 XCTAssertNotNil(job.userId)
-                XCTAssertEqual(job.company, jobExpCoding.company)
-                XCTAssertEqual(job.startAt, jobExpCoding.startAt)
-                XCTAssertEqual(job.endAt, jobExpCoding.endAt)
-                XCTAssertNil(job.department)
-                XCTAssertNil(job.position)
-                XCTAssertNil(job.type)
+                XCTAssertEqual(job.title, jobExpCoding.title)
+                XCTAssertEqual(job.companyName, jobExpCoding.companyName)
+                XCTAssertEqual(job.location, jobExpCoding.location)
+                XCTAssertEqual(job.startDate, jobExpCoding.startDate)
+                XCTAssertEqual(job.endDate, jobExpCoding.endDate)
+                XCTAssertEqual(job.industry.count, 0)
+                XCTAssertNil(job.headline)
+                XCTAssertNil(job.responsibilities)
+                
 
                 let edu = user.eduExps!.first!
                 XCTAssertNotNil(edu.id)
