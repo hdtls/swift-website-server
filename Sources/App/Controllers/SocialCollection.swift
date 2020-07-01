@@ -14,7 +14,7 @@
 import Vapor
 import Fluent
 
-class SocialCollection: UserChildCollection {
+class SocialCollection: RouteCollection, UserChildApi {
     typealias T = Social
 
     var pidFieldKey: FieldKey = T.FieldKeys.user.rawValue

@@ -14,9 +14,9 @@
 import Vapor
 import Fluent
 
-/// Restful style route collection
+/// Restful style api defination.
 /// by default it provide `CRUD` method if `T.IDValue` is `LosslessStringConvertible`
-protocol RestfulCollection: RouteCollection {
+protocol RestfulApi {
     associatedtype T: Model, Transfer
 
     /// ID path for uri
@@ -52,12 +52,12 @@ protocol RestfulCollection: RouteCollection {
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
-extension RestfulCollection {
+extension RestfulApi {
     var restfulIDKey: String { "id" }
 }
 
 /// Default `CRUD` implementation.
-extension RestfulCollection where T.IDValue: LosslessStringConvertible {
+extension RestfulApi where T.IDValue: LosslessStringConvertible {
 
     func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let coding = try req.content.decode(T.Coding.self)

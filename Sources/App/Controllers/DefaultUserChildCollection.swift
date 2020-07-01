@@ -20,11 +20,11 @@ protocol UserChild: Model, Transfer where IDValue: LosslessStringConvertible {
 
 /// This protocol define user children restful route collection.
 /// because all `CRUD` request require data owned by userself so those operation all require authorized.
-protocol UserChildCollection: RestfulCollection where T: UserChild {
+protocol UserChildApi: RestfulApi where T: UserChild {
     var pidFieldKey: FieldKey { get }
 }
 
-extension UserChildCollection {
+extension UserChildApi {
     func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let user = try req.auth.require(User.self)
         let coding = try req.content.decode(T.Coding.self)
@@ -103,7 +103,7 @@ extension UserChildCollection {
     }
 }
 
-class DefaultUserChildCollection<T: UserChild>: UserChildCollection {
+class DefaultUserChildCollection<T: UserChild>: RouteCollection, UserChildApi {
 
     var path: [PathComponent]
     let pidFieldKey: FieldKey

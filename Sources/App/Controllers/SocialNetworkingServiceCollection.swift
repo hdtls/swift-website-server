@@ -15,7 +15,7 @@ import Vapor
 
 /// In progress
 /// admin user request.
-class SocialNetworkingServiceCollection: RestfulCollection {
+class SocialNetworkingServiceCollection: RouteCollection, RestfulApi {
     typealias T = SocialNetworkingService
 
     func boot(routes: RoutesBuilder) throws {

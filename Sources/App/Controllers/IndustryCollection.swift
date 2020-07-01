@@ -13,7 +13,7 @@
 
 import Vapor
 
-class IndustryCollection: RestfulCollection {
+class IndustryCollection: RouteCollection, RestfulApi {
     typealias T = Industry
 
     func boot(routes: RoutesBuilder) throws {
