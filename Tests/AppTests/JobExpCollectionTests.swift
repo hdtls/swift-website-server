@@ -180,7 +180,7 @@ class JobExpCollectionTests: XCTestCase {
             XCTAssertEqual(coding.endDate, "2020-06-29")
             XCTAssertEqual(coding.industry.count, 0)
             XCTAssertNil(coding.headline)
-            XCTAssertNotNil(coding.responsibilities)
+            XCTAssertNil(coding.responsibilities)
         })
     }
 

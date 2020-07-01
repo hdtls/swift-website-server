@@ -37,9 +37,6 @@ final class JobExp: Model {
     @Field(key: FieldKeys.endDate.rawValue)
     var endDate: String
 
-    @Siblings(through: JobExpIndustrySiblings.self, from: \.$jobExp, to: \.$industry)
-    var industry: [Industry]
-
     @Field(key: FieldKeys.headline.rawValue)
     var headline: String?
 
@@ -52,6 +49,9 @@ final class JobExp: Model {
     // MARK: Relations
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
+
+    @Siblings(through: JobExpIndustrySiblings.self, from: \.$jobExp, to: \.$industry)
+    var industry: [Industry]
 
     // MARK: Initializer
     init() {}
@@ -66,7 +66,6 @@ extension JobExp {
         case location
         case startDate = "from"
         case endDate = "to"
-        case industry
         case headline
         case responsibilities
         case media
@@ -90,13 +89,12 @@ extension JobExp: UserChild {
 
         // MARK: Relations
         var industry: [Industry.Coding]
-        var userId: User.IDValue
+        var userId: User.IDValue?
     }
 
     var _$user: Parent<User> {
         return $user
     }
-
 
     /// Convert `Coding` to `JobExp`, used for decoding request content.
     /// - note: `user` and `industry` eager loading property will set on route operation.
@@ -122,7 +120,6 @@ extension JobExp: UserChild {
         headline = another.headline
         responsibilities = another.responsibilities
         media = another.media
-        industry = another.industry
     }
 
     func __reverted() throws -> Coding {
