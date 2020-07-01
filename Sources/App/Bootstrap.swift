@@ -49,12 +49,12 @@ public func bootstrap(_ app: Application) throws {
 
     app.migrations.add(User.migration)
     app.migrations.add(Token.migration)
-    app.migrations.add(EduExp.migration)
     app.migrations.add(JobExp.migration)
     app.migrations.add(Social.migration)
-    app.migrations.add(SocialNetworkingService.migration)
     app.migrations.add(Industry.migration)
+    app.migrations.add(EducationalExp.migration)
     app.migrations.add(JobExpIndustrySiblings.migration)
+    app.migrations.add(SocialNetworkingService.migration)
 
     // Register routes
     try routes(app)

@@ -46,10 +46,10 @@ extension Social {
     }
 }
 
-extension Social: UserChild {
+extension Social: UserChildren {
 
     var _$user: Parent<User> {
-        $user
+        return $user
     }
 
     struct Coding: Content, Equatable {

@@ -14,17 +14,17 @@
 import Vapor
 import Fluent
 
-protocol UserChild: Model, Transfer where IDValue: LosslessStringConvertible {
+protocol UserChildren: Model, Transfer where Self.IDValue: LosslessStringConvertible {
     var _$user: Parent<User> { get }
 }
 
 /// This protocol define user children restful route collection.
 /// because all `CRUD` request require data owned by userself so those operation all require authorized.
-protocol UserChildApi: RestfulApi where T: UserChild {
+protocol UserChildrenRestfulApi: RestfulApi where T: UserChildren {
     var pidFieldKey: FieldKey { get }
 }
 
-extension UserChildApi {
+extension UserChildrenRestfulApi {
     func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let user = try req.auth.require(User.self)
         let coding = try req.content.decode(T.Coding.self)
@@ -37,17 +37,11 @@ extension UserChildApi {
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
 
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .filter(\._$id == id)
-            .first()
+        return T.find(id, on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({ try $0.__reverted() })
     }
@@ -103,7 +97,8 @@ extension UserChildApi {
     }
 }
 
-class DefaultUserChildCollection<T: UserChild>: RouteCollection, UserChildApi {
+/// User children collection
+class UserChildrenCollection<T: UserChildren>: RouteCollection, UserChildrenRestfulApi {
 
     var path: [PathComponent]
     let pidFieldKey: FieldKey
@@ -114,21 +109,25 @@ class DefaultUserChildCollection<T: UserChild>: RouteCollection, UserChildApi {
     }
 
     func boot(routes: RoutesBuilder) throws {
-        var routes = routes.grouped([
+        var routes = routes
+        path.forEach({
+            routes = routes.grouped($0)
+        })
+
+        let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
+
+        routes.on(.GET, path, use: read)
+
+        let trusted = routes.grouped([
             User.authenticator(),
             Token.authenticator(),
             User.guardMiddleware(),
             Token.guardMiddleware()
         ])
 
-        path.forEach({
-            routes = routes.grouped($0)
-        })
-
-        routes.on(.POST, use: create(_:))
-        routes.on(.GET, use: readAll(_:))
-        routes.on(.GET, PathComponent.init(stringLiteral: ":" + restfulIDKey), use: read(_:))
-        routes.on(.PUT, PathComponent.init(stringLiteral: ":" + restfulIDKey), use: update(_:))
-        routes.on(.DELETE, PathComponent.init(stringLiteral: ":" + restfulIDKey), use: delete(_:))
+        trusted.on(.POST, use: create)
+        trusted.on(.GET, use: readAll)
+        trusted.on(.PUT, path, use: update)
+        trusted.on(.DELETE, path, use: delete)
     }
 }

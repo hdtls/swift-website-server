@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// EduExpCollectionTests+XCTest.swift
+// EducationalExpCollectionTests+XCTest.swift
 //
 import XCTest
 

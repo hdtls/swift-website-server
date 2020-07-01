@@ -13,24 +13,30 @@
 
 import Fluent
 
-extension EduExp {
+extension EducationalExp {
 
     static let migration: Migration = .init()
 
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(EduExp.schema)
+            database.schema(EducationalExp.schema)
                 .id()
                 .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
-                .field(FieldKeys.startAt.rawValue, .string, .required)
-                .field(FieldKeys.endAt.rawValue, .string, .required)
-                .field(FieldKeys.education.rawValue, .string, .required)
+                .field(FieldKeys.school.rawValue, .string, .required)
+                .field(FieldKeys.degree.rawValue, .string, .required)
+                .field(FieldKeys.field.rawValue, .string, .required)
+                .field(FieldKeys.startYear.rawValue, .string)
+                .field(FieldKeys.endYear.rawValue, .string)
+                .field(FieldKeys.grade.rawValue, .string)
+                .field(FieldKeys.activities.rawValue, .array(of: .string))
+                .field(FieldKeys.accomplishments.rawValue, .array(of: .string))
+                .field(FieldKeys.media.rawValue, .string)
                 .create()
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(EduExp.schema).delete()
+            database.schema(EducationalExp.schema).delete()
         }
     }
 }

@@ -204,13 +204,16 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(job.headline)
             XCTAssertNil(job.responsibilities)
             
-            
             let edu = user.eduExps!.first!
             XCTAssertNotNil(edu.id)
             XCTAssertNotNil(edu.userId)
-            XCTAssertEqual(edu.startAt, eduExpCoding.startAt)
-            XCTAssertEqual(edu.endAt, eduExpCoding.endAt)
-            XCTAssertEqual(edu.education, eduExpCoding.education)
+            XCTAssertEqual(edu.school, eduExpCoding.school)
+            XCTAssertEqual(edu.degree, eduExpCoding.degree)
+            XCTAssertEqual(edu.field, eduExpCoding.field)
+            XCTAssertEqual(edu.startYear, eduExpCoding.startYear)
+            XCTAssertNil(edu.endYear)
+            XCTAssertEqual(edu.activities, eduExpCoding.activities)
+            XCTAssertNil(edu.accomplishments)
         })
     }
     

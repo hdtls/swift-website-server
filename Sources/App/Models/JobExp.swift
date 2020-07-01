@@ -16,11 +16,13 @@ import Fluent
 
 final class JobExp: Model {
 
-    static let schema: String = "job_experiances"
+    typealias IDValue = UUID
+    
+    static let schema: String = "job_exp"
 
     // MARK: Properties
     @ID()
-    var id: UUID?
+    var id: IDValue?
 
     @Field(key: FieldKeys.title.rawValue)
     var title: String
@@ -73,8 +75,12 @@ extension JobExp {
     }
 }
 
-extension JobExp: UserChild {
+extension JobExp: UserChildren {
 
+    var _$user: Parent<User> {
+        return $user
+    }
+    
     struct Coding: Content, Equatable {
         // MARK: Properties
         var id: JobExp.IDValue?
@@ -90,10 +96,6 @@ extension JobExp: UserChild {
         // MARK: Relations
         var industry: [Industry.Coding]
         var userId: User.IDValue?
-    }
-
-    var _$user: Parent<User> {
-        return $user
     }
 
     /// Convert `Coding` to `JobExp`, used for decoding request content.

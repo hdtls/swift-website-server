@@ -14,7 +14,15 @@
 import XCTVapor
 @testable import App
 
-let eduExpCoding = EduExp.Coding.init(startAt: "2010-09-01", endAt: "2014-06-26", education: "Bachelor Degree")
+let eduExpCoding = EducationalExp.Coding.init(
+    school: "BALABALA",
+    degree: "PhD",
+    field: "xxx",
+    startYear: "2010",
+    activities: ["xxxxx"]
+)
+
+//init(startAt: "2010-09-01", endAt: "2014-06-26", education: "Bachelor Degree")
 
 class EduExpCollectionTests: XCTestCase {
 
@@ -33,8 +41,6 @@ class EduExpCollectionTests: XCTestCase {
         let uuid = UUID.init().uuidString
 
         try app.test(.POST, "exp/edu", afterResponse: assertHttpUnauthorized)
-            .test(.GET, "exp/edu/" + uuid, afterResponse: assertHttpUnauthorized)
-            .test(.GET, "exp/edu", afterResponse: assertHttpUnauthorized)
             .test(.PUT, "exp/edu/" + uuid, afterResponse: assertHttpUnauthorized)
             .test(.DELETE, "exp/edu/" + uuid, afterResponse: assertHttpUnauthorized)
     }
@@ -49,21 +55,22 @@ class EduExpCollectionTests: XCTestCase {
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(EduExp.Coding.self)
+            let coding = try $0.content.decode(EducationalExp.Coding.self)
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.startAt, eduExpCoding.startAt)
-            XCTAssertEqual(coding.endAt, eduExpCoding.endAt)
-            XCTAssertEqual(coding.education, eduExpCoding.education)
+            XCTAssertEqual(coding.school, eduExpCoding.school)
+            XCTAssertEqual(coding.degree, eduExpCoding.degree)
+            XCTAssertEqual(coding.field, eduExpCoding.field)
+            XCTAssertEqual(coding.startYear, eduExpCoding.startYear)
+            XCTAssertNil(coding.endYear)
+            XCTAssertEqual(coding.activities, eduExpCoding.activities)
+            XCTAssertNil(coding.accomplishments)
         })
     }
 
     func testQueryWithInvalidEduID() throws {
         defer { app.shutdown() }
-
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.GET, "exp/edu/1", headers: headers, afterResponse: assertHttpNotFound)
+        try app.test(.GET, "exp/edu/1", afterResponse: assertHttpNotFound)
     }
 
     func testQueryWithEduID() throws {
@@ -76,17 +83,21 @@ class EduExpCollectionTests: XCTestCase {
         try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
         }, afterResponse: {
-            let coding = try $0.content.decode(EduExp.Coding.self)
+            let coding = try $0.content.decode(EducationalExp.Coding.self)
             eduID = coding.id!.uuidString
-        }).test(.GET, "exp/edu/" + eduID, headers: headers, afterResponse: {
+        }).test(.GET, "exp/edu/" + eduID, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(EduExp.Coding.self)
+            let coding = try $0.content.decode(EducationalExp.Coding.self)
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.startAt, eduExpCoding.startAt)
-            XCTAssertEqual(coding.endAt, eduExpCoding.endAt)
-            XCTAssertEqual(coding.education, eduExpCoding.education)
+            XCTAssertEqual(coding.school, eduExpCoding.school)
+            XCTAssertEqual(coding.degree, eduExpCoding.degree)
+            XCTAssertEqual(coding.field, eduExpCoding.field)
+            XCTAssertEqual(coding.startYear, eduExpCoding.startYear)
+            XCTAssertNil(coding.endYear)
+            XCTAssertEqual(coding.activities, eduExpCoding.activities)
+            XCTAssertNil(coding.accomplishments)
         })
     }
 
@@ -97,7 +108,7 @@ class EduExpCollectionTests: XCTestCase {
 
         try app.test(.GET, "exp/edu", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode([EduExp.Coding].self)
+            let coding = try $0.content.decode([EducationalExp.Coding].self)
             XCTAssertEqual(coding.count, 0)
         })
         .test(.POST, "exp/edu", headers: headers, beforeRequest: {
@@ -105,7 +116,7 @@ class EduExpCollectionTests: XCTestCase {
         }, afterResponse: assertHttpOk)
         .test(.GET, "exp/edu", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode([EduExp.Coding].self)
+            let coding = try $0.content.decode([EducationalExp.Coding].self)
             XCTAssertEqual(coding.count, 1)
         })
     }
@@ -115,35 +126,39 @@ class EduExpCollectionTests: XCTestCase {
 
         let headers = try registUserAndLoggedIn(app)
 
-        let education = "B.S.E"
-
         var eduID: String!
 
         try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(EduExp.Coding.self)
+            let coding = try $0.content.decode(EducationalExp.Coding.self)
             eduID = coding.id!.uuidString
-            XCTAssertEqual(coding.education, eduExpCoding.education)
         })
         .test(.PUT, "exp/edu/" + eduID, headers: headers, beforeRequest: {
             try $0.content.encode(
-                EduExp.Coding.init(
-                    startAt: eduExpCoding.startAt,
-                    endAt: eduExpCoding.endAt,
-                    education: education
+                EducationalExp.Coding.init(
+                    school: "ABC",
+                    degree: "PhD",
+                    field: "xxx",
+                    startYear: "2010",
+                    activities: ["xxxxx"],
+                    accomplishments: ["xxxxxxx"]
                 )
             )
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(EduExp.Coding.self)
+            let coding = try $0.content.decode(EducationalExp.Coding.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.education, education)
-            XCTAssertEqual(coding.startAt, eduExpCoding.startAt)
-            XCTAssertEqual(coding.endAt, eduExpCoding.endAt)
+            XCTAssertEqual(coding.school, "ABC")
+            XCTAssertEqual(coding.degree, "PhD")
+            XCTAssertEqual(coding.field, "xxx")
+            XCTAssertEqual(coding.startYear, "2010")
+            XCTAssertNil(coding.endYear)
+            XCTAssertEqual(coding.activities, ["xxxxx"])
+            XCTAssertEqual(coding.accomplishments, ["xxxxxxx"])
         })
     }
 
@@ -168,7 +183,7 @@ class EduExpCollectionTests: XCTestCase {
         try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
         }, afterResponse: {
-            let coding = try $0.content.decode(EduExp.Coding.self)
+            let coding = try $0.content.decode(EducationalExp.Coding.self)
             eduID = coding.id!.uuidString
         }).test(.DELETE, "exp/edu/" + eduID, headers: headers, afterResponse: assertHttpOk)
     }

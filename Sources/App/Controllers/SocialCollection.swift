@@ -14,10 +14,10 @@
 import Vapor
 import Fluent
 
-class SocialCollection: RouteCollection, UserChildApi {
+class SocialCollection: RouteCollection, UserChildrenRestfulApi {
     typealias T = Social
 
-    var pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
+    let pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
 
     func boot(routes: RoutesBuilder) throws {
         let trusted = routes.grouped("social").grouped([

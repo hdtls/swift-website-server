@@ -66,7 +66,7 @@ final class User: Model {
     var social: [Social]
 
     @Children(for: \.$user)
-    var eduExps: [EduExp]
+    var eduExps: [EducationalExp]
 
     @Children(for: \.$user)
     var jobExps: [JobExp]
@@ -170,7 +170,7 @@ extension User: Transfer {
 
         /// Education experiances
         /// - seealso: `Coding.webLinks`
-        var eduExps: [EduExp.Coding]?
+        var eduExps: [EducationalExp.Coding]?
 
         /// Jon experiances
         /// - seealso: `Coding.webLinks`
