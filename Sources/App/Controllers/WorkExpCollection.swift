@@ -41,6 +41,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
     func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let user = try req.auth.require(User.self)
         let coding = try req.content.decode(T.Coding.self)
+
         let exp = try T.__converted(coding)
 
         let industries = try coding.industry.map({ coding -> Industry in
@@ -51,7 +52,9 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             guard let id = coding.id else {
                 throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
             }
-            let industry = try Industry.__converted(coding)
+
+            // Only id is used by attach and detach relations.
+            let industry = Industry.init()
             industry.id = id
             return industry
         })

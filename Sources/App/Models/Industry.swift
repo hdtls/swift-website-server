@@ -49,11 +49,16 @@ extension Industry: Transfer {
     struct Coding: Content, Equatable {
         // `id` should not be nil except for creation action.
         var id: IDValue?
-        var title: String
+
+        // `title` can be nil except create new industry.
+        var title: String?
     }
 
     static func __converted(_ coding: Coding) throws -> Industry {
-        Industry.init(title: coding.title)
+        guard let title = coding.title else {
+            throw Abort.init(.badRequest, reason: "Value required for key 'industry.title'")
+        }
+        return Industry.init(title: title)
     }
 
     func __merge(_ another: Industry) {
