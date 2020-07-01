@@ -34,6 +34,7 @@ extension User {
                 .field(FieldKeys.location.rawValue, .string)
                 .field(FieldKeys.createdAt.rawValue, .datetime, .required)
                 .field(FieldKeys.updatedAt.rawValue, .datetime, .required)
+                .field(FieldKeys.hobbies.rawValue, .array(of: .string))
                 .create()
         }
 

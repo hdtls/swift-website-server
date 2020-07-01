@@ -74,6 +74,12 @@ final class User: Model {
     @Children(for: \.$user)
     var workExps: [WorkExp]
 
+    @Children(for: \.$user)
+    var skill: [Skill]
+
+    @Field(key: FieldKeys.hobbies.rawValue)
+    var hobbies: [String]?
+
     // MARK: Initializer
     required init() {}
 
@@ -87,7 +93,8 @@ final class User: Model {
         phone: String? = nil,
         emailAddress: String? = nil,
         aboutMe: String? = nil,
-        location: String? = nil
+        location: String? = nil,
+        hobbies: [String]? = nil
         ) {
         self.id = id
         self.username = username
@@ -99,6 +106,7 @@ final class User: Model {
         self.emailAddress = emailAddress
         self.aboutMe = aboutMe
         self.location = location
+        self.hobbies = hobbies
     }
 }
 
@@ -117,6 +125,7 @@ extension User {
         case location
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case hobbies
     }
 }
 
@@ -189,6 +198,10 @@ extension User: Transfer {
         /// Jon experiances
         /// - seealso: `Coding.webLinks`
         var workExps: [WorkExp.Coding]?
+
+        var skill: Skill.Coding?
+
+        var hobbies: [String]?
     }
 
     static func __converted(_ coding: Coding) throws -> User {
@@ -200,6 +213,7 @@ extension User: Transfer {
         user.emailAddress = coding.emailAddress
         user.aboutMe = coding.aboutMe
         user.location = coding.location
+        user.hobbies = coding.hobbies
         return user
     }
 
@@ -211,6 +225,7 @@ extension User: Transfer {
         emailAddress = user.emailAddress
         aboutMe = user.aboutMe
         location = user.location
+        hobbies = user.hobbies
     }
     
     func __reverted() throws -> Coding {
@@ -226,6 +241,8 @@ extension User: Transfer {
         coding.eduExps = $eduExps.value?.compactMap({ try? $0.__reverted() })
         coding.workExps = $workExps.value?.compactMap({ try? $0.__reverted() })
         coding.social = $social.value?.compactMap({ try? $0.__reverted() })
+        coding.skill = try $skill.value?.first?.__reverted()
+        coding.hobbies = hobbies
         return coding
     }
 }

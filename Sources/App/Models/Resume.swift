@@ -18,29 +18,11 @@ struct Resume {
     struct Module: Content {
 
         var id: Int
-        var title: String?
+        var title: String
         var profile: User.Coding?
-        var works: [JobExp]?
-        var edu: [EducationalExp]?
+        var works: [WorkExp.Coding]?
+        var edu: [EducationalExp.Coding]?
+        var skill: Skill.Coding?
         var hobbies: [String]?
-//        var skills: [Skill]?
-
-        init(
-            id: Int,
-            title: String?,
-            profile: Profile? = nil,
-            works: [Experience]? = nil,
-            edu: [Experience]? = nil
-//            hobbies: [String]? = nil,
-//            skills: SkillContext? = nil
-        ) {
-            self.id = id
-            self.title = title
-            self.profile = profile
-            self.works = works
-            self.edu = edu
-//            self.hobbies = hobbies
-//            self.skills = skills
-        }
     }
 }
