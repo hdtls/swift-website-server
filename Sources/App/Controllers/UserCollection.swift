@@ -98,7 +98,9 @@ class UserCollection: RouteCollection {
 
         // Include job experiances to query if the key `include_job_exp` exist.
         if (try? req.query.get(Bool.self, at: "include_job_exp")) ?? false {
-            queryBuilder.with(\.$jobExps)
+            queryBuilder.with(\.$jobExps) {
+                $0.with(\.$industry)
+            }
         }
 
         // Include edu experiances to query if the key `include_job_exp` exist.
