@@ -44,7 +44,6 @@ func registUserAndLoggedIn(
 
     var httpHeaders = headers
     guard httpHeaders == nil else {
-        try completion?(httpHeaders!)
         return httpHeaders!
     }
 
@@ -105,30 +104,31 @@ func assertCreateSocial(
     headers: HTTPHeaders? = nil
 ) throws -> (HTTPHeaders, Social.Coding) {
 
+    var httpHeaders: HTTPHeaders! = headers
     var tuple: (HTTPHeaders, Social.Coding)!
 
-    try assertCreateNetworkingService(app, completion: { [unowned app] serviceID in
-        try registUserAndLoggedIn(app, headers: headers, completion: { headers in
-            try app.test(.POST, "social", headers: headers, beforeRequest: {
-                try $0.content.encode(Social.Coding.init(url: "https://twitter.com/uid", networkingServiceId: serviceID))
-            }, afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Social.Coding.self)
+    if httpHeaders == nil {
+        httpHeaders = try registUserAndLoggedIn(app)
+    }
 
-                XCTAssertNotNil(coding.id)
-                XCTAssertNotNil(coding.userId)
-                XCTAssertEqual(coding.url, "https://twitter.com/uid")
-                XCTAssertNotNil(coding.networkingService)
-                XCTAssertEqual(coding.networkingService?.id, serviceID)
+    let service = try assertCreateNetworkingService(app)
 
-                try completion?(headers, coding)
+    try app.test(.POST, "social", headers: httpHeaders, beforeRequest: {
+        try $0.content.encode(Social.Coding.init(url: "https://twitter.com/uid", networkingServiceId: service.id))
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+        let coding = try $0.content.decode(Social.Coding.self)
 
-                tuple = (headers, coding)
-            })
-        })
+        XCTAssertNotNil(coding.id)
+        XCTAssertNotNil(coding.userId)
+        XCTAssertEqual(coding.url, "https://twitter.com/uid")
+        XCTAssertNotNil(coding.networkingService)
+        XCTAssertEqual(coding.networkingService?.id, service.id)
+
+        tuple = (httpHeaders, coding)
     })
 
-    return tuple
+	return tuple
 }
 
 @discardableResult
