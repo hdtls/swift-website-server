@@ -14,17 +14,38 @@
 import XCTVapor
 @testable import App
 
+func assertHttpUnauthorized(_ response: XCTHTTPResponse) throws {
+    XCTAssertEqual(response.status, .unauthorized)
+}
+
+func assertHttpOk(_ response: XCTHTTPResponse) throws {
+    XCTAssertEqual(response.status, .ok)
+}
+
+func assertHttpNotFound(_ response: XCTHTTPResponse) throws {
+    XCTAssertEqual(response.status, .notFound)
+}
+
+func assertHttpServerError(_ response: XCTHTTPResponse) throws {
+    XCTAssertEqual(response.status, .internalServerError)
+}
+
+func assertHttpBadRequest(_ response: XCTHTTPResponse) throws {
+    XCTAssertEqual(response.status, .badRequest)
+}
+
+@discardableResult
 func registUserAndLoggedIn(
     _ app: Application,
     _ username: String = "test",
     _ password: String = "111111",
-    headers: HTTPHeaders? = nil,
-    completion: ((HTTPHeaders) throws -> Void)? = nil
-) throws {
+    headers: HTTPHeaders? = nil
+) throws -> HTTPHeaders {
 
-    guard headers == nil else {
-        try completion?(headers!)
-        return
+    var httpHeaders = headers
+    guard httpHeaders == nil else {
+        try completion?(httpHeaders!)
+        return httpHeaders!
     }
 
     try app.test(.POST, "users", beforeRequest: {
@@ -47,14 +68,19 @@ func registUserAndLoggedIn(
         XCTAssertNil(authorizeMsg.user.eduExps)
         XCTAssertNil(authorizeMsg.user.jobExps)
 
-        try completion?(HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken)))
+        httpHeaders = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken))
     })
+
+    return httpHeaders!
 }
 
+@discardableResult
 func assertCreateNetworkingService(
     _ app: Application,
-    service: SocialNetworkingService.Coding = socialNetworkingService,
-    completion: ((SocialNetworkingService.IDValue) throws -> Void)? = nil) throws {
+    service: SocialNetworkingService.Coding = socialNetworkingService
+) throws -> SocialNetworkingService.Coding {
+
+    var service: SocialNetworkingService.Coding!
 
     try app.test(.POST, "social/services", beforeRequest: {
         try $0.content.encode(socialNetworkingService)
@@ -67,15 +93,19 @@ func assertCreateNetworkingService(
         XCTAssertEqual(coding.html, socialNetworkingService.html)
         XCTAssertNil(coding.imageUrl)
 
-        try completion?(coding.id!)
+        service = coding
     })
+
+    return service
 }
 
+@discardableResult
 func assertCreateSocial(
     _ app: Application,
-    headers: HTTPHeaders? = nil,
-    completion: ((HTTPHeaders, Social.Coding) throws -> Void)? = nil
-) throws {
+    headers: HTTPHeaders? = nil
+) throws -> (HTTPHeaders, Social.Coding) {
+
+    var tuple: (HTTPHeaders, Social.Coding)!
 
     try assertCreateNetworkingService(app, completion: { [unowned app] serviceID in
         try registUserAndLoggedIn(app, headers: headers, completion: { headers in
@@ -92,25 +122,33 @@ func assertCreateSocial(
                 XCTAssertEqual(coding.networkingService?.id, serviceID)
 
                 try completion?(headers, coding)
+
+                tuple = (headers, coding)
             })
         })
     })
+
+    return tuple
 }
 
 @discardableResult
 func assertCreateIndustry(
     _ app: Application,
-    completion: ((Industry.Coding) throws -> Void)? = nil
-) throws -> XCTApplicationTester {
+    industry: Industry.Coding? = nil
+) throws -> Industry.Coding {
 
-    return try app.test(.POST, Industry.schema, beforeRequest: {
-        try $0.content.encode(Industry.Coding.init(title: "International Trade & Development"))
+    var coding: Industry.Coding!
+
+    try app.test(.POST, Industry.schema, beforeRequest: {
+        try $0.content.encode(industry ?? Industry.Coding.init(title: "International Trade & Development"))
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
 
-        let coding = try $0.content.decode(Industry.Coding.self)
+        coding = try $0.content.decode(Industry.Coding.self)
         XCTAssertNotNil(coding.id)
-        XCTAssertEqual(coding.title, "International Trade & Development")
-        try completion?(coding)
+        XCTAssertEqual(coding.title, industry?.title ?? "International Trade & Development")
+
     })
+
+    return coding
 }

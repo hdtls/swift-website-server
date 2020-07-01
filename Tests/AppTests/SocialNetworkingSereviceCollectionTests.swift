@@ -35,9 +35,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     func testQueryWithInvalidID() throws {
         defer { app.shutdown() }
 
-        try app.test(.GET, "social/services/1", afterResponse: {
-            XCTAssertEqual($0.status, .notFound)
-        })
+        try app.test(.GET, "social/services/1", afterResponse: assertHttpNotFound)
     }
 
     func testQueryWithServiceID() throws {
@@ -101,9 +99,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
 
         try assertCreateNetworkingService(app, completion: { [weak app] _ in
 
-            try app?.test(.DELETE, "social/services/1", afterResponse: {
-                XCTAssertEqual($0.status, .notFound)
-            })
+            try app?.test(.DELETE, "social/services/1", afterResponse: assertHttpNotFound)
         })
     }
 
@@ -112,9 +108,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
 
         try assertCreateNetworkingService(app, completion: { [weak app] in
 
-            try app?.test(.DELETE, "social/services/" + $0.uuidString, afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-            })
+            try app?.test(.DELETE, "social/services/" + $0.uuidString, afterResponse: assertHttpOk)
         })
     }
 }
