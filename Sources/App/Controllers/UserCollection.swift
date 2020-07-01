@@ -80,9 +80,9 @@ class UserCollection: RouteCollection {
     }
 
     /// Query users, if `userID` exist add `userID` to filter . there are three query parameters,
-    /// `include_work_exp`:  default is `false`, if `true` the result of user will include user's work experiances.
-    /// `include_edu_exp`:  default is `false`, if `true` the result of user will include user's education experiances.
-    /// `include_web_links`:  default is `false`, if `true` the result of user will include user's web links.
+    /// `incl_wrk_exp`:  default is `false`, if `true` the result of user will include user's work experiances.
+    /// `incl_edu_exp`:  default is `false`, if `true` the result of user will include user's education experiances.
+    /// `incl_sns`:  default is `false`, if `true` the result of user will include user's web links.
     /// - note: This is a mix function the `userID` is optional value.
     func readAll(_ req: Request) -> EventLoopFuture<[User.Coding]> {
 
@@ -96,21 +96,21 @@ class UserCollection: RouteCollection {
             queryBuilder = queryBuilder.filter(\.$username, .equal, userID)
         }
 
-        // Include work experiances to query if the key `include_work_exp` exist.
-        if (try? req.query.get(Bool.self, at: "include_work_exp")) ?? false {
+        // Include work experiances to query if the key `incl_wrk_exp` exist.
+        if (try? req.query.get(Bool.self, at: "incl_wrk_exp")) ?? false {
             queryBuilder.with(\.$workExps) {
                 $0.with(\.$industry)
             }
         }
 
-        // Include edu experiances to query if the key `include_work_exp` exist.
-        if (try? req.query.get(Bool.self, at: "include_edu_exp")) ?? false {
+        // Include edu experiances to query if the key `incl_wrk_exp` exist.
+        if (try? req.query.get(Bool.self, at: "incl_edu_exp")) ?? false {
             queryBuilder.with(\.$eduExps)
         }
 
-        if (try? req.query.get(Bool.self, at: "include_social")) ?? false {
+        if (try? req.query.get(Bool.self, at: "incl_sns")) ?? false {
             queryBuilder.with(\.$social) {
-                $0.with(\.$networkingService)
+                $0.with(\.$service)
             }
         }
 

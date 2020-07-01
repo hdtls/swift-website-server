@@ -100,7 +100,7 @@ class UserCollectionTests: XCTestCase {
         
         let headers = try registUserAndLoggedIn(app)
         
-        let query = "?include_social=true&include_edu_exp=true&include_work_exp=true"
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true"
         try app.test(.GET, "users/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
@@ -180,7 +180,7 @@ class UserCollectionTests: XCTestCase {
         .test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
         }, afterResponse: assertHttpOk)
-        .test(.GET, "users?include_edu_exp=true&include_work_exp=true", afterResponse: {
+        .test(.GET, "users?incl_edu_exp=true&incl_wrk_exp=true", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
             
