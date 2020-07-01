@@ -37,8 +37,7 @@ func assertHttpBadRequest(_ response: XCTHTTPResponse) throws {
 @discardableResult
 func registUserAndLoggedIn(
     _ app: Application,
-    _ username: String = "test",
-    _ password: String = "111111",
+    _ userCreation: User.Creation = userCreation,
     headers: HTTPHeaders? = nil
 ) throws -> HTTPHeaders {
 
@@ -48,7 +47,7 @@ func registUserAndLoggedIn(
     }
 
     try app.test(.POST, "users", beforeRequest: {
-        try $0.content.encode(User.Creation.init(username: username, password: password))
+        try $0.content.encode(userCreation)
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
 
@@ -57,8 +56,9 @@ func registUserAndLoggedIn(
         XCTAssertNotNil(authorizeMsg.accessToken)
         XCTAssertNotNil(authorizeMsg.user)
         XCTAssertNotNil(authorizeMsg.user.id)
-        XCTAssertEqual(authorizeMsg.user.username, username)
-        XCTAssertNil(authorizeMsg.user.name)
+        XCTAssertEqual(authorizeMsg.user.username, userCreation.username)
+        XCTAssertEqual(authorizeMsg.user.firstName, userCreation.firstName)
+        XCTAssertEqual(authorizeMsg.user.lastName, userCreation.lastName)
         XCTAssertNil(authorizeMsg.user.screenName)
         XCTAssertNil(authorizeMsg.user.phone)
         XCTAssertNil(authorizeMsg.user.emailAddress)

@@ -14,6 +14,7 @@
 import XCTVapor
 @testable import App
 
+let userCreation = User.Creation.init(firstName: "J", lastName: "K", username: "test", password: "111111")
 class UserCollectionTests: XCTestCase {
     
     let app = Application.init(.testing)
@@ -29,7 +30,9 @@ class UserCollectionTests: XCTestCase {
         defer { app.shutdown() }
         
         try app.test(.POST, "users", beforeRequest: {
-            try $0.content.encode(User.Creation.init(username: "", password: "111111"))
+            var invalid = userCreation
+            invalid.username = ""
+            try $0.content.encode(invalid)
         }, afterResponse: assertHttpBadRequest)
     }
     
@@ -37,21 +40,20 @@ class UserCollectionTests: XCTestCase {
         defer { app.shutdown() }
         
         try app.test(.POST, "users", beforeRequest: {
-            try $0.content.encode(User.Creation.init(username: "test", password: "111"))
+            var invalid = userCreation
+            invalid.password = "111"
+            try $0.content.encode(invalid)
         }, afterResponse: assertHttpBadRequest)
-        
+
     }
     
     func testCreateWithConflictUsername() throws {
         defer { app.shutdown() }
         
-        let username = "test"
-        let password = "111111"
-        
         try registUserAndLoggedIn(app)
         
         try app.test(.POST, "users", beforeRequest: {
-            try $0.content.encode(User.Creation.init(username: username, password: password))
+            try $0.content.encode(userCreation)
         }, afterResponse: {
             XCTAssertEqual($0.status, .conflict)
         })
@@ -73,14 +75,15 @@ class UserCollectionTests: XCTestCase {
         
         try registUserAndLoggedIn(app)
         
-        try app.test(.GET, "users/test", afterResponse: {
+        try app.test(.GET, "users/\(userCreation.username)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
             
             let user = try! $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
-            XCTAssertEqual(user.username, "test")
-            XCTAssertNil(user.name)
+            XCTAssertEqual(user.username, userCreation.username)
+            XCTAssertEqual(user.firstName, userCreation.firstName)
+            XCTAssertEqual(user.lastName, userCreation.lastName)
             XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
@@ -98,14 +101,15 @@ class UserCollectionTests: XCTestCase {
         let headers = try registUserAndLoggedIn(app)
         
         let query = "?include_social=true&include_edu_exp=true&include_work_exp=true"
-        try app.test(.GET, "users/test\(query)", afterResponse: {
+        try app.test(.GET, "users/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
             
             let user = try! $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
-            XCTAssertEqual(user.username, "test")
-            XCTAssertNil(user.name)
+            XCTAssertEqual(user.username, userCreation.username)
+            XCTAssertEqual(user.firstName, userCreation.firstName)
+            XCTAssertEqual(user.lastName, userCreation.lastName)
             XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
@@ -124,14 +128,15 @@ class UserCollectionTests: XCTestCase {
         .test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
         }, afterResponse: assertHttpOk)
-        .test(.GET, "users/test\(query)", afterResponse: {
+        .test(.GET, "users/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
             
             let user = try! $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
-            XCTAssertEqual(user.username, "test")
-            XCTAssertNil(user.name)
+            XCTAssertEqual(user.username, userCreation.username)
+            XCTAssertEqual(user.firstName, userCreation.firstName)
+            XCTAssertEqual(user.lastName, userCreation.lastName)
             XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
@@ -185,8 +190,9 @@ class UserCollectionTests: XCTestCase {
             let user = users.first!
             
             XCTAssertNotNil(user.id)
-            XCTAssertEqual(user.username, "test")
-            XCTAssertNil(user.name)
+            XCTAssertEqual(user.username, userCreation.username)
+            XCTAssertEqual(user.firstName, userCreation.firstName)
+            XCTAssertEqual(user.lastName, userCreation.lastName)
             XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
@@ -228,6 +234,8 @@ class UserCollectionTests: XCTestCase {
         try app.test(.PUT, "users/test", beforeRequest: {
             try $0.content.encode(
                 User.Coding.init(
+                    firstName: "R",
+                    lastName: "J",
                     screenName: "Jack",
                     phone: "+1 888888888",
                     emailAddress: "test@test.com",
@@ -246,6 +254,8 @@ class UserCollectionTests: XCTestCase {
             
             try $0.content.encode(
                 User.Coding.init(
+                    firstName: "R",
+                    lastName: "J",
                     screenName: "Jack",
                     phone: "+1 888888888",
                     emailAddress: "test@test.com",
@@ -258,8 +268,9 @@ class UserCollectionTests: XCTestCase {
             
             let user = try! $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
-            XCTAssertEqual(user.username, "test")
-            XCTAssertNil(user.name)
+            XCTAssertEqual(user.username, userCreation.username)
+            XCTAssertEqual(user.firstName, "R")
+            XCTAssertEqual(user.lastName, "J")
             XCTAssertEqual(user.screenName, "Jack")
             XCTAssertEqual(user.phone, "+1 888888888")
             XCTAssertEqual(user.emailAddress, "test@test.com")

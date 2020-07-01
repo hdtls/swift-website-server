@@ -34,8 +34,11 @@ final class User: Model {
     @Field(key: FieldKeys.pwd.rawValue)
     var pwd: String
 
-    @Field(key: FieldKeys.name.rawValue)
-    var name: String?
+    @Field(key: FieldKeys.firstName.rawValue)
+    var firstName: String
+
+    @Field(key: FieldKeys.lastName.rawValue)
+    var lastName: String
 
     @Field(key: FieldKeys.screenName.rawValue)
     var screenName: String?
@@ -78,7 +81,8 @@ final class User: Model {
         id: User.IDValue? = nil,
         username: String,
         pwd: String,
-        name: String? = nil,
+        firstName: String,
+        lastName: String,
         screenName: String? = nil,
         phone: String? = nil,
         emailAddress: String? = nil,
@@ -88,7 +92,8 @@ final class User: Model {
         self.id = id
         self.username = username
         self.pwd = pwd
-        self.name = name
+        self.firstName = firstName
+        self.lastName = lastName
         self.screenName = screenName
         self.phone = phone
         self.emailAddress = emailAddress
@@ -103,7 +108,8 @@ extension User {
     enum FieldKeys: FieldKey {
         case username
         case pwd
-        case name
+        case firstName = "first_name"
+        case lastName = "last_name"
         case screenName = "screen_name"
         case phone
         case emailAddress = "email_address"
@@ -136,12 +142,19 @@ extension Validatable where Self: Credentials {
 extension User {
 
     struct Creation: Credentials, Content, Validatable {
+        var firstName: String
+        var lastName: String
         var username: String
         var password: String
     }
 
     convenience init(_ creation: Creation) throws {
-        self.init(username: creation.username, pwd: try Bcrypt.hash(creation.password))
+        self.init(
+            username: creation.username,
+            pwd: try Bcrypt.hash(creation.password),
+            firstName: creation.firstName,
+            lastName: creation.lastName
+        )
     }
 }
 
@@ -156,7 +169,8 @@ extension User: Transfer {
         /// `username` is optional for decoding, required by encoding.
         /// - note: For decoding we will query default logged in user's username instead.
         var username: String?
-        var name: String?
+        var firstName: String
+        var lastName: String
         var screenName: String?
         var phone: String?
         var emailAddress: String?
@@ -179,7 +193,8 @@ extension User: Transfer {
 
     static func __converted(_ coding: Coding) throws -> User {
         let user = User.init()
-        user.name = coding.name
+        user.firstName = coding.firstName
+        user.lastName = coding.lastName
         user.screenName = coding.screenName
         user.phone = coding.phone
         user.emailAddress = coding.emailAddress
@@ -189,7 +204,8 @@ extension User: Transfer {
     }
 
     func __merge(_ user: User) {
-        name = user.name
+        firstName = user.firstName
+        lastName = user.lastName
         screenName = user.screenName
         phone = user.phone
         emailAddress = user.emailAddress
@@ -198,10 +214,9 @@ extension User: Transfer {
     }
     
     func __reverted() throws -> Coding {
-        var coding = Coding.init()
+        var coding = Coding.init(firstName: firstName, lastName: lastName)
         coding.id = try requireID()
         coding.username = username
-        coding.name = name
         coding.screenName = screenName
         coding.phone = phone
         coding.emailAddress = emailAddress
