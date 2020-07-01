@@ -69,7 +69,7 @@ final class User: Model {
     var eduExps: [EducationalExp]
 
     @Children(for: \.$user)
-    var jobExps: [JobExp]
+    var workExps: [WorkExp]
 
     // MARK: Initializer
     required init() {}
@@ -174,7 +174,7 @@ extension User: Transfer {
 
         /// Jon experiances
         /// - seealso: `Coding.webLinks`
-        var jobExps: [JobExp.Coding]?
+        var workExps: [WorkExp.Coding]?
     }
 
     static func __converted(_ coding: Coding) throws -> User {
@@ -209,7 +209,7 @@ extension User: Transfer {
         coding.location = location
         coding.social = $social.value?.compactMap({ try? $0.__reverted() })
         coding.eduExps = $eduExps.value?.compactMap({ try? $0.__reverted() })
-        coding.jobExps = $jobExps.value?.compactMap({ try? $0.__reverted() })
+        coding.workExps = $workExps.value?.compactMap({ try? $0.__reverted() })
         coding.social = $social.value?.compactMap({ try? $0.__reverted() })
         return coding
     }

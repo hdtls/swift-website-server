@@ -36,11 +36,11 @@ class LinuxMainRunnerImpl: LinuxMainRunner {
        XCTMain([
              testCase(EduExpCollectionTests.allTests),
              testCase(IndustryCollectionTests.allTests),
-             testCase(JobExpCollectionTests.allTests),
              testCase(LogCollectionTests.allTests),
              testCase(SocialCollectionTests.allTests),
              testCase(SocialNetworkingSereviceCollectionTests.allTests),
              testCase(UserCollectionTests.allTests),
+             testCase(WorkExpCollectionTests.allTests),
         ])
     }
 }

@@ -65,7 +65,7 @@ func registUserAndLoggedIn(
         XCTAssertNil(authorizeMsg.user.aboutMe)
         XCTAssertNil(authorizeMsg.user.location)
         XCTAssertNil(authorizeMsg.user.eduExps)
-        XCTAssertNil(authorizeMsg.user.jobExps)
+        XCTAssertNil(authorizeMsg.user.workExps)
 
         httpHeaders = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken))
     })

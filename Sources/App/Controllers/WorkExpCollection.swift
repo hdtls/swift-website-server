@@ -14,13 +14,13 @@
 import Vapor
 import Fluent
 
-class JobExpCollection: RouteCollection, RestfulApi {
-    typealias T = JobExp
+class WorkExpCollection: RouteCollection, RestfulApi {
+    typealias T = WorkExp
 
     var pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
 
     func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped("jobs")
+        let routes = routes.grouped("works")
 
         let trusted = routes.grouped([
             User.authenticator(),
@@ -46,7 +46,7 @@ class JobExpCollection: RouteCollection, RestfulApi {
         let industries = try coding.industry.map({ coding -> Industry in
 
             // `Industry.id` is not required by `Industry.__converted(_:)`, but
-            // required by create relation of `jobExp` and `industry`, so we will
+            // required by create relation of `workExp` and `industry`, so we will
             // add additional check to make sure it have `id` to attach with.
             guard let id = coding.id else {
                 throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")

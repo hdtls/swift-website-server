@@ -88,7 +88,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.location)
             XCTAssertNil(user.social)
             XCTAssertNil(user.eduExps)
-            XCTAssertNil(user.jobExps)
+            XCTAssertNil(user.workExps)
         })
     }
     
@@ -97,7 +97,7 @@ class UserCollectionTests: XCTestCase {
         
         let headers = try registUserAndLoggedIn(app)
         
-        let query = "?include_social=true&include_edu_exp=true&include_job_exp=true"
+        let query = "?include_social=true&include_edu_exp=true&include_work_exp=true"
         try app.test(.GET, "users/test\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
@@ -113,13 +113,13 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.location)
             XCTAssertEqual(user.social, [])
             XCTAssertEqual(user.eduExps, [])
-            XCTAssertEqual(user.jobExps, [])
+            XCTAssertEqual(user.workExps, [])
         })
         
         try assertCreateSocial(app, headers: headers)
         
-        try app.test(.POST, "exp/jobs", headers: headers, beforeRequest: {
-            try $0.content.encode(jobExpCoding)
+        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
+            try $0.content.encode(workExpCoding)
         }, afterResponse: assertHttpOk)
         .test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
@@ -139,7 +139,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.location)
             XCTAssertNotNil(user.social?.first)
             XCTAssertNotNil(user.eduExps?.first)
-            XCTAssertNotNil(user.jobExps?.first)
+            XCTAssertNotNil(user.workExps?.first)
         })
     }
     
@@ -165,14 +165,17 @@ class UserCollectionTests: XCTestCase {
         defer { app.shutdown() }
         
         let headers = try registUserAndLoggedIn(app)
-        
-        try app.test(.POST, "exp/jobs", headers: headers, beforeRequest: {
-            try $0.content.encode(jobExpCoding)
+
+        let industry = try assertCreateIndustry(app, industry: workExpCoding.industry.first)
+
+        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
+            workExpCoding.industry = [industry]
+            try $0.content.encode(workExpCoding)
         }, afterResponse: assertHttpOk)
         .test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
         }, afterResponse: assertHttpOk)
-        .test(.GET, "users?include_edu_exp=true&include_job_exp=true", afterResponse: {
+        .test(.GET, "users?include_edu_exp=true&include_work_exp=true", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
             
@@ -190,19 +193,19 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.aboutMe)
             XCTAssertNil(user.location)
             XCTAssertEqual(user.eduExps!.count, 1)
-            XCTAssertEqual(user.jobExps!.count, 1)
+            XCTAssertEqual(user.workExps!.count, 1)
             
-            let job = user.jobExps!.first!
-            XCTAssertNotNil(job.id)
-            XCTAssertNotNil(job.userId)
-            XCTAssertEqual(job.title, jobExpCoding.title)
-            XCTAssertEqual(job.companyName, jobExpCoding.companyName)
-            XCTAssertEqual(job.location, jobExpCoding.location)
-            XCTAssertEqual(job.startDate, jobExpCoding.startDate)
-            XCTAssertEqual(job.endDate, jobExpCoding.endDate)
-            XCTAssertEqual(job.industry.count, 0)
-            XCTAssertNil(job.headline)
-            XCTAssertNil(job.responsibilities)
+            let work = user.workExps!.first!
+            XCTAssertNotNil(work.id)
+            XCTAssertNotNil(work.userId)
+            XCTAssertEqual(work.title, workExpCoding.title)
+            XCTAssertEqual(work.companyName, workExpCoding.companyName)
+            XCTAssertEqual(work.location, workExpCoding.location)
+            XCTAssertEqual(work.startDate, workExpCoding.startDate)
+            XCTAssertEqual(work.endDate, workExpCoding.endDate)
+            XCTAssertEqual(work.industry.count, 1)
+            XCTAssertNil(work.headline)
+            XCTAssertNil(work.responsibilities)
             
             let edu = user.eduExps!.first!
             XCTAssertNotNil(edu.id)
@@ -264,7 +267,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.location)
             XCTAssertNil(user.social)
             XCTAssertNil(user.eduExps)
-            XCTAssertNil(user.jobExps)
+            XCTAssertNil(user.workExps)
         })
     }
 }

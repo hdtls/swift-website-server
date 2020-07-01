@@ -14,11 +14,11 @@
 import Vapor
 import Fluent
 
-final class JobExp: Model {
+final class WorkExp: Model {
 
     typealias IDValue = UUID
     
-    static let schema: String = "job_exp"
+    static let schema: String = "work_exps"
 
     // MARK: Properties
     @ID()
@@ -52,7 +52,7 @@ final class JobExp: Model {
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
 
-    @Siblings(through: JobExpIndustrySiblings.self, from: \.$jobExp, to: \.$industry)
+    @Siblings(through: WorkExpIndustrySiblings.self, from: \.$workExp, to: \.$industry)
     var industry: [Industry]
 
     // MARK: Initializer
@@ -60,7 +60,7 @@ final class JobExp: Model {
 }
 
 // MARK: Field keys
-extension JobExp {
+extension WorkExp {
 
     enum FieldKeys: FieldKey {
         case title
@@ -75,7 +75,7 @@ extension JobExp {
     }
 }
 
-extension JobExp: UserChildren {
+extension WorkExp: UserChildren {
 
     var _$user: Parent<User> {
         return $user
@@ -83,7 +83,7 @@ extension JobExp: UserChildren {
     
     struct Coding: Content, Equatable {
         // MARK: Properties
-        var id: JobExp.IDValue?
+        var id: WorkExp.IDValue?
         var title: String
         var companyName: String
         var location: String
@@ -98,10 +98,10 @@ extension JobExp: UserChildren {
         var userId: User.IDValue?
     }
 
-    /// Convert `Coding` to `JobExp`, used for decoding request content.
+    /// Convert `Coding` to `WorkExp`, used for decoding request content.
     /// - note: `user` and `industry` eager loading property will set on route operation.
-    static func __converted(_ coding: Coding) throws -> JobExp {
-        let exp = JobExp.init()
+    static func __converted(_ coding: Coding) throws -> WorkExp {
+        let exp = WorkExp.init()
         exp.title = coding.title
         exp.companyName = coding.companyName
         exp.location = coding.location
@@ -113,7 +113,7 @@ extension JobExp: UserChildren {
         return exp
     }
 
-    func __merge(_ another: JobExp) {
+    func __merge(_ another: WorkExp) {
         title = another.title
         companyName = another.companyName
         location = another.location
