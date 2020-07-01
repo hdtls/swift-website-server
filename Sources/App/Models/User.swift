@@ -66,7 +66,7 @@ final class User: Model {
     var tokens: [Token]
 
     @Children(for: \.$user)
-    var social: [Social]
+    var social: [SocialNetworking]
 
     @Children(for: \.$user)
     var eduExps: [EducationalExp]
@@ -180,7 +180,7 @@ extension User: Transfer {
         // MARK: Relations
         /// Links that user owned.
         /// - note: Only use for encoding user model.
-        var social: [Social.Coding]?
+        var social: [SocialNetworking.Coding]?
 
         /// Education experiances
         /// - seealso: `Coding.webLinks`

@@ -14,9 +14,9 @@
 import Vapor
 import Fluent
 
-final class Social: Model {
+final class SocialNetworking: Model {
 
-    static var schema: String = "social"
+    static var schema: String = "social_networking"
 
     // MARK: Properties
     @ID()
@@ -29,52 +29,52 @@ final class Social: Model {
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
 
-    @Parent(key: FieldKeys.networkingService.rawValue)
-    var networkingService: SocialNetworkingService
+    @Parent(key: FieldKeys.service.rawValue)
+    var service: Service
 
     // MARK: Initializer
     required init() {}
 }
 
 // MARK: Field keys
-extension Social {
+extension SocialNetworking {
 
     enum FieldKeys: FieldKey {
         case user = "user_id"
         case url
-        case networkingService = "networking_service_id"
+        case service = "service_id"
     }
 }
 
-extension Social: UserChildren {
+extension SocialNetworking: UserChildren {
 
     var _$user: Parent<User> {
         return $user
     }
 
     struct Coding: Content, Equatable {
-        var id: Social.IDValue?
+        var id: SocialNetworking.IDValue?
         var userId: User.IDValue?
         var url: String
 
         /// `ID` of `networkingService` is require for create referance with `SocialNetworkingService`
         /// This property only used for decoding. ignore by encoding.
-        var networkingServiceId: SocialNetworkingService.IDValue?
-        var networkingService: SocialNetworkingService.Coding?
+        var networkingServiceId: Service.IDValue?
+        var networkingService: Service.Coding?
     }
 
-    static func __converted(_ coding: Coding) throws -> Social {
+    static func __converted(_ coding: Coding) throws -> SocialNetworking {
         guard let serviceID = coding.networkingServiceId else {
             throw Abort.init(.badRequest, reason: "Value required for key 'socialNetworkingService.id'")
         }
-        let social = Social.init()
+        let social = SocialNetworking.init()
         social.url = coding.url
-        social.$networkingService.id = serviceID
+        social.$service.id = serviceID
         return social
     }
 
     // Only `url` property can be update.
-    func __merge(_ another: Social) {
+    func __merge(_ another: SocialNetworking) {
         url = another.url
     }
 
@@ -83,7 +83,7 @@ extension Social: UserChildren {
             id: requireID(),
             userId: $user.id,
             url: url,
-            networkingService: networkingService.__reverted()
+            networkingService: service.__reverted()
         )
     }
 }

@@ -14,29 +14,33 @@
 import Vapor
 import Fluent
 
-final class SocialNetworkingService: Model {
+typealias SocialNetworkingService = SocialNetworking.Service
 
-    static var schema: String = "social_networking_services"
+extension SocialNetworking {
+    final class Service: Model {
 
-    // MARK: Properties
-    @ID()
-    var id: UUID?
+        static var schema: String = "social_networking_services"
 
-    @Enum(key: FieldKeys.type.rawValue)
-    var type: ServiceType
+        // MARK: Properties
+        @ID()
+        var id: UUID?
 
-    @Field(key: FieldKeys.imageUrl.rawValue)
-    var imageUrl: String?
+        @Enum(key: FieldKeys.type.rawValue)
+        var type: ServiceType
 
-    @Field(key: FieldKeys.html.rawValue)
-    var html: String?
+        @Field(key: FieldKeys.imageUrl.rawValue)
+        var imageUrl: String?
 
-    // MARK: Relations
-    @Children(for: \.$networkingService)
-    var social: [Social]
+        @Field(key: FieldKeys.html.rawValue)
+        var html: String?
 
-    // MARK: Initializer
-    required init() {}
+        // MARK: Relations
+        @Children(for: \.$service)
+        var social: [SocialNetworking]
+
+        // MARK: Initializer
+        required init() {}
+    }
 }
 
 // MARK: Field keys

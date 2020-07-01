@@ -14,8 +14,8 @@
 import Vapor
 import Fluent
 
-class SocialCollection: RouteCollection, UserChildrenRestfulApi {
-    typealias T = Social
+class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
+    typealias T = SocialNetworking
 
     let pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
 
@@ -46,7 +46,7 @@ class SocialCollection: RouteCollection, UserChildrenRestfulApi {
             .flatMap({
                 // Make sure `$socialNetworkingService` has been eager loaded
                 // before try `model.__reverted()`.
-                model.$networkingService.get(on: req.db)
+                model.$service.get(on: req.db)
             })
             .flatMapThrowing({ _ in
                 try model.__reverted()
@@ -64,7 +64,7 @@ class SocialCollection: RouteCollection, UserChildrenRestfulApi {
         return T.query(on: req.db)
             .filter(\._$id == id)
             .filter(pidFieldKey, .equal, userID)
-            .with(\.$networkingService)
+            .with(\.$service)
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMapThrowing({
@@ -78,7 +78,7 @@ class SocialCollection: RouteCollection, UserChildrenRestfulApi {
 
         return T.query(on: req.db)
             .filter(pidFieldKey, .equal, userID)
-            .with(\.$networkingService)
+            .with(\.$service)
             .all()
             .flatMapEachThrowing({ try $0.__reverted() })
     }
@@ -96,7 +96,7 @@ class SocialCollection: RouteCollection, UserChildrenRestfulApi {
         return T.query(on: req.db)
             .filter(\._$id == id)
             .filter(pidFieldKey, .equal, userID)
-            .with(\.$networkingService)
+            .with(\.$service)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in

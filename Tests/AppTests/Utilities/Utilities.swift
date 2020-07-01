@@ -102,10 +102,10 @@ func assertCreateNetworkingService(
 func assertCreateSocial(
     _ app: Application,
     headers: HTTPHeaders? = nil
-) throws -> (HTTPHeaders, Social.Coding) {
+) throws -> (HTTPHeaders, SocialNetworking.Coding) {
 
     var httpHeaders: HTTPHeaders! = headers
-    var tuple: (HTTPHeaders, Social.Coding)!
+    var tuple: (HTTPHeaders, SocialNetworking.Coding)!
 
     if httpHeaders == nil {
         httpHeaders = try registUserAndLoggedIn(app)
@@ -114,10 +114,10 @@ func assertCreateSocial(
     let service = try assertCreateNetworkingService(app)
 
     try app.test(.POST, "social", headers: httpHeaders, beforeRequest: {
-        try $0.content.encode(Social.Coding.init(url: "https://twitter.com/uid", networkingServiceId: service.id))
+        try $0.content.encode(SocialNetworking.Coding.init(url: "https://twitter.com/uid", networkingServiceId: service.id))
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
-        let coding = try $0.content.decode(Social.Coding.self)
+        let coding = try $0.content.decode(SocialNetworking.Coding.self)
 
         XCTAssertNotNil(coding.id)
         XCTAssertNotNil(coding.userId)

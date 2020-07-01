@@ -14,7 +14,7 @@
 import XCTVapor
 @testable import App
 
-class SocialCollectionTests: XCTestCase {
+class SocialNetworkingCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)
 
@@ -54,13 +54,13 @@ class SocialCollectionTests: XCTestCase {
 
         let tuple = try assertCreateSocial(app)
         let headers = tuple.0
-        let social = tuple.1
+        let socialNetworking = tuple.1
 
-        try app.test(.GET, "social/\(social.id!)", headers: headers, afterResponse: {
+        try app.test(.GET, "social/\(socialNetworking.id!)", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(Social.Coding.self)
-            XCTAssertEqual(coding, social)
+            let coding = try $0.content.decode(SocialNetworking.Coding.self)
+            XCTAssertEqual(coding, socialNetworking)
         })
     }
 
@@ -69,14 +69,14 @@ class SocialCollectionTests: XCTestCase {
 
         let tuple = try assertCreateSocial(app)
         let headers = tuple.0
-        let social = tuple.1
+        let socialNetworking = tuple.1
 
         try app.test(.GET, "social", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode([Social.Coding].self)
+            let coding = try $0.content.decode([SocialNetworking.Coding].self)
             XCTAssertEqual(coding.count, 1)
-            XCTAssertEqual(coding.first!, social)
+            XCTAssertEqual(coding.first!, socialNetworking)
         })
     }
 
@@ -86,22 +86,22 @@ class SocialCollectionTests: XCTestCase {
         let tuple = try assertCreateSocial(app)
 
         let headers = tuple.0
-        let social = tuple.1
+        let socialNetworking = tuple.1
 
-        try app.test(.PUT, "social/\(social.id!)", headers: headers, beforeRequest: {
+        try app.test(.PUT, "social/\(socialNetworking.id!)", headers: headers, beforeRequest: {
             try $0.content.encode(
-                Social.Coding.init(
+                SocialNetworking.Coding.init(
                     url: "https://facebook.com",
-                    networkingServiceId: social.id
+                    networkingServiceId: socialNetworking.id
                 )
             )
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(Social.Coding.self)
-            XCTAssertEqual(coding.id, social.id)
+            let coding = try $0.content.decode(SocialNetworking.Coding.self)
+            XCTAssertEqual(coding.id, socialNetworking.id)
             XCTAssertEqual(coding.url, "https://facebook.com")
-            XCTAssertEqual(coding.networkingService, social.networkingService)
+            XCTAssertEqual(coding.networkingService, socialNetworking.networkingService)
         })
     }
 
@@ -111,11 +111,11 @@ class SocialCollectionTests: XCTestCase {
         let tuple = try assertCreateSocial(app)
 
         let headers = tuple.0
-        let social = tuple.1
+        let socialNetworking = tuple.1
 
-        try app.test(.DELETE, "social/\(social.id!)", headers: headers, afterResponse: {
+        try app.test(.DELETE, "social/\(socialNetworking.id!)", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-        }).test(.DELETE, "social/\(social.id!)", headers: headers, afterResponse: {
+        }).test(.DELETE, "social/\(socialNetworking.id!)", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
         }).test(.DELETE, "social/1", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
