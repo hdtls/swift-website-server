@@ -23,7 +23,7 @@ class IndustryCollection: RouteCollection, RestfulApi {
         routes.on(.POST, use: create)
         routes.on(.GET, use: readAll)
 
-        let path = PathComponent.init(stringLiteral: ":\(restfulIDKey)")
+        let path = PathComponent.parameter(restfulIDKey)
         routes.on(.GET, path, use: read)
         routes.on(.PUT, path, use: update)
         routes.on(.DELETE, path, use: delete)

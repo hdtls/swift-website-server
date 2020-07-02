@@ -20,7 +20,11 @@ class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
     let pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
 
     func boot(routes: RoutesBuilder) throws {
-        let trusted = routes.grouped("social").grouped([
+        let routes = routes.grouped("social")
+
+        routes.on(.GET, .parameter(restfulIDKey), use: read)
+
+        let trusted = routes.grouped([
             User.authenticator(),
             Token.authenticator(),
             User.guardMiddleware(),
@@ -28,12 +32,8 @@ class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
         ])
 
         trusted.on(.POST, use: create)
-        trusted.on(.GET, use: readAll)
-
-        let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
-        trusted.on(.GET, path, use: read)
-        trusted.on(.PUT, path, use: update)
-        trusted.on(.DELETE, path, use: delete)
+        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
+        trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
     func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
@@ -54,8 +54,6 @@ class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
@@ -63,24 +61,12 @@ class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
 
         return T.query(on: req.db)
             .filter(\._$id == id)
-            .filter(pidFieldKey, .equal, userID)
             .with(\.$service)
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMapThrowing({
                 try $0.__reverted()
             })
-    }
-
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.Coding]> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .with(\.$service)
-            .all()
-            .flatMapEachThrowing({ try $0.__reverted() })
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {

@@ -22,7 +22,7 @@ class SocialNetworkingServiceCollection: RouteCollection, RestfulApi {
 
         let routes = routes.grouped("social", "services")
 
-        let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
+        let path = PathComponent.parameter(restfulIDKey)
 
         routes.on(.POST, use: create)
         routes.on(.GET, use: readAll)

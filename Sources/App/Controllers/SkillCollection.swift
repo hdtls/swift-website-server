@@ -23,7 +23,7 @@ class SkillCollection: RouteCollection, RestfulApi {
 
         let routes = routes.grouped("skills")
 
-        let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
+        let path = PathComponent.parameter(restfulIDKey)
 
         routes.on(.GET, path, use: read)
 

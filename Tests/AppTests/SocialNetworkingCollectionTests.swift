@@ -35,8 +35,8 @@ class SocialNetworkingCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         try app.test(.POST, "social", afterResponse: assertHttpUnauthorized)
-            .test(.GET, "social/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
-            .test(.GET, "social", afterResponse: assertHttpUnauthorized)
+            .test(.GET, "social/" + UUID().uuidString, afterResponse: assertHttpNotFound)
+            .test(.GET, "social", afterResponse: assertHttpNotFound)
             .test(.PUT, "social/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
             .test(.DELETE, "social/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
     }
@@ -44,39 +44,20 @@ class SocialNetworkingCollectionTests: XCTestCase {
     func testQueryWithInvalidID() throws {
         defer { app.shutdown() }
 
-        let tuple = try assertCreateSocial(app)
-
-        try app.test(.GET, "social/1", headers: tuple.0, afterResponse: assertHttpNotFound)
+        try app.test(.GET, "social/1", afterResponse: assertHttpNotFound)
     }
 
     func testQueryWithSocialID() throws {
         defer { app.shutdown() }
 
         let tuple = try assertCreateSocial(app)
-        let headers = tuple.0
         let socialNetworking = tuple.1
 
-        try app.test(.GET, "social/\(socialNetworking.id!)", headers: headers, afterResponse: {
+        try app.test(.GET, "social/\(socialNetworking.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(SocialNetworking.Coding.self)
             XCTAssertEqual(coding, socialNetworking)
-        })
-    }
-
-    func testQueryAll() throws {
-        defer { app.shutdown() }
-
-        let tuple = try assertCreateSocial(app)
-        let headers = tuple.0
-        let socialNetworking = tuple.1
-
-        try app.test(.GET, "social", headers: headers, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-
-            let coding = try $0.content.decode([SocialNetworking.Coding].self)
-            XCTAssertEqual(coding.count, 1)
-            XCTAssertEqual(coding.first!, socialNetworking)
         })
     }
 

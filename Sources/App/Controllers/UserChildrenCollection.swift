@@ -36,25 +36,6 @@ extension UserChildrenRestfulApi {
             })
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-
-        return T.find(id, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ try $0.__reverted() })
-    }
-
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.Coding]> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .all()
-            .flatMapEachThrowing({ try $0.__reverted() })
-    }
-
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let userID = try req.auth.require(User.self).requireID()
         let coding = try req.content.decode(T.Coding.self)
@@ -126,7 +107,6 @@ class UserChildrenCollection<T: UserChildren>: RouteCollection, UserChildrenRest
         ])
 
         trusted.on(.POST, use: create)
-        trusted.on(.GET, use: readAll)
         trusted.on(.PUT, path, use: update)
         trusted.on(.DELETE, path, use: delete)
     }

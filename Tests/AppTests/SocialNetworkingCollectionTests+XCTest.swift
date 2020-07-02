@@ -31,7 +31,6 @@ extension SocialNetworkingCollectionTests {
                 ("testAuthorizeRequire", testAuthorizeRequire),
                 ("testQueryWithInvalidID", testQueryWithInvalidID),
                 ("testQueryWithSocialID", testQueryWithSocialID),
-                ("testQueryAll", testQueryAll),
                 ("testUpdate", testUpdate),
                 ("testDelete", testDelete),
            ]

@@ -42,8 +42,8 @@ class WorkExpCollectionTests: XCTestCase {
         let uuid = UUID.init().uuidString
 
         try app.test(.POST, "exp/works", afterResponse: assertHttpUnauthorized)
-            .test(.GET, "exp/works", afterResponse: assertHttpUnauthorized)
-            .test(.GET, "exp/works/" + uuid, afterResponse: assertHttpUnauthorized)
+            .test(.GET, "exp/works", afterResponse: assertHttpNotFound)
+            .test(.GET, "exp/works/" + uuid, afterResponse: assertHttpNotFound)
             .test(.PUT, "exp/works/" + uuid, afterResponse: assertHttpUnauthorized)
             .test(.DELETE, "exp/works/" + uuid, afterResponse: assertHttpUnauthorized)
     }
@@ -80,9 +80,7 @@ class WorkExpCollectionTests: XCTestCase {
     func testQueryWithInvalidWorkID() throws {
         defer { app.shutdown() }
 
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.GET, "exp/works/1", headers: headers, afterResponse: assertHttpNotFound)
+        try app.test(.GET, "exp/works/1", afterResponse: assertHttpNotFound)
     }
 
     func testQueryWithWorkID() throws {
@@ -104,7 +102,7 @@ class WorkExpCollectionTests: XCTestCase {
             XCTAssertNotNil(coding.id)
             workID = coding.id
         })
-        .test(.GET, "exp/works/\(workID.uuidString)", headers: headers, afterResponse: {
+        .test(.GET, "exp/works/\(workID.uuidString)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(WorkExp.Coding.self)
@@ -120,26 +118,6 @@ class WorkExpCollectionTests: XCTestCase {
             XCTAssertEqual(coding.industry.first!.title, industry.title)
             XCTAssertNil(coding.headline)
             XCTAssertNil(coding.responsibilities)
-        })
-    }
-
-    func testQueryAll() throws {
-        defer { app.shutdown() }
-
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.GET, "exp/works", headers: headers, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode([WorkExp.Coding].self)
-            XCTAssertEqual(coding.count, 0)
-        })
-        .test(.POST, "exp/works", headers: headers, beforeRequest: {
-            try $0.content.encode(workExpCoding)
-        }, afterResponse: assertHttpOk)
-        .test(.GET, "exp/works", headers: headers, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode([WorkExp.Coding].self)
-            XCTAssertEqual(coding.count, 1)
         })
     }
 

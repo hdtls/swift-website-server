@@ -31,7 +31,6 @@ extension WorkExpCollectionTests {
                 ("testCreate", testCreate),
                 ("testQueryWithInvalidWorkID", testQueryWithInvalidWorkID),
                 ("testQueryWithWorkID", testQueryWithWorkID),
-                ("testQueryAll", testQueryAll),
                 ("testUpdate", testUpdate),
                 ("testDeleteWithInvalidWorkID", testDeleteWithInvalidWorkID),
                 ("testDelete", testDelete),

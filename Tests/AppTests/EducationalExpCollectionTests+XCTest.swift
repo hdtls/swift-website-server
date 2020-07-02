@@ -31,7 +31,6 @@ extension EduExpCollectionTests {
                 ("testCreate", testCreate),
                 ("testQueryWithInvalidEduID", testQueryWithInvalidEduID),
                 ("testQueryWithEduID", testQueryWithEduID),
-                ("testQueryAll", testQueryAll),
                 ("testUpdate", testUpdate),
                 ("testDeleteWithInvalideduID", testDeleteWithInvalideduID),
                 ("testDelete", testDelete),

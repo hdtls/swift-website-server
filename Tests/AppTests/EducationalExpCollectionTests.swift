@@ -41,6 +41,7 @@ class EduExpCollectionTests: XCTestCase {
         let uuid = UUID.init().uuidString
 
         try app.test(.POST, "exp/edu", afterResponse: assertHttpUnauthorized)
+            .test(.GET, "exp/edu/" + uuid, afterResponse: assertHttpNotFound)
             .test(.PUT, "exp/edu/" + uuid, afterResponse: assertHttpUnauthorized)
             .test(.DELETE, "exp/edu/" + uuid, afterResponse: assertHttpUnauthorized)
     }
@@ -98,26 +99,6 @@ class EduExpCollectionTests: XCTestCase {
             XCTAssertNil(coding.endYear)
             XCTAssertEqual(coding.activities, eduExpCoding.activities)
             XCTAssertNil(coding.accomplishments)
-        })
-    }
-
-    func testQueryAll() throws {
-        defer { app.shutdown() }
-
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.GET, "exp/edu", headers: headers, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode([EducationalExp.Coding].self)
-            XCTAssertEqual(coding.count, 0)
-        })
-        .test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        }, afterResponse: assertHttpOk)
-        .test(.GET, "exp/edu", headers: headers, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode([EducationalExp.Coding].self)
-            XCTAssertEqual(coding.count, 1)
         })
     }
 
