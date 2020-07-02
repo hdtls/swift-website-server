@@ -14,7 +14,6 @@
 import XCTVapor
 @testable import App
 
-let userCreation = User.Creation.init(firstName: "J", lastName: "K", username: "test", password: "111111")
 class UserCollectionTests: XCTestCase {
     
     let app = Application.init(.testing)
@@ -100,7 +99,7 @@ class UserCollectionTests: XCTestCase {
         
         let headers = try registUserAndLoggedIn(app)
         
-        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true"
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill"
         try app.test(.GET, "users/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
@@ -121,13 +120,18 @@ class UserCollectionTests: XCTestCase {
         })
         
         try assertCreateSocial(app, headers: headers)
-        
+        let industry = try assertCreateIndustry(app)
+        try assertCreateSkill(app, headers: headers)
+
         try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            try $0.content.encode(workExpCoding)
+            var encoding = workExpCoding
+            encoding.industry = [industry]
+            try $0.content.encode(encoding)
         }, afterResponse: assertHttpOk)
         .test(.POST, "exp/edu", headers: headers, beforeRequest: {
             try $0.content.encode(eduExpCoding)
         }, afterResponse: assertHttpOk)
+
         .test(.GET, "users/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
@@ -145,6 +149,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNotNil(user.social?.first)
             XCTAssertNotNil(user.eduExps?.first)
             XCTAssertNotNil(user.workExps?.first)
+            XCTAssertNotNil(user.skill)
         })
     }
     

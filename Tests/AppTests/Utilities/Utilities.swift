@@ -34,6 +34,7 @@ func assertHttpBadRequest(_ response: XCTHTTPResponse) throws {
     XCTAssertEqual(response.status, .badRequest)
 }
 
+let userCreation = User.Creation.init(firstName: "J", lastName: "K", username: "test", password: "111111")
 @discardableResult
 func registUserAndLoggedIn(
     _ app: Application,
@@ -66,6 +67,7 @@ func registUserAndLoggedIn(
         XCTAssertNil(authorizeMsg.user.location)
         XCTAssertNil(authorizeMsg.user.eduExps)
         XCTAssertNil(authorizeMsg.user.workExps)
+        XCTAssertNil(authorizeMsg.user.hobbies)
 
         httpHeaders = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken))
     })
