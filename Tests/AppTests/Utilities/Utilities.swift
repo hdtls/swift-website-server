@@ -152,3 +152,30 @@ func assertCreateIndustry(
 
     return coding
 }
+
+let skill = Skill.Coding.init(profesional: ["xxx"], workflow: ["xxx"])
+
+@discardableResult
+func assertCreateSkill(
+    _ app: Application,
+    headers: HTTPHeaders? = nil,
+    skill: Skill.Coding = skill
+) throws -> Skill.Coding {
+
+    let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
+
+    var coding: Skill.Coding!
+
+    try app.test(.POST, "skills", headers: httpHeaders, beforeRequest: {
+        try $0.content.encode(skill)
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+
+        coding = try $0.content.decode(Skill.Coding.self)
+        XCTAssertNotNil(coding.id)
+        XCTAssertEqual(coding.profesional, skill.profesional)
+        XCTAssertEqual(coding.workflow, skill.workflow)
+    })
+
+    return coding
+}
