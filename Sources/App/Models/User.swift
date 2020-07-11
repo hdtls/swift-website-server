@@ -69,6 +69,9 @@ final class User: Model {
     var social: [SocialNetworking]
 
     @Children(for: \.$user)
+    var projects: [Project]
+
+    @Children(for: \.$user)
     var eduExps: [EducationalExp]
 
     @Children(for: \.$user)
@@ -191,12 +194,13 @@ extension User: Transfer {
         /// - note: Only use for encoding user model.
         var social: [SocialNetworking.Coding]?
 
+        /// Projects
+        var projects: [Project.Coding]?
+
         /// Education experiances
-        /// - seealso: `Coding.webLinks`
         var eduExps: [EducationalExp.Coding]?
 
-        /// Jon experiances
-        /// - seealso: `Coding.webLinks`
+        /// Experiances
         var workExps: [WorkExp.Coding]?
 
         var skill: Skill.Coding?
@@ -238,6 +242,7 @@ extension User: Transfer {
         coding.aboutMe = aboutMe
         coding.location = location
         coding.social = $social.value?.compactMap({ try? $0.__reverted() })
+        coding.projects = $projects.value?.compactMap({ try? $0.__reverted() })
         coding.eduExps = $eduExps.value?.compactMap({ try? $0.__reverted() })
         coding.workExps = $workExps.value?.compactMap({ try? $0.__reverted() })
         coding.social = $social.value?.compactMap({ try? $0.__reverted() })

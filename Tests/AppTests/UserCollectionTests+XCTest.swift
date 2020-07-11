@@ -27,6 +27,7 @@ extension UserCollectionTests {
    @available(*, deprecated, message: "not actually deprecated. Just deprecated to allow deprecated tests (which test deprecated functionality) without warnings")
    static var allTests : [(String, (UserCollectionTests) -> () throws -> Void)] {
       return [
+                ("testAuthorizeRequire", testAuthorizeRequire),
                 ("testCreateWithInvalidUsername", testCreateWithInvalidUsername),
                 ("testCreateWithInvalidPassword", testCreateWithInvalidPassword),
                 ("testCreateWithConflictUsername", testCreateWithConflictUsername),
@@ -34,9 +35,9 @@ extension UserCollectionTests {
                 ("testQueryWithInvalidUserID", testQueryWithInvalidUserID),
                 ("testQueryWithUserID", testQueryWithUserID),
                 ("testQueryWithUserIDAndQueryParameters", testQueryWithUserIDAndQueryParameters),
+                ("testQueryWithUserIDAndQueryParametersAfterAddChildrens", testQueryWithUserIDAndQueryParametersAfterAddChildrens),
                 ("testQueryAll", testQueryAll),
-                ("testQueryAfterAddChildrens", testQueryAfterAddChildrens),
-                ("testUpdateWithUnauthorized", testUpdateWithUnauthorized),
+                ("testQueryAllWithQueryParametersAfterAddChildrens", testQueryAllWithQueryParametersAfterAddChildrens),
                 ("testUpdate", testUpdate),
            ]
    }

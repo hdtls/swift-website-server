@@ -17,6 +17,7 @@ import XCTVapor
 class UserCollectionTests: XCTestCase {
     
     let app = Application.init(.testing)
+    let path = "users"
     
     override func setUpWithError() throws {
         try bootstrap(app)
@@ -24,11 +25,19 @@ class UserCollectionTests: XCTestCase {
         try app.autoRevert().wait()
         try app.autoMigrate().wait()
     }
-    
+
+    func testAuthorizeRequire() {
+        defer { app.shutdown() }
+
+        XCTAssertNoThrow(
+            try app.test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
+        )
+    }
+
     func testCreateWithInvalidUsername() throws {
         defer { app.shutdown() }
         
-        try app.test(.POST, "users", beforeRequest: {
+        try app.test(.POST, path, beforeRequest: {
             var invalid = userCreation
             invalid.username = ""
             try $0.content.encode(invalid)
@@ -38,7 +47,7 @@ class UserCollectionTests: XCTestCase {
     func testCreateWithInvalidPassword() throws {
         defer { app.shutdown() }
         
-        try app.test(.POST, "users", beforeRequest: {
+        try app.test(.POST, path, beforeRequest: {
             var invalid = userCreation
             invalid.password = "111"
             try $0.content.encode(invalid)
@@ -51,7 +60,7 @@ class UserCollectionTests: XCTestCase {
         
         try registUserAndLoggedIn(app)
         
-        try app.test(.POST, "users", beforeRequest: {
+        try app.test(.POST, path, beforeRequest: {
             try $0.content.encode(userCreation)
         }, afterResponse: {
             XCTAssertEqual($0.status, .conflict)
@@ -66,15 +75,15 @@ class UserCollectionTests: XCTestCase {
     func testQueryWithInvalidUserID() throws {
         defer { app.shutdown() }
         
-        try app.test(.GET, "users/didnotcreated", afterResponse: assertHttpNotFound)
+        try app.test(.GET, path + "/notfound", afterResponse: assertHttpNotFound)
     }
     
     func testQueryWithUserID() throws {
         defer { app.shutdown() }
         
-        try registUserAndLoggedIn(app)
+        try registUserAndLoggedIn(app, userCreation)
         
-        try app.test(.GET, "users/\(userCreation.username)", afterResponse: {
+        try app.test(.GET, path + "/\(userCreation.username)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
             
@@ -96,11 +105,11 @@ class UserCollectionTests: XCTestCase {
     
     func testQueryWithUserIDAndQueryParameters() throws {
         defer { app.shutdown() }
-        
-        let headers = try registUserAndLoggedIn(app)
-        
-        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill"
-        try app.test(.GET, "users/\(userCreation.username)\(query)", afterResponse: {
+
+        try registUserAndLoggedIn(app, userCreation)
+
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
+        try app.test(.GET, path + "/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
             
@@ -115,27 +124,29 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.aboutMe)
             XCTAssertNil(user.location)
             XCTAssertEqual(user.social, [])
+            XCTAssertEqual(user.projects, [])
             XCTAssertEqual(user.eduExps, [])
             XCTAssertEqual(user.workExps, [])
+            XCTAssertNil(user.skill)
         })
-        
-        try assertCreateSocial(app, headers: headers)
-        let industry = try assertCreateIndustry(app)
-        try assertCreateSkill(app, headers: headers)
+    }
 
-        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            var encoding = workExpCoding
-            encoding.industry = [industry]
-            try $0.content.encode(encoding)
-        }, afterResponse: assertHttpOk)
-        .test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        }, afterResponse: assertHttpOk)
+    func testQueryWithUserIDAndQueryParametersAfterAddChildrens() throws {
+        defer { app.shutdown() }
 
-        .test(.GET, "users/\(userCreation.username)\(query)", afterResponse: {
+        let headers = try registUserAndLoggedIn(app, userCreation)
+
+        let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
+        let workExp = try assertCreateWorkExperiance(app, headers: headers)
+        let eduExp = try assertCreateEduExperiance(app, headers: headers)
+        let proj = try assertCreateProj(app, headers: headers)
+        let skill = try assertCreateSkill(app, headers: headers)
+
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
+        try app.test(.GET, path + "/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
-            
+
             let user = try! $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
@@ -146,17 +157,22 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
             XCTAssertNil(user.location)
-            XCTAssertNotNil(user.social?.first)
-            XCTAssertNotNil(user.eduExps?.first)
-            XCTAssertNotNil(user.workExps?.first)
-            XCTAssertNotNil(user.skill)
+            XCTAssertEqual(user.social?.count, 1)
+            XCTAssertEqual(user.social?.first, socialNetworking)
+            XCTAssertEqual(user.projects?.count, 1)
+            XCTAssertEqual(user.projects?.first, proj)
+            XCTAssertEqual(user.eduExps?.count, 1)
+            XCTAssertEqual(user.eduExps?.first, eduExp)
+            XCTAssertEqual(user.workExps?.count, 1)
+            XCTAssertEqual(user.workExps?.first, workExp)
+            XCTAssertEqual(user.skill, skill)
         })
     }
-    
+
     func testQueryAll() throws {
         defer { app.shutdown() }
         
-        try app.test(.GET, "users", afterResponse: {
+        try app.test(.GET, path, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
             XCTAssertEqual(try! $0.content.decode([User.Coding].self).count, 0)
@@ -164,32 +180,30 @@ class UserCollectionTests: XCTestCase {
         
         try registUserAndLoggedIn(app)
         
-        try app.test(.GET, "users", afterResponse: {
+        try app.test(.GET, path, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
             XCTAssertEqual(try! $0.content.decode([User.Coding].self).count, 1)
         })
     }
     
-    func testQueryAfterAddChildrens() throws {
+    func testQueryAllWithQueryParametersAfterAddChildrens() throws {
         defer { app.shutdown() }
         
-        let headers = try registUserAndLoggedIn(app)
+        let headers = try registUserAndLoggedIn(app, userCreation)
 
-        let industry = try assertCreateIndustry(app, industry: workExpCoding.industry.first)
+        let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
+        let workExpCoding = try assertCreateWorkExperiance(app, headers: headers)
+        let eduExpCoding = try assertCreateEduExperiance(app, headers: headers)
+        let projCoding = try assertCreateProj(app, headers: headers)
+        let skillCoding = try assertCreateSkill(app, headers: headers)
 
-        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            workExpCoding.industry = [industry]
-            try $0.content.encode(workExpCoding)
-        }, afterResponse: assertHttpOk)
-        .test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        }, afterResponse: assertHttpOk)
-        .test(.GET, "users?incl_edu_exp=true&incl_wrk_exp=true", afterResponse: {
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
+        try app.test(.GET, path + query, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
-            
+
             let users = try $0.content.decode([User.Coding].self)
+            XCTAssertEqual(users.count, 1)
             XCTAssertNotNil(users.first)
             
             let user = users.first!
@@ -203,70 +217,34 @@ class UserCollectionTests: XCTestCase {
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
             XCTAssertNil(user.location)
+            XCTAssertEqual(user.social!.count, 1)
+            XCTAssertEqual(user.social!.first, socialNetworking)
             XCTAssertEqual(user.eduExps!.count, 1)
+            XCTAssertEqual(user.eduExps!.first, eduExpCoding)
             XCTAssertEqual(user.workExps!.count, 1)
-            
-            let work = user.workExps!.first!
-            XCTAssertNotNil(work.id)
-            XCTAssertNotNil(work.userId)
-            XCTAssertEqual(work.title, workExpCoding.title)
-            XCTAssertEqual(work.companyName, workExpCoding.companyName)
-            XCTAssertEqual(work.location, workExpCoding.location)
-            XCTAssertEqual(work.startDate, workExpCoding.startDate)
-            XCTAssertEqual(work.endDate, workExpCoding.endDate)
-            XCTAssertEqual(work.industry.count, 1)
-            XCTAssertNil(work.headline)
-            XCTAssertNil(work.responsibilities)
-            
-            let edu = user.eduExps!.first!
-            XCTAssertNotNil(edu.id)
-            XCTAssertNotNil(edu.userId)
-            XCTAssertEqual(edu.school, eduExpCoding.school)
-            XCTAssertEqual(edu.degree, eduExpCoding.degree)
-            XCTAssertEqual(edu.field, eduExpCoding.field)
-            XCTAssertEqual(edu.startYear, eduExpCoding.startYear)
-            XCTAssertNil(edu.endYear)
-            XCTAssertEqual(edu.activities, eduExpCoding.activities)
-            XCTAssertNil(edu.accomplishments)
+            XCTAssertEqual(user.workExps!.first, workExpCoding)
+            XCTAssertEqual(user.projects!.count, 1)
+            XCTAssertEqual(user.projects!.first, projCoding)
+            XCTAssertNotNil(user.skill)
+            XCTAssertEqual(user.skill, skillCoding)
         })
-    }
-    
-    func testUpdateWithUnauthorized() throws {
-        defer { app.shutdown() }
-        
-        try registUserAndLoggedIn(app)
-        
-        try app.test(.PUT, "users/test", beforeRequest: {
-            try $0.content.encode(
-                User.Coding.init(
-                    firstName: "R",
-                    lastName: "J",
-                    screenName: "Jack",
-                    phone: "+1 888888888",
-                    emailAddress: "test@test.com",
-                    aboutMe: "HELLO WORLD !!!"
-                )
-            )
-        }, afterResponse: assertHttpUnauthorized)
     }
     
     func testUpdate() throws {
         defer { app.shutdown() }
         
         let headers = try registUserAndLoggedIn(app)
-        
-        try app.test(.PUT, "users/test", headers: headers, beforeRequest: {
+        let upgrade = User.Coding.init(
+            firstName: "R",
+            lastName: "J",
+            screenName: "Jack",
+            phone: "+1 888888888",
+            emailAddress: "test@test.com",
+            aboutMe: "HELLO WORLD !!!"
+        )
+        try app.test(.PUT, path + "/test", headers: headers, beforeRequest: {
             
-            try $0.content.encode(
-                User.Coding.init(
-                    firstName: "R",
-                    lastName: "J",
-                    screenName: "Jack",
-                    phone: "+1 888888888",
-                    emailAddress: "test@test.com",
-                    aboutMe: "HELLO WORLD !!!"
-                )
-            )
+            try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
@@ -274,12 +252,12 @@ class UserCollectionTests: XCTestCase {
             let user = try! $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
-            XCTAssertEqual(user.firstName, "R")
-            XCTAssertEqual(user.lastName, "J")
-            XCTAssertEqual(user.screenName, "Jack")
-            XCTAssertEqual(user.phone, "+1 888888888")
-            XCTAssertEqual(user.emailAddress, "test@test.com")
-            XCTAssertEqual(user.aboutMe, "HELLO WORLD !!!")
+            XCTAssertEqual(user.firstName, upgrade.firstName)
+            XCTAssertEqual(user.lastName, upgrade.lastName)
+            XCTAssertEqual(user.screenName, upgrade.screenName)
+            XCTAssertEqual(user.phone, upgrade.phone)
+            XCTAssertEqual(user.emailAddress, upgrade.emailAddress)
+            XCTAssertEqual(user.aboutMe, upgrade.aboutMe)
             XCTAssertNil(user.location)
             XCTAssertNil(user.social)
             XCTAssertNil(user.eduExps)
