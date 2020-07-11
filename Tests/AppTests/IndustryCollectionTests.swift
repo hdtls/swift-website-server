@@ -17,7 +17,8 @@ import XCTVapor
 class IndustryCollectionTests: XCTestCase {
     
     let app = Application.init(.testing)
-    
+    let path = Industry.schema
+
     override func setUpWithError() throws {
         try bootstrap(app)
         
@@ -25,12 +26,18 @@ class IndustryCollectionTests: XCTestCase {
         try app.autoMigrate().wait()
     }
     
-    func testCreate() throws {
+    func testCreate() {
         defer { app.shutdown() }
         
+        XCTAssertNoThrow(try assertCreateIndustry(app))
+    }
+
+    func testCreateWithConflictIndustry() throws {
+        defer { app.shutdown() }
+
         let industry = try assertCreateIndustry(app)
-        
-        try app.test(.POST, Industry.schema, beforeRequest: {
+
+        try app.test(.POST, path, beforeRequest: {
             try $0.content.encode(industry)
         }, afterResponse: {
             XCTAssertEqual($0.status, .conflict)
@@ -40,9 +47,9 @@ class IndustryCollectionTests: XCTestCase {
     func testQueryWithInvalidID() throws {
         defer { app.shutdown() }
         
-        _ = try assertCreateIndustry(app)
+        try assertCreateIndustry(app)
         
-        try app.test(.GET, Industry.schema + "/1", afterResponse: assertHttpNotFound)
+        try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
     }
     
     func testQueryWithID() throws {
@@ -50,7 +57,7 @@ class IndustryCollectionTests: XCTestCase {
         
         let industry = try assertCreateIndustry(app)
         
-        try app.test(.GET, Industry.schema + "/\(industry.id!)", afterResponse: {
+        try app.test(.GET, path + "/\(industry.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             
             let coding = try $0.content.decode(Industry.Coding.self)
@@ -63,7 +70,7 @@ class IndustryCollectionTests: XCTestCase {
         
         try assertCreateIndustry(app)
         
-        try app.test(.GET, Industry.schema, afterResponse: {
+        try app.test(.GET, path, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode([Industry.Coding].self)
             XCTAssertEqual(coding.count, 1)
@@ -75,7 +82,7 @@ class IndustryCollectionTests: XCTestCase {
         
         let industry = try assertCreateIndustry(app)
         
-        try app.test(.PUT, Industry.schema + "/\(industry.id!)", beforeRequest: {
+        try app.test(.PUT, path + "/\(industry.id!)", beforeRequest: {
             try $0.content.encode(Industry.Coding.init(title: "12345"))
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -90,7 +97,7 @@ class IndustryCollectionTests: XCTestCase {
         
         let industry = try assertCreateIndustry(app)
         
-        try app.test(.DELETE, Industry.schema + "/\(industry.id!)", afterResponse: assertHttpOk)
-            .test(.DELETE, Industry.schema + "/1", afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/\(industry.id!)", afterResponse: assertHttpOk)
+            .test(.DELETE, path + "/1", afterResponse: assertHttpNotFound)
     }
 }

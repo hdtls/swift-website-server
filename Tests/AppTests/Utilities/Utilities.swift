@@ -75,8 +75,9 @@ func registUserAndLoggedIn(
     return httpHeaders!
 }
 
+let socialNetworkingService = SocialNetworkingService.Coding.init(type: .twitter)
 @discardableResult
-func assertCreateNetworkingService(
+func assertCreateSocialNetworkingService(
     _ app: Application,
     service: SocialNetworkingService.Coding = socialNetworkingService
 ) throws -> SocialNetworkingService.Coding {
@@ -91,8 +92,6 @@ func assertCreateNetworkingService(
         let coding = try $0.content.decode(SocialNetworkingService.Coding.self)
         XCTAssertNotNil(coding.id)
         XCTAssertNotNil(coding.type)
-        XCTAssertEqual(coding.html, socialNetworkingService.html)
-        XCTAssertNil(coding.imageUrl)
 
         service = coding
     })
@@ -101,36 +100,33 @@ func assertCreateNetworkingService(
 }
 
 @discardableResult
-func assertCreateSocial(
+func assertCreateSocialNetworking(
     _ app: Application,
     headers: HTTPHeaders? = nil
-) throws -> (HTTPHeaders, SocialNetworking.Coding) {
+) throws -> SocialNetworking.Coding {
 
-    var httpHeaders: HTTPHeaders! = headers
-    var tuple: (HTTPHeaders, SocialNetworking.Coding)!
+    let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
 
-    if httpHeaders == nil {
-        httpHeaders = try registUserAndLoggedIn(app)
-    }
+    var coding: SocialNetworking.Coding!
 
-    let service = try assertCreateNetworkingService(app)
+    let service = try assertCreateSocialNetworkingService(app)
 
     try app.test(.POST, "social", headers: httpHeaders, beforeRequest: {
-        try $0.content.encode(SocialNetworking.Coding.init(url: "https://twitter.com/uid", networkingServiceId: service.id))
+        try $0.content.encode(
+            SocialNetworking.Coding.init(url: "https://twitter.com/uid", service: service)
+        )
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
-        let coding = try $0.content.decode(SocialNetworking.Coding.self)
+        coding = try $0.content.decode(SocialNetworking.Coding.self)
 
         XCTAssertNotNil(coding.id)
         XCTAssertNotNil(coding.userId)
         XCTAssertEqual(coding.url, "https://twitter.com/uid")
-        XCTAssertNotNil(coding.networkingService)
-        XCTAssertEqual(coding.networkingService?.id, service.id)
-
-        tuple = (httpHeaders, coding)
+        XCTAssertNotNil(coding.service)
+        XCTAssertEqual(coding.service?.id, service.id)
     })
 
-	return tuple
+    return coding
 }
 
 @discardableResult
@@ -155,8 +151,53 @@ func assertCreateIndustry(
     return coding
 }
 
-let skill = Skill.Coding.init(profesional: ["xxx"], workflow: ["xxx"])
+let workExpCoding = WorkExp.Coding.init(
+    title: "iOS Developer",
+    companyName: "XXX",
+    location: "XXX",
+    startDate: "2020-02-20",
+    endDate: "-",
+    industry: [
+        Industry.Coding.init(title: "International Trade & Development")
+    ]
+)
+@discardableResult
+func assertCreateWorkExperiance(
+    _ app: Application,
+    headers: HTTPHeaders? = nil,
+    exp: WorkExp.Coding = workExpCoding
+) throws -> WorkExp.Coding {
+    let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
+    let industry = try assertCreateIndustry(app, industry: exp.industry.first)
 
+    var coding: WorkExp.Coding!
+
+    try app.test(.POST, "exp/works", headers: httpHeaders, beforeRequest: {
+        var workExpCoding = exp
+        workExpCoding.industry = [industry]
+        try $0.content.encode(workExpCoding)
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+
+        coding = try $0.content.decode(WorkExp.Coding.self)
+        XCTAssertNotNil(coding.id)
+        XCTAssertNotNil(coding.userId)
+        XCTAssertEqual(coding.title, exp.title)
+        XCTAssertEqual(coding.companyName, exp.companyName)
+        XCTAssertEqual(coding.location, exp.location)
+        XCTAssertEqual(coding.startDate, exp.startDate)
+        XCTAssertEqual(coding.endDate, exp.endDate)
+        XCTAssertEqual(coding.industry.count, 1)
+        XCTAssertEqual(coding.industry.first!.id, industry.id)
+        XCTAssertEqual(coding.industry.first!.title, industry.title)
+        XCTAssertNil(coding.headline)
+        XCTAssertNil(coding.responsibilities)
+    })
+
+    return coding
+}
+
+let skill = Skill.Coding.init(profesional: ["xxx"], workflow: ["xxx"])
 @discardableResult
 func assertCreateSkill(
     _ app: Application,
@@ -177,6 +218,36 @@ func assertCreateSkill(
         XCTAssertNotNil(coding.id)
         XCTAssertEqual(coding.profesional, skill.profesional)
         XCTAssertEqual(coding.workflow, skill.workflow)
+    })
+
+    return coding
+}
+
+let proj = Project.Coding.init(name: "proj", summary: "proj_summary", startDate: "start_date", endDate: "end_date")
+@discardableResult
+func assertCreateProj(
+    _ app: Application,
+    headers: HTTPHeaders? = nil,
+    proj: Project.Coding = proj
+) throws -> Project.Coding {
+
+    let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
+
+    var coding: Project.Coding!
+
+    try app.test(.POST, "projects", headers: httpHeaders, beforeRequest: {
+        try $0.content.encode(proj)
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+
+        coding = try $0.content.decode(Project.Coding.self)
+        XCTAssertNotNil(coding.id)
+        XCTAssertEqual(coding.name, proj.name)
+        XCTAssertEqual(coding.categories, proj.categories)
+        XCTAssertEqual(coding.summary, proj.summary)
+        XCTAssertEqual(coding.startDate, proj.startDate)
+        XCTAssertEqual(coding.endDate, proj.endDate)
+        XCTAssertNotNil(coding.userId)
     })
 
     return coding

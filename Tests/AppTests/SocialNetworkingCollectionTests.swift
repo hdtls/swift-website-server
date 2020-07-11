@@ -17,6 +17,7 @@ import XCTVapor
 class SocialNetworkingCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)
+    let path = "social"
 
     override func setUpWithError() throws {
         try bootstrap(app)
@@ -25,35 +26,37 @@ class SocialNetworkingCollectionTests: XCTestCase {
         try app.autoMigrate().wait()
     }
 
-    func testCreate() throws {
+    func testCreate() {
         defer { app.shutdown() }
 
-        try assertCreateSocial(app)
+        XCTAssertNoThrow(try assertCreateSocialNetworking(app))
     }
 
-    func testAuthorizeRequire() throws {
+    func testAuthorizeRequire() {
         defer { app.shutdown() }
 
-        try app.test(.POST, "social", afterResponse: assertHttpUnauthorized)
-            .test(.GET, "social/" + UUID().uuidString, afterResponse: assertHttpNotFound)
+        XCTAssertNoThrow(
+            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
+            .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
             .test(.GET, "social", afterResponse: assertHttpNotFound)
-            .test(.PUT, "social/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, "social/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
+            .test(.PUT, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
+            .test(.DELETE, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
+        )
     }
 
-    func testQueryWithInvalidID() throws {
+    func testQueryWithInvalidID() {
         defer { app.shutdown() }
 
-        try app.test(.GET, "social/1", afterResponse: assertHttpNotFound)
+        XCTAssertNoThrow(try assertCreateSocialNetworking(app))
+        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithSocialID() throws {
         defer { app.shutdown() }
 
-        let tuple = try assertCreateSocial(app)
-        let socialNetworking = tuple.1
+        let socialNetworking = try assertCreateSocialNetworking(app)
 
-        try app.test(.GET, "social/\(socialNetworking.id!)", afterResponse: {
+        try app.test(.GET, path + "/\(socialNetworking.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(SocialNetworking.Coding.self)
@@ -64,41 +67,35 @@ class SocialNetworkingCollectionTests: XCTestCase {
     func testUpdate() throws {
         defer { app.shutdown() }
 
-        let tuple = try assertCreateSocial(app)
-
-        let headers = tuple.0
-        let socialNetworking = tuple.1
-
-        try app.test(.PUT, "social/\(socialNetworking.id!)", headers: headers, beforeRequest: {
-            try $0.content.encode(
-                SocialNetworking.Coding.init(
-                    url: "https://facebook.com",
-                    networkingServiceId: socialNetworking.id
-                )
-            )
+        let headers = try registUserAndLoggedIn(app)
+        let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
+        let upgrade = SocialNetworking.Coding.init(
+            url: "https://facebook.com",
+            service: socialNetworking.service
+        )
+        try app.test(.PUT, path + "/\(socialNetworking.id!)", headers: headers, beforeRequest: {
+            try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(SocialNetworking.Coding.self)
             XCTAssertEqual(coding.id, socialNetworking.id)
-            XCTAssertEqual(coding.url, "https://facebook.com")
-            XCTAssertEqual(coding.networkingService, socialNetworking.networkingService)
+            XCTAssertEqual(coding.url, upgrade.url)
+            XCTAssertEqual(coding.service, upgrade.service)
         })
     }
 
     func testDelete() throws {
         defer { app.shutdown() }
 
-        let tuple = try assertCreateSocial(app)
+        let headers = try registUserAndLoggedIn(app)
+        let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
 
-        let headers = tuple.0
-        let socialNetworking = tuple.1
-
-        try app.test(.DELETE, "social/\(socialNetworking.id!)", headers: headers, afterResponse: {
+        try app.test(.DELETE, path + "/\(socialNetworking.id!)", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-        }).test(.DELETE, "social/\(socialNetworking.id!)", headers: headers, afterResponse: {
+        }).test(.DELETE, path + "/\(socialNetworking.id!)", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
-        }).test(.DELETE, "social/1", headers: headers, afterResponse: {
+        }).test(.DELETE, path + "/1", headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
         })
     }

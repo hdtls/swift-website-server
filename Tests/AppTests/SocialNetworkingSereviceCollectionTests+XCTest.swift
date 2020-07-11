@@ -30,7 +30,6 @@ extension SocialNetworkingSereviceCollectionTests {
                 ("testCreate", testCreate),
                 ("testQueryWithInvalidID", testQueryWithInvalidID),
                 ("testQueryWithServiceID", testQueryWithServiceID),
-                ("testQueryAll", testQueryAll),
                 ("testUpdate", testUpdate),
                 ("testDeleteWithInvalidServiceID", testDeleteWithInvalidServiceID),
                 ("testDelete", testDelete),

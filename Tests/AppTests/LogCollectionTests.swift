@@ -17,6 +17,7 @@ import XCTVapor
 class LogCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)
+    let path = "login"
 
     override func setUpWithError() throws {
         try bootstrap(app)
@@ -33,9 +34,9 @@ class LogCollectionTests: XCTestCase {
         let wrongPasswordHeader = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTEx"))
         let wrongUsernameHeader = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDE6MTExMTEx"))
 
-        try app.test(.POST, "login", headers: wrongPasswordHeader, afterResponse: {
+        try app.test(.POST, path, headers: wrongPasswordHeader, afterResponse: {
             XCTAssertEqual($0.status, .unauthorized)
-        }).test(.POST, "login", headers: wrongUsernameHeader, afterResponse: {
+        }).test(.POST, path, headers: wrongUsernameHeader, afterResponse: {
             XCTAssertEqual($0.status, .unauthorized)
         })
     }
@@ -47,7 +48,7 @@ class LogCollectionTests: XCTestCase {
 
         let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTE="
         ))
-        try app.test(.POST, "login", headers: headers, afterResponse: {
+        try app.test(.POST, path, headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
         })
     }

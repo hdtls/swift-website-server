@@ -14,20 +14,10 @@
 import XCTVapor
 @testable import App
 
-var workExpCoding = WorkExp.Coding.init(
-    title: "iOS Developer",
-    companyName: "XXX",
-    location: "XXX",
-    startDate: "2020-02-20",
-    endDate: "-",
-    industry: [
-        Industry.Coding.init(title: "International Trade & Development")
-    ]
-)
-
 class WorkExpCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)
+    let path = "exp/works"
 
     override func setUpWithError() throws {
         try bootstrap(app)
@@ -36,86 +26,51 @@ class WorkExpCollectionTests: XCTestCase {
         try app.autoMigrate().wait()
     }
 
-    func testAuthorizeRequire() throws {
+    func testAuthorizeRequire() {
         defer { app.shutdown() }
 
         let uuid = UUID.init().uuidString
 
-        try app.test(.POST, "exp/works", afterResponse: assertHttpUnauthorized)
-            .test(.GET, "exp/works", afterResponse: assertHttpNotFound)
-            .test(.GET, "exp/works/" + uuid, afterResponse: assertHttpNotFound)
-            .test(.PUT, "exp/works/" + uuid, afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, "exp/works/" + uuid, afterResponse: assertHttpUnauthorized)
+        XCTAssertNoThrow(
+            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
+            .test(.GET, path, afterResponse: assertHttpNotFound)
+            .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
+            .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
+            .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
+        )
     }
 
-    func testCreate() throws {
+    func testCreate() {
         defer { app.shutdown() }
 
-        let headers = try registUserAndLoggedIn(app)
-
-        let industry = try assertCreateIndustry(app, industry: workExpCoding.industry.first)
-
-        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            workExpCoding.industry = [industry]
-            try $0.content.encode(workExpCoding)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-
-            let coding = try $0.content.decode(WorkExp.Coding.self)
-            XCTAssertNotNil(coding.id)
-            XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.title, workExpCoding.title)
-            XCTAssertEqual(coding.companyName, workExpCoding.companyName)
-            XCTAssertEqual(coding.location, workExpCoding.location)
-            XCTAssertEqual(coding.startDate, workExpCoding.startDate)
-            XCTAssertEqual(coding.endDate, workExpCoding.endDate)
-            XCTAssertEqual(coding.industry.count, 1)
-            XCTAssertNotNil(coding.industry.first!.id)
-            XCTAssertEqual(coding.industry.first!.title, industry.title)
-            XCTAssertNil(coding.headline)
-            XCTAssertNil(coding.responsibilities)
-        })
+        XCTAssertNoThrow(try assertCreateWorkExperiance(app))
     }
 
-    func testQueryWithInvalidWorkID() throws {
+    func testQueryWithInvalidWorkID() {
         defer { app.shutdown() }
 
-        try app.test(.GET, "exp/works/1", afterResponse: assertHttpNotFound)
+        XCTAssertNoThrow(try assertCreateWorkExperiance(app))
+        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithWorkID() throws {
         defer { app.shutdown() }
 
-        let headers = try registUserAndLoggedIn(app)
+        let exp = try assertCreateWorkExperiance(app)
 
-        let industry = try assertCreateIndustry(app, industry: workExpCoding.industry.first)
-
-        var workID: WorkExp.IDValue!
-
-        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            workExpCoding.industry = [industry]
-            try $0.content.encode(workExpCoding)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-
-            let coding = try $0.content.decode(WorkExp.Coding.self)
-            XCTAssertNotNil(coding.id)
-            workID = coding.id
-        })
-        .test(.GET, "exp/works/\(workID.uuidString)", afterResponse: {
+        try app.test(.GET, path + "/\(exp.id!.uuidString)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(WorkExp.Coding.self)
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.title, workExpCoding.title)
-            XCTAssertEqual(coding.companyName, workExpCoding.companyName)
-            XCTAssertEqual(coding.location, workExpCoding.location)
-            XCTAssertEqual(coding.startDate, workExpCoding.startDate)
-            XCTAssertEqual(coding.endDate, workExpCoding.endDate)
+            XCTAssertEqual(coding.title, exp.title)
+            XCTAssertEqual(coding.companyName, exp.companyName)
+            XCTAssertEqual(coding.location, exp.location)
+            XCTAssertEqual(coding.startDate, exp.startDate)
+            XCTAssertEqual(coding.endDate, exp.endDate)
             XCTAssertEqual(coding.industry.count, 1)
             XCTAssertNotNil(coding.industry.first!.id)
-            XCTAssertEqual(coding.industry.first!.title, industry.title)
             XCTAssertNil(coding.headline)
             XCTAssertNil(coding.responsibilities)
         })
@@ -125,37 +80,31 @@ class WorkExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         let headers = try registUserAndLoggedIn(app)
-        var workID: String!
 
-        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            try $0.content.encode(workExpCoding)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(WorkExp.Coding.self)
-            workID = coding.id!.uuidString
-        })
-        .test(.PUT, "exp/works/" + workID, headers: headers, beforeRequest: {
-            try $0.content.encode(
-                WorkExp.Coding.init(
-                    title: workExpCoding.title,
-                    companyName: workExpCoding.companyName,
-                    location: workExpCoding.location,
-                    startDate: workExpCoding.startDate,
-                    endDate: "2020-06-29",
-                    industry: []
-                )
-            )
+        let exp = try assertCreateWorkExperiance(app, headers: headers)
+
+        let upgrade = WorkExp.Coding.init(
+            title: exp.title,
+            companyName: exp.companyName,
+            location: exp.location,
+            startDate: exp.startDate,
+            endDate: "2020-06-29",
+            industry: []
+        )
+
+        try app.test(.PUT, path + "/" + exp.id!.uuidString, headers: headers, beforeRequest: {
+            try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(WorkExp.Coding.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.title, workExpCoding.title)
-            XCTAssertEqual(coding.companyName, workExpCoding.companyName)
-            XCTAssertEqual(coding.location, workExpCoding.location)
-            XCTAssertEqual(coding.startDate, workExpCoding.startDate)
-            XCTAssertEqual(coding.endDate, "2020-06-29")
+            XCTAssertEqual(coding.title, upgrade.title)
+            XCTAssertEqual(coding.companyName, upgrade.companyName)
+            XCTAssertEqual(coding.location, upgrade.location)
+            XCTAssertEqual(coding.startDate, upgrade.startDate)
+            XCTAssertEqual(coding.endDate, upgrade.endDate)
             XCTAssertEqual(coding.industry.count, 0)
             XCTAssertNil(coding.headline)
             XCTAssertNil(coding.responsibilities)
@@ -167,22 +116,18 @@ class WorkExpCollectionTests: XCTestCase {
 
         let headers = try registUserAndLoggedIn(app)
 
-        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            try $0.content.encode(workExpCoding)
-        }).test(.DELETE, "exp/works/1", headers: headers, afterResponse: assertHttpNotFound)
+        try assertCreateWorkExperiance(app, headers: headers)
+
+        try app.test(.DELETE, path + "/1", headers: headers, afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
         defer { app.shutdown() }
 
         let headers = try registUserAndLoggedIn(app)
-        var workID: String!
 
-        try app.test(.POST, "exp/works", headers: headers, beforeRequest: {
-            try $0.content.encode(workExpCoding)
-        }, afterResponse: {
-            let coding = try $0.content.decode(WorkExp.Coding.self)
-            workID = coding.id!.uuidString
-        }).test(.DELETE, "exp/works/" + workID, headers: headers, afterResponse: assertHttpOk)
+        let exp = try assertCreateWorkExperiance(app, headers: headers)
+
+        try app.test(.DELETE, path + "/\(exp.id!.uuidString)", headers: headers, afterResponse: assertHttpNotFound)
     }
 }

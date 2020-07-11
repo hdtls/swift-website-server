@@ -25,7 +25,6 @@ class SocialNetworkingServiceCollection: RouteCollection, RestfulApi {
         let path = PathComponent.parameter(restfulIDKey)
 
         routes.on(.POST, use: create)
-        routes.on(.GET, use: readAll)
         routes.on(.GET, path, use: read)
         routes.on(.PUT, path, use: update)
         routes.on(.DELETE, path, use: delete)
