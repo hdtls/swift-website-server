@@ -128,6 +128,6 @@ class WorkExpCollectionTests: XCTestCase {
 
         let exp = try assertCreateWorkExperiance(app, headers: headers)
 
-        try app.test(.DELETE, path + "/\(exp.id!.uuidString)", headers: headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/\(exp.id!.uuidString)", headers: headers, afterResponse: assertHttpOk)
     }
 }

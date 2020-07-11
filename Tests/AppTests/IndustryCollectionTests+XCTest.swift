@@ -28,6 +28,7 @@ extension IndustryCollectionTests {
    static var allTests : [(String, (IndustryCollectionTests) -> () throws -> Void)] {
       return [
                 ("testCreate", testCreate),
+                ("testCreateWithConflictIndustry", testCreateWithConflictIndustry),
                 ("testQueryWithInvalidID", testQueryWithInvalidID),
                 ("testQueryWithID", testQueryWithID),
                 ("testQueryAll", testQueryAll),

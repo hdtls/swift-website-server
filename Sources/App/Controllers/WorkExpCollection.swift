@@ -43,18 +43,13 @@ class WorkExpCollection: RouteCollection, RestfulApi {
         let exp = try T.__converted(coding)
 
         let industries = try coding.industry.map({ coding -> Industry in
-
             // `Industry.id` is not required by `Industry.__converted(_:)`, but
             // required by create relation of `workExp` and `industry`, so we will
             // add additional check to make sure it have `id` to attach with.
-            guard let id = coding.id else {
+            guard let coding.id != nil else {
                 throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
             }
-
-            // Only id is used by attach and detach relations.
-            let industry = Industry.init()
-            industry.id = id
-            return industry
+            return try Industry.__converted(coding)
         })
         
         exp.$user.id = try user.requireID()
@@ -99,7 +94,15 @@ class WorkExpCollection: RouteCollection, RestfulApi {
         let userID = try user.requireID()
         let coding = try req.content.decode(T.Coding.self)
         let upgrade = try T.__converted(coding)
-        let industries = try coding.industry.map(Industry.__converted)
+        let industries = try coding.industry.map({ coding -> Industry in
+            // `Industry.id` is not required by `Industry.__converted(_:)`, but
+            // required by create relation of `workExp` and `industry`, so we will
+            // add additional check to make sure it have `id` to attach with.
+            guard coding.id != nil else {
+                throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
+            }
+            return try Industry.__converted(coding)
+        })
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
@@ -114,7 +117,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             .flatMap({ saved -> EventLoopFuture<T> in
                 saved.__merge(upgrade)
 
-                let difference = saved.industry.difference(from: industries) {
+                let difference = industries.difference(from: saved.industry) {
                     $0.id == $1.id
                 }
 
@@ -127,6 +130,9 @@ class WorkExpCollection: RouteCollection, RestfulApi {
                     }
                 }), on: req.eventLoop)
                 .flatMap({
+                    saved.$industry.get(reload: true, on: req.db)
+                })
+                .flatMap({ _ in
                     saved.update(on: req.db)
                 })
                 .map({ saved })

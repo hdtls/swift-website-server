@@ -75,12 +75,12 @@ func registUserAndLoggedIn(
     return httpHeaders!
 }
 
-let socialNetworkingService = SocialNetworkingService.Coding.init(type: .twitter)
 @discardableResult
 func assertCreateSocialNetworkingService(
-    _ app: Application,
-    service: SocialNetworkingService.Coding = socialNetworkingService
+    _ app: Application
 ) throws -> SocialNetworkingService.Coding {
+
+    let socialNetworkingService = SocialNetworkingService.Coding.init(type: .twitter)
 
     var service: SocialNetworkingService.Coding!
 
@@ -151,22 +151,21 @@ func assertCreateIndustry(
     return coding
 }
 
-let workExpCoding = WorkExp.Coding.init(
-    title: "iOS Developer",
-    companyName: "XXX",
-    location: "XXX",
-    startDate: "2020-02-20",
-    endDate: "-",
-    industry: [
-        Industry.Coding.init(title: "International Trade & Development")
-    ]
-)
 @discardableResult
 func assertCreateWorkExperiance(
     _ app: Application,
-    headers: HTTPHeaders? = nil,
-    exp: WorkExp.Coding = workExpCoding
+    headers: HTTPHeaders? = nil
 ) throws -> WorkExp.Coding {
+    let exp = WorkExp.Coding.init(
+        title: "iOS Developer",
+        companyName: "XXX",
+        location: "XXX",
+        startDate: "2020-02-20",
+        endDate: "-",
+        industry: [
+            Industry.Coding.init(title: "International Trade & Development")
+        ]
+    )
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
     let industry = try assertCreateIndustry(app, industry: exp.industry.first)
 
@@ -197,13 +196,49 @@ func assertCreateWorkExperiance(
     return coding
 }
 
-let skill = Skill.Coding.init(profesional: ["xxx"], workflow: ["xxx"])
+@discardableResult
+func assertCreateEduExperiance(
+    _ app: Application,
+    headers: HTTPHeaders? = nil
+) throws -> EducationalExp.Coding {
+
+    let edu = EducationalExp.Coding.init(
+        school: "BALABALA",
+        degree: "PhD",
+        field: "xxx",
+        startYear: "2010",
+        activities: ["xxxxx"]
+    )
+
+    let headers = try registUserAndLoggedIn(app, headers: headers)
+    var coding: EducationalExp.Coding!
+
+    try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
+        try $0.content.encode(edu)
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+
+        coding = try $0.content.decode(EducationalExp.Coding.self)
+        XCTAssertNotNil(coding.id)
+        XCTAssertNotNil(coding.userId)
+        XCTAssertEqual(coding.school, edu.school)
+        XCTAssertEqual(coding.degree, edu.degree)
+        XCTAssertEqual(coding.field, edu.field)
+        XCTAssertEqual(coding.startYear, edu.startYear)
+        XCTAssertNil(coding.endYear)
+        XCTAssertEqual(coding.activities, edu.activities)
+        XCTAssertNil(coding.accomplishments)
+    })
+
+    return coding
+}
+
 @discardableResult
 func assertCreateSkill(
     _ app: Application,
-    headers: HTTPHeaders? = nil,
-    skill: Skill.Coding = skill
+    headers: HTTPHeaders? = nil
 ) throws -> Skill.Coding {
+    let skill = Skill.Coding.init(profesional: ["xxx"], workflow: ["xxx"])
 
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
 
@@ -223,13 +258,13 @@ func assertCreateSkill(
     return coding
 }
 
-let proj = Project.Coding.init(name: "proj", summary: "proj_summary", startDate: "start_date", endDate: "end_date")
 @discardableResult
 func assertCreateProj(
     _ app: Application,
-    headers: HTTPHeaders? = nil,
-    proj: Project.Coding = proj
+    headers: HTTPHeaders? = nil
 ) throws -> Project.Coding {
+
+    let proj = Project.Coding.init(name: "proj", summary: "proj_summary", startDate: "start_date", endDate: "end_date")
 
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
 

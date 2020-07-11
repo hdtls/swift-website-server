@@ -14,19 +14,10 @@
 import XCTVapor
 @testable import App
 
-let eduExpCoding = EducationalExp.Coding.init(
-    school: "BALABALA",
-    degree: "PhD",
-    field: "xxx",
-    startYear: "2010",
-    activities: ["xxxxx"]
-)
-
-//init(startAt: "2010-09-01", endAt: "2014-06-26", education: "Bachelor Degree")
-
 class EduExpCollectionTests: XCTestCase {
 
     let app = Application.init(.testing)
+    let path = "exp/edu"
 
     override func setUpWithError() throws {
         try bootstrap(app)
@@ -35,70 +26,50 @@ class EduExpCollectionTests: XCTestCase {
         try app.autoMigrate().wait()
     }
     
-    func testAuthorizeRequire() throws {
+    func testAuthorizeRequire() {
         defer { app.shutdown() }
 
         let uuid = UUID.init().uuidString
 
-        try app.test(.POST, "exp/edu", afterResponse: assertHttpUnauthorized)
-            .test(.GET, "exp/edu/" + uuid, afterResponse: assertHttpNotFound)
-            .test(.PUT, "exp/edu/" + uuid, afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, "exp/edu/" + uuid, afterResponse: assertHttpUnauthorized)
+        XCTAssertNoThrow(
+            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
+                .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
+                .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
+                .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
+        )
     }
 
-    func testCreate() throws {
+    func testCreate() {
         defer { app.shutdown() }
 
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-
-            let coding = try $0.content.decode(EducationalExp.Coding.self)
-            XCTAssertNotNil(coding.id)
-            XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.school, eduExpCoding.school)
-            XCTAssertEqual(coding.degree, eduExpCoding.degree)
-            XCTAssertEqual(coding.field, eduExpCoding.field)
-            XCTAssertEqual(coding.startYear, eduExpCoding.startYear)
-            XCTAssertNil(coding.endYear)
-            XCTAssertEqual(coding.activities, eduExpCoding.activities)
-            XCTAssertNil(coding.accomplishments)
-        })
+        XCTAssertNoThrow(try assertCreateEduExperiance(app))
     }
 
-    func testQueryWithInvalidEduID() throws {
+    func testQueryWithInvalidEduID() {
         defer { app.shutdown() }
-        try app.test(.GET, "exp/edu/1", afterResponse: assertHttpNotFound)
+
+        XCTAssertNoThrow(try assertCreateEduExperiance(app))
+        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithEduID() throws {
         defer { app.shutdown() }
 
-        let headers = try registUserAndLoggedIn(app)
+        let exp = try assertCreateEduExperiance(app)
 
-        var eduID: String!
-
-        try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        }, afterResponse: {
-            let coding = try $0.content.decode(EducationalExp.Coding.self)
-            eduID = coding.id!.uuidString
-        }).test(.GET, "exp/edu/" + eduID, afterResponse: {
+        try app.test(.GET, path + "/" + exp.id!.uuidString, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(EducationalExp.Coding.self)
-            XCTAssertNotNil(coding.id)
-            XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.school, eduExpCoding.school)
-            XCTAssertEqual(coding.degree, eduExpCoding.degree)
-            XCTAssertEqual(coding.field, eduExpCoding.field)
-            XCTAssertEqual(coding.startYear, eduExpCoding.startYear)
-            XCTAssertNil(coding.endYear)
-            XCTAssertEqual(coding.activities, eduExpCoding.activities)
-            XCTAssertNil(coding.accomplishments)
+            XCTAssertEqual(coding.id, exp.id)
+            XCTAssertEqual(coding.userId, exp.userId)
+            XCTAssertEqual(coding.school, exp.school)
+            XCTAssertEqual(coding.degree, exp.degree)
+            XCTAssertEqual(coding.field, exp.field)
+            XCTAssertEqual(coding.startYear, exp.startYear)
+            XCTAssertEqual(coding.endYear, exp.endYear)
+            XCTAssertEqual(coding.activities, exp.activities)
+            XCTAssertEqual(coding.accomplishments, exp.accomplishments)
         })
     }
 
@@ -106,40 +77,30 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         let headers = try registUserAndLoggedIn(app)
-
-        var eduID: String!
-
-        try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(EducationalExp.Coding.self)
-            eduID = coding.id!.uuidString
-        })
-        .test(.PUT, "exp/edu/" + eduID, headers: headers, beforeRequest: {
-            try $0.content.encode(
-                EducationalExp.Coding.init(
-                    school: "ABC",
-                    degree: "PhD",
-                    field: "xxx",
-                    startYear: "2010",
-                    activities: ["xxxxx"],
-                    accomplishments: ["xxxxxxx"]
-                )
-            )
+        let exp = try assertCreateEduExperiance(app, headers: headers)
+        let upgrade = EducationalExp.Coding.init(
+            school: "ABC",
+            degree: "PhD",
+            field: "xxx",
+            startYear: "2010",
+            activities: ["xxxxx"],
+            accomplishments: ["xxxxxxx"]
+        )
+        try app.test(.PUT, path + "/" + exp.id!.uuidString, headers: headers, beforeRequest: {
+            try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(EducationalExp.Coding.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.school, "ABC")
-            XCTAssertEqual(coding.degree, "PhD")
-            XCTAssertEqual(coding.field, "xxx")
-            XCTAssertEqual(coding.startYear, "2010")
-            XCTAssertNil(coding.endYear)
-            XCTAssertEqual(coding.activities, ["xxxxx"])
-            XCTAssertEqual(coding.accomplishments, ["xxxxxxx"])
+            XCTAssertEqual(coding.school, upgrade.school)
+            XCTAssertEqual(coding.degree, upgrade.degree)
+            XCTAssertEqual(coding.field, upgrade.field)
+            XCTAssertEqual(coding.startYear, upgrade.startYear)
+            XCTAssertEqual(coding.endYear, upgrade.endYear)
+            XCTAssertEqual(coding.activities, upgrade.activities)
+            XCTAssertEqual(coding.accomplishments, upgrade.accomplishments)
         })
     }
 
@@ -147,11 +108,8 @@ class EduExpCollectionTests: XCTestCase {
         defer { app.shutdown() }
 
         let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        })
-        .test(.DELETE, "exp/edu/1", headers: headers, afterResponse: assertHttpNotFound)
+        try assertCreateEduExperiance(app, headers: headers)
+        try app.test(.DELETE, path + "/1", headers: headers, afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
@@ -159,13 +117,8 @@ class EduExpCollectionTests: XCTestCase {
 
         let headers = try registUserAndLoggedIn(app)
 
-        var eduID: String!
+        let exp = try assertCreateEduExperiance(app, headers: headers)
 
-        try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
-            try $0.content.encode(eduExpCoding)
-        }, afterResponse: {
-            let coding = try $0.content.decode(EducationalExp.Coding.self)
-            eduID = coding.id!.uuidString
-        }).test(.DELETE, "exp/edu/" + eduID, headers: headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/" + exp.id!.uuidString, headers: headers, afterResponse: assertHttpOk)
     }
 }
