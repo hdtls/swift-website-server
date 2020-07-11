@@ -15,14 +15,17 @@ import Vapor
 
 class FileCollection: RouteCollection {
 
+    private let restfulIDKey = "id"
+
     func boot(routes: RoutesBuilder) throws {
-        routes.on(.GET, "static/:fileID", use: query)
+        let routes = routes.grouped("static")
+        routes.on(.GET, .parameter(restfulIDKey), use: read)
     }
 
     /// Query md file  with name `fileID` in public fold.
-    func query(_ req: Request) -> Response {
+    func read(_ req: Request) -> Response {
 
-        guard let fileID = req.parameters.get("fileID") else {
+        guard let fileID = req.parameters.get(restfulIDKey) else {
             return Response.init(status: .notFound)
         }
 

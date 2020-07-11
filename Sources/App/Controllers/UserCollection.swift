@@ -15,13 +15,13 @@ import Vapor
 
 class UserCollection: RouteCollection {
 
-    let restfulIDKey = "userID"
+    let restfulIDKey = "id"
 
     func boot(routes: RoutesBuilder) throws {
 
         let users = routes.grouped("users")
 
-        let path = PathComponent.init(stringLiteral: ":" + restfulIDKey)
+        let path = PathComponent.parameter(restfulIDKey)
 
         users.on(.POST, use: create)
         users.on(.GET, use: readAll)

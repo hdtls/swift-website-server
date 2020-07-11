@@ -16,7 +16,7 @@ import Fluent
 
 class ResumeCollection: RouteCollection {
 
-    let restfulIDKey = "userID"
+    let restfulIDKey = "id"
 
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped("users", .parameter(restfulIDKey), "resume")

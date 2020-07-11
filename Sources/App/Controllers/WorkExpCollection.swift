@@ -46,7 +46,8 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             // `Industry.id` is not required by `Industry.__converted(_:)`, but
             // required by create relation of `workExp` and `industry`, so we will
             // add additional check to make sure it have `id` to attach with.
-            guard let coding.id != nil else {
+
+            guard coding.id != nil else {
                 throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
             }
             return try Industry.__converted(coding)

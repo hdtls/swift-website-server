@@ -57,12 +57,11 @@ extension Industry: Transfer {
     static func __converted(_ coding: Coding) throws -> Industry {
         let industry = Industry.init()
         industry.id = coding.id
-        industry.title = coding.title
+        industry.title = coding.title ?? ""
         return industry
     }
 
     func __merge(_ another: Industry) {
-        id = another.id
         title = another.title
     }
 
