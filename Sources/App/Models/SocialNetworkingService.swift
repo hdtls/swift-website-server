@@ -28,12 +28,6 @@ extension SocialNetworking {
         @Enum(key: FieldKeys.type.rawValue)
         var type: ServiceType
 
-        @Field(key: FieldKeys.imageUrl.rawValue)
-        var imageUrl: String?
-
-        @Field(key: FieldKeys.html.rawValue)
-        var html: String?
-
         // MARK: Relations
         @Children(for: \.$service)
         var social: [SocialNetworking]
@@ -48,8 +42,6 @@ extension SocialNetworkingService {
 
     enum FieldKeys: FieldKey {
         case type
-        case imageUrl = "image_url"
-        case html
     }
 }
 
@@ -81,7 +73,7 @@ extension SocialNetworkingService {
         case stackOverflow = "StackOverflow"
         case mail = "Mail"
         case website = "Website"
-        case undefine
+        case undefined
     }
 }
 
@@ -89,31 +81,26 @@ extension SocialNetworkingService: Transfer {
 
     struct Coding: Content, Equatable {
         var id: SocialNetworkingService.IDValue?
-        var type: SocialNetworkingService.ServiceType
-        var imageUrl: String?
-        var html: String?
+
+        // `type` is require by create new service ignored when create social networking.
+        // so make it optional.
+        var type: SocialNetworkingService.ServiceType?
     }
 
     static func __converted(_ coding: Coding) throws -> SocialNetworkingService {
         let social = SocialNetworkingService.init()
-        social.type = coding.type
-        social.imageUrl = coding.imageUrl
-        social.html = coding.html
+        social.type = coding.type ?? .undefined
         return social
     }
 
     func __merge(_ another: SocialNetworkingService) {
         type = another.type
-        imageUrl = another.imageUrl
-        html = another.html
     }
 
     func __reverted() throws -> Coding {
         try Coding.init(
             id: requireID(),
-            type: type,
-            imageUrl: imageUrl,
-            html: html
+            type: type
         )
     }
 }

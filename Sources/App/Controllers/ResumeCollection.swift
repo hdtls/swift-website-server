@@ -52,8 +52,8 @@ class ResumeCollection: RouteCollection {
             .map({
                 [
                     Resume.Module.init(
-                        id: 0,
-                        title: "about",
+                        id: "profile",
+                        title: "个人资料",
                         profile: User.Coding.init(
                             firstName: $0.firstName,
                             lastName: $0.lastName,
@@ -64,10 +64,10 @@ class ResumeCollection: RouteCollection {
                             social: $0.social
                         )
                     ),
-                    Resume.Module.init(id: 1, title: "experiance", works: $0.workExps),
-                    Resume.Module.init(id: 2, title: "education", edu: $0.eduExps),
-                    Resume.Module.init(id: 3, title: "skill", skill: $0.skill),
-                    Resume.Module.init(id: 4, title: "interests", hobbies: $0.hobbies)
+                    Resume.Module.init(id: "experiance", title: "职业经历", works: $0.workExps),
+                    Resume.Module.init(id: "skills", title: "职业技能", skill: $0.skill),
+                    Resume.Module.init(id: "education", title: "教育经历", edu: $0.eduExps),
+                    Resume.Module.init(id: "interests", title: "兴趣爱好", hobbies: $0.hobbies)
                 ]
             })
     }

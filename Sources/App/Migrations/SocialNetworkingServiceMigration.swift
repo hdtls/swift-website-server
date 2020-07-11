@@ -32,8 +32,6 @@ extension SocialNetworkingService {
                     database.schema(SocialNetworkingService.schema)
                         .id()
                         .field(FieldKeys.type.rawValue, $0, .required)
-                        .field(FieldKeys.imageUrl.rawValue, .string)
-                        .field(FieldKeys.html.rawValue, .string)
                         .create()
                 })
         }

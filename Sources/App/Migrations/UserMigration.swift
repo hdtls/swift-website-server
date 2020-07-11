@@ -30,7 +30,7 @@ extension User {
                 .field(FieldKeys.screenName.rawValue, .string)
                 .field(FieldKeys.phone.rawValue, .string)
                 .field(FieldKeys.emailAddress.rawValue, .string)
-                .field(FieldKeys.aboutMe.rawValue, .string)
+                .field(FieldKeys.aboutMe.rawValue, .sql(raw: "VARCHAR(1024)"))
                 .field(FieldKeys.location.rawValue, .string)
                 .field(FieldKeys.createdAt.rawValue, .datetime, .required)
                 .field(FieldKeys.updatedAt.rawValue, .datetime, .required)

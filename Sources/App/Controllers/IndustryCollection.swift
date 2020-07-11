@@ -31,6 +31,9 @@ class IndustryCollection: RouteCollection, RestfulApi {
 
     func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let coding = try req.content.decode(T.Coding.self)
+        guard coding.title != nil else {
+            throw Abort.init(.badRequest, reason: "Value required for key 'industry.title'")
+        }
         let industry = try T.__converted(coding)
 
         return T.query(on: req.db)
@@ -51,6 +54,9 @@ class IndustryCollection: RouteCollection, RestfulApi {
 
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
         let coding = try req.content.decode(T.Coding.self)
+        guard coding.title != nil else {
+            throw Abort.init(.badRequest, reason: "Value required for key 'industry.title'")
+        }
         let upgrade = try T.__converted(coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {

@@ -57,15 +57,13 @@ extension SocialNetworking: UserChildren {
         var userId: User.IDValue?
         var url: String
 
-        /// `ID` of `networkingService` is require for create referance with `SocialNetworkingService`
-        /// This property only used for decoding. ignore by encoding.
-        var networkingServiceId: Service.IDValue?
-        var networkingService: Service.Coding?
+        /// `ID` of `service` is require for create referance with `SocialNetworkingService`
+        var service: Service.Coding?
     }
 
     static func __converted(_ coding: Coding) throws -> SocialNetworking {
-        guard let serviceID = coding.networkingServiceId else {
-            throw Abort.init(.badRequest, reason: "Value required for key 'socialNetworkingService.id'")
+        guard let serviceID = coding.service?.id else {
+            throw Abort.init(.badRequest, reason: "Value required for key 'service.id'")
         }
         let social = SocialNetworking.init()
         social.url = coding.url
@@ -83,7 +81,7 @@ extension SocialNetworking: UserChildren {
             id: requireID(),
             userId: $user.id,
             url: url,
-            networkingService: service.__reverted()
+            service: service.__reverted()
         )
     }
 }

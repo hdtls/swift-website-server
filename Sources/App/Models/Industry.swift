@@ -50,15 +50,17 @@ extension Industry: Transfer {
         // `id` should not be nil except for creation action.
         var id: IDValue?
 
-        // `title` can be nil except create new industry.
+        // `title` can be nil except create & update new industry.
         var title: String?
     }
 
     static func __converted(_ coding: Coding) throws -> Industry {
-        guard let title = coding.title else {
-            throw Abort.init(.badRequest, reason: "Value required for key 'industry.title'")
+        let industry = Industry.init()
+        industry.id = coding.id
+        if let title = coding.title {
+            industry.title = title
         }
-        return Industry.init(title: title)
+        return industry
     }
 
     func __merge(_ another: Industry) {

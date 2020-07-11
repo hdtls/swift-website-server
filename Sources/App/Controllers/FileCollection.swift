@@ -16,7 +16,7 @@ import Vapor
 class FileCollection: RouteCollection {
 
     func boot(routes: RoutesBuilder) throws {
-        routes.on(.GET, "md/:fileID", use: query)
+        routes.on(.GET, "static/:fileID", use: query)
     }
 
     /// Query md file  with name `fileID` in public fold.

@@ -17,7 +17,7 @@ struct Resume {
 
     struct Module: Content {
 
-        var id: Int
+        var id: String
         var title: String
         var profile: User.Coding?
         var works: [WorkExp.Coding]?

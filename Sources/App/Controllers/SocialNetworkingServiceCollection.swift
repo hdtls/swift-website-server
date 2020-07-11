@@ -30,4 +30,16 @@ class SocialNetworkingServiceCollection: RouteCollection, RestfulApi {
         routes.on(.PUT, path, use: update)
         routes.on(.DELETE, path, use: delete)
     }
+
+    func create(_ req: Request) throws -> EventLoopFuture<SocialNetworking.Service.Coding> {
+        let coding = try req.content.decode(T.Coding.self)
+        guard coding.type != nil else {
+            throw Abort.init(.badRequest, reason: "Value required for key 'type'")
+        }
+        let model = try T.__converted(coding)
+        return model.save(on: req.db)
+            .flatMapThrowing({
+                try model.__reverted()
+            })
+    }
 }

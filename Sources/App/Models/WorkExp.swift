@@ -43,7 +43,7 @@ final class WorkExp: Model {
     var headline: String?
 
     @Field(key: FieldKeys.responsibilities.rawValue)
-    var responsibilities: String?
+    var responsibilities: [String]?
 
     @Field(key: FieldKeys.media.rawValue)
     var media: String?
@@ -66,8 +66,8 @@ extension WorkExp {
         case title
         case companyName = "campany_name"
         case location
-        case startDate = "from"
-        case endDate = "to"
+        case startDate = "start_date"
+        case endDate = "end_date"
         case headline
         case responsibilities
         case media
@@ -90,7 +90,7 @@ extension WorkExp: UserChildren {
         var startDate: String
         var endDate: String
         var headline: String?
-        var responsibilities: String?
+        var responsibilities: [String]?
         var media: String?
 
         // MARK: Relations
