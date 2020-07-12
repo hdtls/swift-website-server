@@ -39,8 +39,7 @@ public func bootstrap(_ app: Application) throws {
     app.middleware.use(FileMiddleware.init(publicDirectory: app.directory.publicDirectory))
 
     app.databases.use(.mysql(
-        hostname: "127.0.0.1",
-        port: app.environment == .testing ? 3308 : (app.environment == .development ? 3307 : 3306),
+        hostname: Env.get("MYSQL_HOSTNAME") ?? "127.0.0.1",
         username: "vapor",
         password: "vapor.mysql",
         database: "website",
