@@ -1,49 +1,40 @@
-name: 'Build test and push Docker images'
+name: CI
 
-on:
-  push:
-    tags:
-      - '*'
+on: [ push, pull_request]
 
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  # test:
-    # runs-on: ubuntu-18.04
+  test:
+    container: swift:5.2
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_USER: vapor
+          MYSQL_PASSWORD: vapor.mysql
+          MYSQL_DATABASE: website
+    steps:
+      - name: Check out test case
+        uses: actions/checkout@v2
+      - name: Run tests with Thread Sanitizer
+        env:
+          MYSQL_HOSTNAME: mysql
+        run: swift test --enable-test-discovery --sanitize=thread
 
-    # steps:
-      # - uses: actions/checkout@v2
-
-      # - name: Run tests
-        # run: |
-          # if [ -f docker-compose.test.yml ]; then
-            # docker-compose --file docker-compose.test.yml build
-            # docker-compose --file docker-compose.test.yml run sut
-          # else
-            # docker build . --file Dockerfile
-          # fi
-
-  # Push image to GitHub Packages.
-  # See also https://docs.docker.com/docker-hub/builds/
-  push:
-    # Ensure test job passes before pushing image.
-    # needs: test
-
-    runs-on: ubuntu-18.04
-
+  push_to_registry:
+    if: ${{ startsWith(github.ref, 'refs/tags/*') }}
+    needs: test
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      - name: 'Build and push Docker images'
+      - name: Build and push docker to registry
         uses: docker/build-push-action@v1.1.0
         with:
-          # Username used to log in to a Docker registry. If not set then no login will occur
-          username: ${{ secrets.DOCKER_USERNAME }}
-          # Password or personal access token used to log in to a Docker registry. If not set then no login will occur
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          # Server address of Docker registry. If not set then will default to Docker Hub
+          dockerfile: ./docker/Dockerfile
           registry: ${{ secrets.DOCKER_REGISTRY }}
-          # Docker repository to tag the image with
+          username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           repository: ${{ github.repository }}
-          # Automatically tags the built image with the git reference as per the readme
           tag_with_ref: true
+          tags: latest
