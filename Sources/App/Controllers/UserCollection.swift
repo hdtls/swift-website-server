@@ -14,6 +14,7 @@
 import Vapor
 
 class UserCollection: RouteCollection {
+    let profile = "profile/"
 
     let restfulIDKey = "id"
 
@@ -33,7 +34,7 @@ class UserCollection: RouteCollection {
             User.guardMiddleware(),
             Token.guardMiddleware()
         ])
-        trusted.on(.PUT, path, use: update)
+        trusted.on(.PUT, path, body: .collect(maxSize: "100kb"), use: update)
     }
 
     /// Register new user with `User.Creation` msg. when success a new user and token is registed.
@@ -41,7 +42,7 @@ class UserCollection: RouteCollection {
     /// - note: We make `username` unique so if the `username` already taken an `conflic` statu will be
     /// send to custom.
     func create(_ req: Request) throws -> EventLoopFuture<AuthorizeMsg> {
-        try User.Creation.validate(req)
+        try User.Creation.validate(content: req)
         
         let user = try User.init(req.content.decode(User.Creation.self))
 
@@ -135,13 +136,30 @@ class UserCollection: RouteCollection {
         let coding = try req.content.decode(User.Coding.self)
         let upgrade = try User.__converted(coding)
 
-        return User.find(userId, on: req.db)
+        var eventLoopFuture = User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
-            .flatMap({ saved -> EventLoopFuture<User> in
-                saved.__merge(upgrade)
-                let newValue = saved
-                return newValue.update(on: req.db).map({ newValue })
-            })
+
+        // Save avatar to public folder
+        if let image = coding.avatar {
+            let filename = profile + Insecure.MD5.hash(data: image).hex
+            let path = req.application.directory.publicDirectory + "images/" + filename
+            eventLoopFuture = eventLoopFuture
+                .flatMap({ saved -> EventLoopFuture<User> in
+                    req.fileio.writeFile(.init(data: image), at: path).flatMap({
+                        saved.__merge(upgrade)
+                        saved.avatarUrl = filename
+                        return saved.update(on: req.db).map({ saved })
+                    })
+                })
+        } else {
+            eventLoopFuture = eventLoopFuture
+                .flatMap({ saved -> EventLoopFuture<User> in
+                    saved.__merge(upgrade)
+                    return saved.update(on: req.db).map({ saved })
+                })
+        }
+
+        return eventLoopFuture
             .flatMapThrowing({
                 try $0.__reverted()
             })

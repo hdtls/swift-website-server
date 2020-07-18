@@ -22,6 +22,7 @@ ENV APP_SERVE_MODE=$APP_SERVE_MODE \
     APP_SERVE_PORT=$APP_SERVE_PORT
 
 COPY --from=builder /build/bin/Run .
+COPY --from=builder /build/Public ./Public
 
 ENTRYPOINT [ "./Run", "serve" ]
 CMD [ "--env", "$APP_SERVE_MODE", "--hostname", "0.0.0.0", "--port", "$APP_SERVE_PORT"

@@ -28,6 +28,7 @@ extension User {
                 .field(FieldKeys.firstName.rawValue, .string, .required)
                 .field(FieldKeys.lastName.rawValue, .string, .required)
                 .field(FieldKeys.screenName.rawValue, .string)
+                .field(FieldKeys.avatarUrl.rawValue, .string)
                 .field(FieldKeys.phone.rawValue, .string)
                 .field(FieldKeys.emailAddress.rawValue, .string)
                 .field(FieldKeys.aboutMe.rawValue, .sql(raw: "VARCHAR(1024)"))

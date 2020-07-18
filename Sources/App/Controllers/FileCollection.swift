@@ -18,8 +18,8 @@ class FileCollection: RouteCollection {
     private let restfulIDKey = "id"
 
     func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped("static")
-        routes.on(.GET, .parameter(restfulIDKey), use: read)
+        routes.on(.GET, "static", .parameter(restfulIDKey), use: read)
+        routes.on(.GET, "images", .parameter(restfulIDKey), use: read)
     }
 
     /// Query md file  with name `fileID` in public fold.

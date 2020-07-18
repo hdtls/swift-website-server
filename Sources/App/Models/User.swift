@@ -40,19 +40,22 @@ final class User: Model {
     @Field(key: FieldKeys.lastName.rawValue)
     var lastName: String
 
-    @Field(key: FieldKeys.screenName.rawValue)
+    @OptionalField(key: FieldKeys.screenName.rawValue)
     var screenName: String?
 
-    @Field(key: FieldKeys.phone.rawValue)
+    @OptionalField(key: FieldKeys.avatarUrl.rawValue)
+    var avatarUrl: String?
+
+    @OptionalField(key: FieldKeys.phone.rawValue)
     var phone: String?
 
-    @Field(key: FieldKeys.emailAddress.rawValue)
+    @OptionalField(key: FieldKeys.emailAddress.rawValue)
     var emailAddress: String?
 
-    @Field(key: FieldKeys.aboutMe.rawValue)
+    @OptionalField(key: FieldKeys.aboutMe.rawValue)
     var aboutMe: String?
 
-    @Field(key: FieldKeys.location.rawValue)
+    @OptionalField(key: FieldKeys.location.rawValue)
     var location: String?
 
     @Timestamp(key: FieldKeys.createdAt.rawValue, on: .create)
@@ -80,7 +83,7 @@ final class User: Model {
     @Children(for: \.$user)
     var skill: [Skill]
 
-    @Field(key: FieldKeys.hobbies.rawValue)
+    @OptionalField(key: FieldKeys.hobbies.rawValue)
     var hobbies: [String]?
 
     // MARK: Initializer
@@ -93,6 +96,7 @@ final class User: Model {
         firstName: String,
         lastName: String,
         screenName: String? = nil,
+        avatarUrl: String? = nil,
         phone: String? = nil,
         emailAddress: String? = nil,
         aboutMe: String? = nil,
@@ -105,6 +109,7 @@ final class User: Model {
         self.firstName = firstName
         self.lastName = lastName
         self.screenName = screenName
+        self.avatarUrl = avatarUrl
         self.phone = phone
         self.emailAddress = emailAddress
         self.aboutMe = aboutMe
@@ -122,6 +127,7 @@ extension User {
         case firstName = "first_name"
         case lastName = "last_name"
         case screenName = "screen_name"
+        case avatarUrl = "avatar_url"
         case phone
         case emailAddress = "email_address"
         case aboutMe = "about_me"
@@ -184,6 +190,8 @@ extension User: Transfer {
         var firstName: String
         var lastName: String
         var screenName: String?
+        var avatarUrl: String?
+        var avatar: Data?
         var phone: String?
         var emailAddress: String?
         var aboutMe: String?
@@ -225,6 +233,7 @@ extension User: Transfer {
         firstName = user.firstName
         lastName = user.lastName
         screenName = user.screenName
+        avatarUrl = user.avatarUrl
         phone = user.phone
         emailAddress = user.emailAddress
         aboutMe = user.aboutMe
@@ -237,6 +246,7 @@ extension User: Transfer {
         coding.id = try requireID()
         coding.username = username
         coding.screenName = screenName
+        coding.avatarUrl = avatarUrl
         coding.phone = phone
         coding.emailAddress = emailAddress
         coding.aboutMe = aboutMe
