@@ -39,13 +39,13 @@ final class WorkExp: Model {
     @Field(key: FieldKeys.endDate.rawValue)
     var endDate: String
 
-    @Field(key: FieldKeys.headline.rawValue)
+    @OptionalField(key: FieldKeys.headline.rawValue)
     var headline: String?
 
-    @Field(key: FieldKeys.responsibilities.rawValue)
+    @OptionalField(key: FieldKeys.responsibilities.rawValue)
     var responsibilities: [String]?
 
-    @Field(key: FieldKeys.media.rawValue)
+    @OptionalField(key: FieldKeys.media.rawValue)
     var media: String?
 
     // MARK: Relations

@@ -25,7 +25,7 @@ final class Token: Model {
     @Field(key: FieldKeys.token.rawValue)
     var token: String
 
-    @Field(key: FieldKeys.expiresAt.rawValue)
+    @OptionalField(key: FieldKeys.expiresAt.rawValue)
     var expiresAt: Date?
 
     // MARK: Relations

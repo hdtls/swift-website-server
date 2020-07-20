@@ -23,10 +23,10 @@ final class Skill: Model {
     @ID()
     var id: IDValue?
 
-    @Field(key: FieldKeys.profesional.rawValue)
+    @OptionalField(key: FieldKeys.profesional.rawValue)
     var profesional: [String]?
 
-    @Field(key: FieldKeys.workflow.rawValue)
+    @OptionalField(key: FieldKeys.workflow.rawValue)
     var workflow: [String]?
 
     @Parent(key: FieldKeys.user.rawValue)

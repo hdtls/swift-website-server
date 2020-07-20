@@ -33,22 +33,22 @@ final class EducationalExp: Model {
     @Field(key: FieldKeys.field.rawValue)
     var field: String
 
-    @Field(key: FieldKeys.startYear.rawValue)
+    @OptionalField(key: FieldKeys.startYear.rawValue)
     var startYear: String?
 
-    @Field(key: FieldKeys.endYear.rawValue)
+    @OptionalField(key: FieldKeys.endYear.rawValue)
     var endYear: String?
 
-    @Field(key: FieldKeys.grade.rawValue)
+    @OptionalField(key: FieldKeys.grade.rawValue)
     var grade: String?
 
-    @Field(key: FieldKeys.activities.rawValue)
+    @OptionalField(key: FieldKeys.activities.rawValue)
     var activities: [String]?
 
-    @Field(key: FieldKeys.accomplishments.rawValue)
+    @OptionalField(key: FieldKeys.accomplishments.rawValue)
     var accomplishments: [String]?
 
-    @Field(key: FieldKeys.media.rawValue)
+    @OptionalField(key: FieldKeys.media.rawValue)
     var media: String?
 
     // MARK: Relations

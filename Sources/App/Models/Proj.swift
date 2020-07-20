@@ -26,7 +26,7 @@ final class Project: Model {
     @Field(key: FieldKeys.name.rawValue)
     var name: String
 
-    @Field(key: FieldKeys.categories.rawValue)
+    @OptionalField(key: FieldKeys.categories.rawValue)
     var categories: [String]?
 
     @Field(key: FieldKeys.summary.rawValue)
