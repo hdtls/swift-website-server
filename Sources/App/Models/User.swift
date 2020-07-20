@@ -191,7 +191,6 @@ extension User: Transfer {
         var lastName: String
         var screenName: String?
         var avatarUrl: String?
-        var avatar: Data?
         var phone: String?
         var emailAddress: String?
         var aboutMe: String?

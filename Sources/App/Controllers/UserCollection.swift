@@ -22,19 +22,17 @@ class UserCollection: RouteCollection {
 
         let users = routes.grouped("users")
 
-        let path = PathComponent.parameter(restfulIDKey)
-
         users.on(.POST, use: create)
         users.on(.GET, use: readAll)
-        users.on(.GET, path, use: read)
+        users.on(.GET, .parameter(restfulIDKey), use: read)
 
         let trusted = users.grouped([
             User.authenticator(),
             Token.authenticator(),
-            User.guardMiddleware(),
-            Token.guardMiddleware()
+            User.guardMiddleware()
         ])
-        trusted.on(.PUT, path, body: .collect(maxSize: "100kb"), use: update)
+        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
+        trusted.on(.PATCH, .parameter(restfulIDKey), "profile", body: .collect(maxSize: "100kb"), use: patch)
     }
 
     /// Register new user with `User.Creation` msg. when success a new user and token is registed.
@@ -136,30 +134,37 @@ class UserCollection: RouteCollection {
         let coding = try req.content.decode(User.Coding.self)
         let upgrade = try User.__converted(coding)
 
-        var eventLoopFuture = User.find(userId, on: req.db)
+        return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
+            .flatMap({ saved -> EventLoopFuture<User> in
+                saved.__merge(upgrade)
+                return saved.update(on: req.db).map({ saved })
+            })
+            .flatMapThrowing({
+                try $0.__reverted()
+            })
+    }
 
-        // Save avatar to public folder
-        if let image = coding.avatar {
-            let filename = profile + Insecure.MD5.hash(data: image).hex
-            let path = req.application.directory.publicDirectory + "images/" + filename
-            eventLoopFuture = eventLoopFuture
-                .flatMap({ saved -> EventLoopFuture<User> in
-                    req.fileio.writeFile(.init(data: image), at: path).flatMap({
-                        saved.__merge(upgrade)
-                        saved.avatarUrl = filename
-                        return saved.update(on: req.db).map({ saved })
-                    })
-                })
-        } else {
-            eventLoopFuture = eventLoopFuture
-                .flatMap({ saved -> EventLoopFuture<User> in
-                    saved.__merge(upgrade)
-                    return saved.update(on: req.db).map({ saved })
-                })
+    func patch(_ req: Request) throws -> EventLoopFuture<User.Coding> {
+        let userId = try req.auth.require(User.self).requireID()
+
+        struct Payload: Decodable {
+            var image: Data
         }
 
-        return eventLoopFuture
+        let payload = try req.content.decode(Payload.self)
+
+        let filename = profile + Insecure.MD5.hash(data: payload.image).hex
+        let path = req.application.directory.publicDirectory + "images/" + filename
+
+        return User.find(userId, on: req.db)
+            .unwrap(or: Abort.init(.notFound))
+            .flatMap({ saved -> EventLoopFuture<User> in
+                req.fileio.writeFile(.init(data: payload.image), at: path).flatMap({
+                    saved.avatarUrl = req.headers.first(name: .host)! + "/images/" + filename
+                    return saved.update(on: req.db).map({ saved })
+                })
+            })
             .flatMapThrowing({
                 try $0.__reverted()
             })
