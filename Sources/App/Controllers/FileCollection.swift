@@ -69,21 +69,11 @@ class FileCollection: RouteCollection {
     }
 
     func create(_ req: Request) throws -> EventLoopFuture<[String]> {
-        try uploadMultipleFiles(req).flatMapEachThrowing({ req.fileURL($0)! })
+        try uploadMultipleFiles(req).flatMapEachThrowing({ $0.absoluteURLString })
     }
 
     /// Query file  at path `url` in public fold.
     func read(_ req: Request) -> Response {
         return req.fileio.streamFile(at: req.application.directory.publicDirectory + req.url.string)
-    }
-}
-
-extension Request {
-
-    func fileURL(_ path: String?) -> String? {
-        guard let path = path else {
-            return nil
-        }
-        return (headers.first(name: .host) ?? "") + path
     }
 }

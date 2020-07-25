@@ -4,8 +4,6 @@ import FluentMySQLDriver
 
 /// Called before your application initializes.
 public func bootstrap(_ app: Application) throws {
-
-    app.http.server.configuration.port = 8181
     
     // JSON configuration
     let encoder = JSONEncoder()

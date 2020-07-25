@@ -232,7 +232,7 @@ extension User: Transfer {
         coding.id = try requireID()
         coding.username = username
         coding.screenName = screenName
-        coding.avatarUrl = avatarUrl
+        coding.avatarUrl = avatarUrl?.absoluteURLString
         coding.phone = phone
         coding.emailAddress = emailAddress
         coding.aboutMe = aboutMe

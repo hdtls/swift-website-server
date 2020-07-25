@@ -111,9 +111,7 @@ class UserCollection: RouteCollection {
         return queryBuilder
             .all()
             .flatMapEachThrowing({
-                var coding = try $0.__reverted()
-                coding.avatarUrl = req.fileURL(coding.avatarUrl)
-                return coding
+                try $0.__reverted()
             })
     }
 
@@ -130,9 +128,7 @@ class UserCollection: RouteCollection {
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({
-                var coding = try $0.__reverted()
-                coding.avatarUrl = req.fileURL(coding.avatarUrl)
-                return coding
+                try $0.__reverted()
             })
     }
 
@@ -152,9 +148,7 @@ class UserCollection: RouteCollection {
                 }
             })
             .flatMapThrowing({
-                var coding = try $0.__reverted()
-                coding.avatarUrl = req.fileURL(coding.avatarUrl)
-                return coding
+                try $0.__reverted()
             })
     }
 }
