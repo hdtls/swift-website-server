@@ -32,22 +32,6 @@ include FileUtils
 #
 def header(fileName)
   string = <<-eos
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the website-backend open source project
-//
-// Copyright © 2020 Eli Zhang and the website-backend project authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE.txt for license information
-// See CONTRIBUTORS.txt for the list of SwiftNIO project authors
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-//
-// <FileName>
-//
 import XCTest
 
 ///
