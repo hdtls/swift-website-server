@@ -1,21 +1,6 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the website-backend open source project
-//
-// Copyright © 2020 Eli Zhang and the website-backend project authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE for license information
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-
 import Vapor
 import Fluent
 import FluentMySQLDriver
-
-typealias Env = Environment
 
 /// Called before your application initializes.
 public func bootstrap(_ app: Application) throws {
@@ -39,11 +24,11 @@ public func bootstrap(_ app: Application) throws {
     app.middleware.use(FileMiddleware.init(publicDirectory: app.directory.publicDirectory))
 
     app.databases.use(.mysql(
-        hostname: Env.get("MYSQL_HOSTNAME") ?? "127.0.0.1",
-        username: "vapor",
-        password: "vapor.mysql",
-        database: "website",
-        tlsConfiguration: .none
+        hostname: Environment.get("DATABASE_HOST") ?? "localhost",
+        username: Environment.get("DATABASE_USERNAME") ?? "vapor_username",
+        password: Environment.get("DATABASE_PASSWORD") ?? "vapor_password",
+        database: Environment.get("DATABASE_NAME") ?? "vapor_database",
+        tlsConfiguration: .forClient(certificateVerification: .none)
         ), as: .mysql)
 
     app.migrations.add(User.migration)
@@ -56,6 +41,8 @@ public func bootstrap(_ app: Application) throws {
     app.migrations.add(SocialNetworkingService.migration)
     app.migrations.add(Skill.migration)
     app.migrations.add(Project.migration)
+
+    try app.autoMigrate().wait()
 
     // Register routes
     try routes(app)
