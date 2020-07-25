@@ -1,16 +1,3 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the website-backend open source project
-//
-// Copyright © 2020 Eli Zhang and the website-backend project authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE for license information
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-
 import Vapor
 
 class UserCollection: RouteCollection {
@@ -124,7 +111,9 @@ class UserCollection: RouteCollection {
         return queryBuilder
             .all()
             .flatMapEachThrowing({
-                try $0.__reverted()
+                var coding = try $0.__reverted()
+                coding.avatarUrl = req.fileURL(coding.avatarUrl)
+                return coding
             })
     }
 
@@ -141,32 +130,31 @@ class UserCollection: RouteCollection {
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                var coding = try $0.__reverted()
+                coding.avatarUrl = req.fileURL(coding.avatarUrl)
+                return coding
             })
     }
 
     func patch(_ req: Request) throws -> EventLoopFuture<User.Coding> {
         let userId = try req.auth.require(User.self).requireID()
-
-        struct Payload: Decodable {
-            var image: Data
-        }
-
-        let payload = try req.content.decode(Payload.self)
-
-        let filename = profile + Insecure.MD5.hash(data: payload.image).hex
-        let path = req.application.directory.publicDirectory + "images/" + filename
-
         return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ saved -> EventLoopFuture<User> in
-                req.fileio.writeFile(.init(data: payload.image), at: path).flatMap({
-                    saved.avatarUrl = req.headers.first(name: .host)! + "/images/" + filename
-                    return saved.update(on: req.db).map({ saved })
-                })
+                do {
+                    return try uploadMultipleFiles(req)
+                        .flatMap({
+                            saved.avatarUrl = $0.first!
+                            return saved.update(on: req.db).map({ saved })
+                        })
+                } catch {
+                    return req.eventLoop.makeFailedFuture(error)
+                }
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                var coding = try $0.__reverted()
+                coding.avatarUrl = req.fileURL(coding.avatarUrl)
+                return coding
             })
     }
 }

@@ -1,34 +1,89 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the website-backend open source project
-//
-// Copyright © 2020 Eli Zhang and the website-backend project authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE for license information
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-
 import Vapor
+
+func uploadMultipleFiles(
+    _ req: Request,
+    path: String = "images"
+) throws -> EventLoopFuture<[String]> {
+
+    struct MultipartFormData: Decodable {
+        var multipart: [Data]
+    }
+
+    let multipartFormData = try req.content.decode(MultipartFormData.self)
+
+    guard !multipartFormData.multipart.isEmpty else {
+        throw Abort(.badRequest)
+    }
+
+    let fileDescriptors: [(Data, String)] = try multipartFormData.multipart.map({
+        let filename = Insecure.MD5.hash(data: $0).hex
+        var substring = filename.prefix(6)
+        var filepath = path + "/"
+
+        let maxLength = 2
+        while substring.count >= maxLength {
+            filepath += substring.prefix(maxLength) + "/"
+            substring.removeFirst(maxLength)
+        }
+
+        try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+
+        // TODO: Decode file extension from formdata.
+        let fileExtension = path == "images" ? ".jpg" : ""
+        filepath += filename + fileExtension
+        return ($0, filepath)
+    })
+
+    return EventLoopFuture<Void>.andAllSucceed(fileDescriptors.map({
+        req.fileio.writeFile(.init(data: $0.0), at: req.application.directory.publicDirectory + $0.1)
+    }), on: req.eventLoop)
+    .map({
+        fileDescriptors.map({
+            "/" + $0.1
+        })
+    })
+}
 
 class FileCollection: RouteCollection {
 
-    private let restfulIDKey = "id"
+    let path: String
+    let maximumBodySize: ByteCount
 
-    func boot(routes: RoutesBuilder) throws {
-        routes.on(.GET, "static", .parameter(restfulIDKey), use: read)
-        routes.on(.GET, "images", .parameter(restfulIDKey), use: read)
+    init(path: String, maximumBodySize: ByteCount = "1mb") {
+        self.path = path
+        self.maximumBodySize = maximumBodySize
     }
 
-    /// Query md file  with name `fileID` in public fold.
+    func boot(routes: RoutesBuilder) throws {
+        let routes = routes.grouped(.init(stringLiteral: path))
+
+        routes.on(.GET, .anything, use: read)
+
+        let trusted = routes.grouped([
+            User.authenticator(),
+            Token.authenticator(),
+            User.guardMiddleware()
+        ])
+
+        trusted.on(.POST, body: .collect(maxSize: maximumBodySize), use: create)
+    }
+
+    func create(_ req: Request) throws -> EventLoopFuture<[String]> {
+        try uploadMultipleFiles(req).flatMapEachThrowing({ req.fileURL($0)! })
+    }
+
+    /// Query file  at path `url` in public fold.
     func read(_ req: Request) -> Response {
+        return req.fileio.streamFile(at: req.application.directory.publicDirectory + req.url.string)
+    }
+}
 
-        guard let fileID = req.parameters.get(restfulIDKey) else {
-            return Response.init(status: .notFound)
+extension Request {
+
+    func fileURL(_ path: String?) -> String? {
+        guard let path = path else {
+            return nil
         }
-
-        return req.fileio.streamFile(at: req.application.directory.publicDirectory + fileID)
+        return (headers.first(name: .host) ?? "") + path
     }
 }
