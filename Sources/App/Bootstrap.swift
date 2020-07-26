@@ -41,7 +41,7 @@ public func bootstrap(_ app: Application) throws {
     app.migrations.add(Project.migration)
 
     try app.autoMigrate().wait()
-
+    
     // Register routes
     try routes(app)
 }
