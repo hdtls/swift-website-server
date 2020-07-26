@@ -8,18 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:5.7
+        image: mysql
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: true
-          MYSQL_USER: vapor
-          MYSQL_PASSWORD: vapor.mysql
-          MYSQL_DATABASE: website
+          MYSQL_USER: vapor_username
+          MYSQL_PASSWORD: vapor_password
+          MYSQL_DATABASE: vapor_database
+          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
     steps:
       - name: Check out test case
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer
         env:
-          MYSQL_HOSTNAME: mysql
+          DATABASE_HOST: mysql
         run: swift test --enable-test-discovery --sanitize=thread
 
   push_to_registry:
