@@ -1,21 +1,11 @@
 import XCTVapor
 @testable import App
 
-class EduExpCollectionTests: XCTestCase {
+class EduExpCollectionTests: XCAppCase {
 
-    let app = Application.init(.testing)
     let path = "exp/edu"
 
-    override func setUpWithError() throws {
-        try bootstrap(app)
-
-        try app.autoRevert().wait()
-        try app.autoMigrate().wait()
-    }
-    
     func testAuthorizeRequire() {
-        defer { app.shutdown() }
-
         let uuid = UUID.init().uuidString
 
         XCTAssertNoThrow(
@@ -27,21 +17,15 @@ class EduExpCollectionTests: XCTestCase {
     }
 
     func testCreate() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(try assertCreateEduExperiance(app))
     }
 
     func testQueryWithInvalidEduID() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(try assertCreateEduExperiance(app))
         XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithEduID() throws {
-        defer { app.shutdown() }
-
         let exp = try assertCreateEduExperiance(app)
 
         try app.test(.GET, path + "/" + exp.id!.uuidString, afterResponse: {
@@ -61,8 +45,6 @@ class EduExpCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
         let exp = try assertCreateEduExperiance(app, headers: headers)
         let upgrade = EducationalExp.Coding.init(
@@ -92,16 +74,12 @@ class EduExpCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalideduID() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
         try assertCreateEduExperiance(app, headers: headers)
         try app.test(.DELETE, path + "/1", headers: headers, afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
 
         let exp = try assertCreateEduExperiance(app, headers: headers)

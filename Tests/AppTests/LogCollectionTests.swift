@@ -1,21 +1,11 @@
 import XCTVapor
 @testable import App
 
-class LogCollectionTests: XCTestCase {
+class LogCollectionTests: XCAppCase {
 
-    let app = Application.init(.testing)
     let path = "login"
 
-    override func setUpWithError() throws {
-        try bootstrap(app)
-
-        try app.autoRevert().wait()
-        try app.autoMigrate().wait()
-    }
-
     func testLoginWithWrongMsg() throws {
-        defer { app.shutdown() }
-
         try registUserAndLoggedIn(app)
 
         let wrongPasswordHeader = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTEx"))
@@ -29,8 +19,6 @@ class LogCollectionTests: XCTestCase {
     }
 
     func testLogin() throws {
-        defer { app.shutdown() }
-
         try registUserAndLoggedIn(app)
 
         let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTE="

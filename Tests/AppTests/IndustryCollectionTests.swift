@@ -1,27 +1,15 @@
 import XCTVapor
 @testable import App
 
-class IndustryCollectionTests: XCTestCase {
-    
-    let app = Application.init(.testing)
+class IndustryCollectionTests: XCAppCase {
+
     let path = Industry.schema
 
-    override func setUpWithError() throws {
-        try bootstrap(app)
-        
-        try app.autoRevert().wait()
-        try app.autoMigrate().wait()
-    }
-    
     func testCreate() {
-        defer { app.shutdown() }
-        
         XCTAssertNoThrow(try assertCreateIndustry(app))
     }
 
     func testCreateWithConflictIndustry() throws {
-        defer { app.shutdown() }
-
         let industry = try assertCreateIndustry(app)
 
         try app.test(.POST, path, beforeRequest: {
@@ -32,16 +20,12 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testQueryWithInvalidID() throws {
-        defer { app.shutdown() }
-        
         try assertCreateIndustry(app)
         
         try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
     }
     
     func testQueryWithID() throws {
-        defer { app.shutdown() }
-        
         let industry = try assertCreateIndustry(app)
         
         try app.test(.GET, path + "/\(industry.id!)", afterResponse: {
@@ -53,8 +37,6 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testQueryAll() throws {
-        defer { app.shutdown() }
-        
         try assertCreateIndustry(app)
         
         try app.test(.GET, path, afterResponse: {
@@ -65,8 +47,6 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testUpdate() throws {
-        defer { app.shutdown() }
-        
         let industry = try assertCreateIndustry(app)
         
         try app.test(.PUT, path + "/\(industry.id!)", beforeRequest: {
@@ -80,8 +60,6 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testDelete() throws {
-        defer { app.shutdown() }
-        
         let industry = try assertCreateIndustry(app)
         
         try app.test(.DELETE, path + "/\(industry.id!)", afterResponse: assertHttpOk)

@@ -1,27 +1,15 @@
 import XCTVapor
 @testable import App
 
-class SocialNetworkingCollectionTests: XCTestCase {
+class SocialNetworkingCollectionTests: XCAppCase {
 
-    let app = Application.init(.testing)
     let path = "social"
 
-    override func setUpWithError() throws {
-        try bootstrap(app)
-
-        try app.autoRevert().wait()
-        try app.autoMigrate().wait()
-    }
-
     func testCreate() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(try assertCreateSocialNetworking(app))
     }
 
     func testAuthorizeRequire() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
             .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
@@ -32,15 +20,11 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidID() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(try assertCreateSocialNetworking(app))
         XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithSocialID() throws {
-        defer { app.shutdown() }
-
         let socialNetworking = try assertCreateSocialNetworking(app)
 
         try app.test(.GET, path + "/\(socialNetworking.id!)", afterResponse: {
@@ -52,8 +36,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
         let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
         let upgrade = SocialNetworking.Coding.init(
@@ -73,8 +55,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testDelete() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
         let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
 

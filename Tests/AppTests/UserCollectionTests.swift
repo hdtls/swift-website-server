@@ -1,29 +1,17 @@
 import XCTVapor
 @testable import App
 
-class UserCollectionTests: XCTestCase {
+class UserCollectionTests: XCAppCase {
     
-    let app = Application.init(.testing)
     let path = "users"
-    
-    override func setUpWithError() throws {
-        try bootstrap(app)
-        
-        try app.autoRevert().wait()
-        try app.autoMigrate().wait()
-    }
 
     func testAuthorizeRequire() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(
             try app.test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
         )
     }
 
     func testCreateWithInvalidUsername() throws {
-        defer { app.shutdown() }
-        
         try app.test(.POST, path, beforeRequest: {
             var invalid = userCreation
             invalid.username = ""
@@ -32,8 +20,6 @@ class UserCollectionTests: XCTestCase {
     }
     
     func testCreateWithInvalidPassword() throws {
-        defer { app.shutdown() }
-        
         try app.test(.POST, path, beforeRequest: {
             var invalid = userCreation
             invalid.password = "111"
@@ -43,8 +29,6 @@ class UserCollectionTests: XCTestCase {
     }
     
     func testCreateWithConflictUsername() throws {
-        defer { app.shutdown() }
-        
         try registUserAndLoggedIn(app)
         
         try app.test(.POST, path, beforeRequest: {
@@ -55,26 +39,20 @@ class UserCollectionTests: XCTestCase {
     }
     
     func testCreate() throws {
-        defer { app.shutdown() }
         try registUserAndLoggedIn(app)
     }
     
     func testQueryWithInvalidUserID() throws {
-        defer { app.shutdown() }
-        
         try app.test(.GET, path + "/notfound", afterResponse: assertHttpNotFound)
     }
     
     func testQueryWithUserID() throws {
-        defer { app.shutdown() }
-        
         try registUserAndLoggedIn(app, userCreation)
         
         try app.test(.GET, path + "/\(userCreation.username)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
-            
-            let user = try! $0.content.decode(User.Coding.self)
+
+            let user = try $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
@@ -91,16 +69,13 @@ class UserCollectionTests: XCTestCase {
     }
     
     func testQueryWithUserIDAndQueryParameters() throws {
-        defer { app.shutdown() }
-
         try registUserAndLoggedIn(app, userCreation)
 
         let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
         try app.test(.GET, path + "/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
-            
-            let user = try! $0.content.decode(User.Coding.self)
+
+            let user = try $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
@@ -119,8 +94,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryWithUserIDAndQueryParametersAfterAddChildrens() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app, userCreation)
 
         let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
@@ -132,9 +105,7 @@ class UserCollectionTests: XCTestCase {
         let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
         try app.test(.GET, path + "/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
-
-            let user = try! $0.content.decode(User.Coding.self)
+            let user = try $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
@@ -157,8 +128,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryAll() throws {
-        defer { app.shutdown() }
-        
         try app.test(.GET, path, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
@@ -175,8 +144,6 @@ class UserCollectionTests: XCTestCase {
     }
     
     func testQueryAllWithQueryParametersAfterAddChildrens() throws {
-        defer { app.shutdown() }
-        
         let headers = try registUserAndLoggedIn(app, userCreation)
 
         let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
@@ -218,8 +185,6 @@ class UserCollectionTests: XCTestCase {
     }
     
     func testUpdate() throws {
-        defer { app.shutdown() }
-        
         let headers = try registUserAndLoggedIn(app)
         let upgrade = User.Coding.init(
             firstName: "R",
@@ -234,9 +199,8 @@ class UserCollectionTests: XCTestCase {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            XCTAssertNoThrow(try $0.content.decode(User.Coding.self))
-            
-            let user = try! $0.content.decode(User.Coding.self)
+
+            let user = try $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, upgrade.firstName)

@@ -1,35 +1,21 @@
 import XCTVapor
 @testable import App
 
-class SkillCollectionTests: XCTestCase {
+class SkillCollectionTests: XCAppCase {
 
-    let app = Application.init(.testing)
     let path = "skills"
 
-    override func setUpWithError() throws {
-        try bootstrap(app)
-
-        try app.autoRevert().wait()
-        try app.autoMigrate().wait()
-    }
-
     func testAuthorizeRequire() throws {
-        defer { app.shutdown() }
-
         try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
             .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
             .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
     }
 
     func testCreate() throws {
-        defer { app.shutdown() }
-
         try assertCreateSkill(app)
     }
 
     func testQuery() throws {
-        defer { app.shutdown() }
-
         let saved = try assertCreateSkill(app)
 
         try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
@@ -44,8 +30,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
         let upgrade = Skill.Coding.init(profesional: nil, workflow: ["xxx", "xxxx"])
 
@@ -67,8 +51,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testDelete() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
 
         let saved = try assertCreateSkill(app, headers: headers)

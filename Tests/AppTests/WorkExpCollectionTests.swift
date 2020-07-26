@@ -1,21 +1,11 @@
 import XCTVapor
 @testable import App
 
-class WorkExpCollectionTests: XCTestCase {
+class WorkExpCollectionTests: XCAppCase {
 
-    let app = Application.init(.testing)
     let path = "exp/works"
 
-    override func setUpWithError() throws {
-        try bootstrap(app)
-
-        try app.autoRevert().wait()
-        try app.autoMigrate().wait()
-    }
-
     func testAuthorizeRequire() {
-        defer { app.shutdown() }
-
         let uuid = UUID.init().uuidString
 
         XCTAssertNoThrow(
@@ -28,21 +18,15 @@ class WorkExpCollectionTests: XCTestCase {
     }
 
     func testCreate() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(try assertCreateWorkExperiance(app))
     }
 
     func testQueryWithInvalidWorkID() {
-        defer { app.shutdown() }
-
         XCTAssertNoThrow(try assertCreateWorkExperiance(app))
         XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithWorkID() throws {
-        defer { app.shutdown() }
-
         let exp = try assertCreateWorkExperiance(app)
 
         try app.test(.GET, path + "/\(exp.id!.uuidString)", afterResponse: {
@@ -64,8 +48,6 @@ class WorkExpCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
 
         let exp = try assertCreateWorkExperiance(app, headers: headers)
@@ -99,8 +81,6 @@ class WorkExpCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidWorkID() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
 
         try assertCreateWorkExperiance(app, headers: headers)
@@ -109,8 +89,6 @@ class WorkExpCollectionTests: XCTestCase {
     }
 
     func testDelete() throws {
-        defer { app.shutdown() }
-
         let headers = try registUserAndLoggedIn(app)
 
         let exp = try assertCreateWorkExperiance(app, headers: headers)

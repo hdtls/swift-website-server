@@ -251,7 +251,7 @@ func assertCreateProj(
     headers: HTTPHeaders? = nil
 ) throws -> Project.Coding {
 
-    let proj = Project.Coding.init(name: "proj", summary: "proj_summary", startDate: "start_date", endDate: "end_date")
+    let proj = Project.Coding.init(name: "proj", summary: "proj_summary", kind: .software, startDate: "start_date", endDate: "end_date")
 
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
 
@@ -265,7 +265,7 @@ func assertCreateProj(
         coding = try $0.content.decode(Project.Coding.self)
         XCTAssertNotNil(coding.id)
         XCTAssertEqual(coding.name, proj.name)
-        XCTAssertEqual(coding.categories, proj.categories)
+        XCTAssertEqual(coding.genres, proj.genres)
         XCTAssertEqual(coding.summary, proj.summary)
         XCTAssertEqual(coding.startDate, proj.startDate)
         XCTAssertEqual(coding.endDate, proj.endDate)

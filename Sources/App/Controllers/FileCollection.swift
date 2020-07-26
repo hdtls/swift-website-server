@@ -1,13 +1,13 @@
 import Vapor
 
+struct MultipartFormData: Codable {
+    var multipart: [Data]
+}
+
 func uploadMultipleFiles(
     _ req: Request,
     path: String = "images"
 ) throws -> EventLoopFuture<[String]> {
-
-    struct MultipartFormData: Decodable {
-        var multipart: [Data]
-    }
 
     let multipartFormData = try req.content.decode(MultipartFormData.self)
 
@@ -26,7 +26,10 @@ func uploadMultipleFiles(
             substring.removeFirst(maxLength)
         }
 
-        try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            atPath: req.application.directory.publicDirectory + filepath,
+            withIntermediateDirectories: true
+        )
 
         // TODO: Decode file extension from formdata.
         let fileExtension = path == "images" ? ".jpg" : ""
