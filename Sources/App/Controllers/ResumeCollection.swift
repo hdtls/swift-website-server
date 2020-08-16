@@ -34,7 +34,7 @@ class ResumeCollection: RouteCollection {
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
             .map({
                 [

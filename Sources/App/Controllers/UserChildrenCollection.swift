@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-protocol UserChildren: Model, Transfer where Self.IDValue: LosslessStringConvertible {
+protocol UserChildren: Model, Serializing, Mergeable where Self.IDValue: LosslessStringConvertible {
     var _$user: Parent<User> { get }
 }
 
@@ -12,21 +12,21 @@ protocol UserChildrenRestfulApi: RestfulApi where T: UserChildren {
 }
 
 extension UserChildrenRestfulApi {
-    func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
-        let coding = try req.content.decode(T.Coding.self)
-        let exp = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let exp = try T.init(content: coding)
         exp._$user.id = try user.requireID()
         return exp.save(on: req.db)
             .flatMapThrowing({
-                try exp.__reverted()
+                try exp.reverted()
             })
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let userID = try req.auth.require(User.self).requireID()
-        let coding = try req.content.decode(T.Coding.self)
-        let upgrade = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let upgrade = try T.init(content: coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
@@ -38,12 +38,12 @@ extension UserChildrenRestfulApi {
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
-                saved.__merge(upgrade)
+                saved.merge(upgrade)
                 let newValue = saved
                 return saved.update(on: req.db).map({ newValue })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 

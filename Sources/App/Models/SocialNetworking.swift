@@ -34,6 +34,7 @@ extension SocialNetworking {
 }
 
 extension SocialNetworking: UserChildren {
+    typealias SerializedObject = Coding
 
     var _$user: Parent<User> {
         return $user
@@ -48,27 +49,30 @@ extension SocialNetworking: UserChildren {
         var service: Service.Coding?
     }
 
-    static func __converted(_ coding: Coding) throws -> SocialNetworking {
-        guard let serviceID = coding.service?.id else {
+    convenience init(content: SerializedObject) throws {
+        guard let serviceID = content.service?.id else {
             throw Abort.init(.badRequest, reason: "Value required for key 'service.id'")
         }
-        let social = SocialNetworking.init()
-        social.url = coding.url
-        social.$service.id = serviceID
-        return social
+
+        self.init()
+        url = content.url
+        $service.id = serviceID
     }
 
-    // Only `url` property can be update.
-    func __merge(_ another: SocialNetworking) {
-        url = another.url
-    }
-
-    func __reverted() throws -> Coding {
-        try Coding.init(
+    func reverted() throws -> SerializedObject {
+        try SerializedObject.init(
             id: requireID(),
             userId: $user.id,
             url: url,
-            service: service.__reverted()
+            service: service.reverted()
         )
+    }
+}
+
+extension SocialNetworking: Mergeable {
+
+    // Only `url` property can be update.
+    func merge(_ other: SocialNetworking) {
+        url = other.url
     }
 }

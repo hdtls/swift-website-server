@@ -24,20 +24,20 @@ class ProjCollection: RouteCollection, RestfulApi {
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
-        let coding = try req.content.decode(T.Coding.self)
-        let exp = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let exp = try T.init(content: coding)
 
         exp.$user.id = try user.requireID()
 
         return exp.save(on: req.db)
             .flatMapThrowing({ _ in
-                try exp.__reverted()
+                try exp.reverted()
             })
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
@@ -45,23 +45,23 @@ class ProjCollection: RouteCollection, RestfulApi {
 
         return T.find(id, on: req.db)
             .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ try $0.__reverted() })
+            .flatMapThrowing({ try $0.reverted() })
     }
 
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.Coding]> {
+    func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
         return T.query(on: req.db)
             .filter(pidFieldKey, .equal, userID)
             .all()
-            .flatMapEachThrowing({ try $0.__reverted() })
+            .flatMapEachThrowing({ try $0.reverted() })
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
-        let coding = try req.content.decode(T.Coding.self)
-        let upgrade = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let upgrade = try T.init(content: coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
@@ -73,15 +73,15 @@ class ProjCollection: RouteCollection, RestfulApi {
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
-                saved.__merge(upgrade)
+                saved.merge(upgrade)
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 
-    func uploadFiles(_ req: Request, execute: @escaping (T, [String]) -> Void) throws -> EventLoopFuture<T.Coding> {
+    func uploadFiles(_ req: Request, execute: @escaping (T, [String]) -> Void) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
 
@@ -106,17 +106,17 @@ class ProjCollection: RouteCollection, RestfulApi {
                 }
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 
-    func uploadArtworkImage(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func uploadArtworkImage(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         try uploadFiles(req) { (saved, urls) in
             saved.artworkUrl = urls.first!
         }
     }
 
-    func uploadScreenshotImages(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func uploadScreenshotImages(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         try uploadFiles(req) { (saved, urls) in
             saved.screenshotUrls = urls
         }

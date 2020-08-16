@@ -29,21 +29,21 @@ class SkillCollection: RouteCollection, RestfulApi {
     func create(_ req: Request) throws -> EventLoopFuture<Skill.Coding> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
-        let coding = try req.content.decode(T.Coding.self)
-        let skill = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let skill = T.init(content: coding)
         skill.$user.id = userID
 
         return skill.save(on: req.db)
             .flatMapThrowing({
-                try skill.__reverted()
+                try skill.reverted()
             })
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<Skill.Coding> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
-        let coding = try req.content.decode(T.Coding.self)
-        let upgrade = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let upgrade = T.init(content: coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
@@ -55,11 +55,11 @@ class SkillCollection: RouteCollection, RestfulApi {
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
-                saved.__merge(upgrade)
+                saved.merge(upgrade)
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 

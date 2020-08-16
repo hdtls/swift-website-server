@@ -13,7 +13,7 @@ class LogCollection: RouteCollection {
 
         return token.save(on: req.db)
         .flatMapThrowing({
-            try AuthorizeMsg.init(user: user.__reverted(), token: token)
+            try AuthorizeMsg.init(user: user.reverted(), token: token)
         })
     }
 

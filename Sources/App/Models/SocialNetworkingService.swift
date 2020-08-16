@@ -65,7 +65,8 @@ extension SocialNetworkingService {
     }
 }
 
-extension SocialNetworkingService: Transfer {
+extension SocialNetworkingService: Serializing {
+    typealias SerializedObject = Coding
 
     struct Coding: Content, Equatable {
         var id: SocialNetworkingService.IDValue?
@@ -75,20 +76,22 @@ extension SocialNetworkingService: Transfer {
         var type: SocialNetworkingService.ServiceType?
     }
 
-    static func __converted(_ coding: Coding) throws -> SocialNetworkingService {
-        let social = SocialNetworkingService.init()
-        social.type = coding.type ?? .undefined
-        return social
+    convenience init(content: SerializedObject) {
+        self.init()
+        type = content.type ?? .undefined
     }
 
-    func __merge(_ another: SocialNetworkingService) {
-        type = another.type
-    }
-
-    func __reverted() throws -> Coding {
-        try Coding.init(
+    func reverted() throws -> SerializedObject {
+        try SerializedObject.init(
             id: requireID(),
             type: type
         )
+    }
+}
+
+extension SocialNetworkingService: Mergeable {
+
+    func merge(_ other: SocialNetworking.Service) {
+        type = other.type
     }
 }

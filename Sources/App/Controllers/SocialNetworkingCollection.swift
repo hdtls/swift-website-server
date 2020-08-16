@@ -23,24 +23,24 @@ class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
-        let coding = try req.content.decode(T.Coding.self)
-        let model = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let model = try T.init(content: coding)
         model.$user.id = try user.requireID()
 
         return model.save(on: req.db)
             .flatMap({
                 // Make sure `$socialNetworkingService` has been eager loaded
-                // before try `model.__reverted()`.
+                // before try `model.reverted()`.
                 model.$service.get(on: req.db)
             })
             .flatMapThrowing({ _ in
-                try model.__reverted()
+                try model.reverted()
             })
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
@@ -52,15 +52,15 @@ class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
-        let coding = try req.content.decode(T.Coding.self)
-        let upgrade = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let upgrade = try T.init(content: coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
@@ -73,13 +73,13 @@ class SocialNetworkingCollection: RouteCollection, UserChildrenRestfulApi {
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
-                saved.__merge(upgrade)
+                saved.merge(upgrade)
                 let newValue = saved
                 return newValue.update(on: req.db)
                     .map({ newValue })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 }

@@ -23,11 +23,11 @@ class WorkExpCollection: RouteCollection, RestfulApi {
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
-        let coding = try req.content.decode(T.Coding.self)
+        let coding = try req.content.decode(T.SerializedObject.self)
 
-        let exp = try T.__converted(coding)
+        let exp = T.init(content: coding)
 
         let industries = try coding.industry.map({ coding -> Industry in
             // `Industry.id` is not required by `Industry.__converted(_:)`, but
@@ -37,7 +37,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             guard coding.id != nil else {
                 throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
             }
-            return try Industry.__converted(coding)
+            return try Industry.init(content: coding)
         })
         
         exp.$user.id = try user.requireID()
@@ -50,11 +50,11 @@ class WorkExpCollection: RouteCollection, RestfulApi {
                 exp.$industry.get(on: req.db)
             })
             .flatMapThrowing({ _ in
-                try exp.__reverted()
+                try exp.reverted()
             })
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
@@ -64,24 +64,24 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             .with(\.$industry)
             .first()
             .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ try $0.__reverted() })
+            .flatMapThrowing({ try $0.reverted() })
     }
 
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.Coding]> {
+    func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
         return T.query(on: req.db)
             .filter(pidFieldKey, .equal, userID)
             .with(\.$industry)
             .all()
-            .flatMapEachThrowing({ try $0.__reverted() })
+            .flatMapEachThrowing({ try $0.reverted() })
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
         let userID = try user.requireID()
-        let coding = try req.content.decode(T.Coding.self)
-        let upgrade = try T.__converted(coding)
+        let coding = try req.content.decode(T.SerializedObject.self)
+        let upgrade = T.init(content: coding)
         let industries = try coding.industry.map({ coding -> Industry in
             // `Industry.id` is not required by `Industry.__converted(_:)`, but
             // required by create relation of `workExp` and `industry`, so we will
@@ -89,7 +89,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             guard coding.id != nil else {
                 throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
             }
-            return try Industry.__converted(coding)
+            return try Industry.init(content: coding)
         })
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
@@ -103,7 +103,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
-                saved.__merge(upgrade)
+                saved.merge(upgrade)
 
                 let difference = industries.difference(from: saved.industry) {
                     $0.id == $1.id
@@ -126,7 +126,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
                 .map({ saved })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 

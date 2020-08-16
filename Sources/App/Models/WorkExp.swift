@@ -64,6 +64,8 @@ extension WorkExp {
 
 extension WorkExp: UserChildren {
 
+    typealias SerializedObject = Coding
+
     var _$user: Parent<User> {
         return $user
     }
@@ -87,31 +89,19 @@ extension WorkExp: UserChildren {
 
     /// Convert `Coding` to `WorkExp`, used for decoding request content.
     /// - note: `user` and `industry` eager loading property will set on route operation.
-    static func __converted(_ coding: Coding) throws -> WorkExp {
-        let exp = WorkExp.init()
-        exp.title = coding.title
-        exp.companyName = coding.companyName
-        exp.location = coding.location
-        exp.startDate = coding.startDate
-        exp.endDate = coding.endDate
-        exp.headline = coding.headline
-        exp.responsibilities = coding.responsibilities
-        exp.media = coding.media
-        return exp
+    convenience init(content: Coding) {
+        self.init()
+        title = content.title
+        companyName = content.companyName
+        location = content.location
+        startDate = content.startDate
+        endDate = content.endDate
+        headline = content.headline
+        responsibilities = content.responsibilities
+        media = content.media
     }
 
-    func __merge(_ another: WorkExp) {
-        title = another.title
-        companyName = another.companyName
-        location = another.location
-        startDate = another.startDate
-        endDate = another.endDate
-        headline = another.headline
-        responsibilities = another.responsibilities
-        media = another.media
-    }
-
-    func __reverted() throws -> Coding {
+    func reverted() throws -> SerializedObject {
         try Coding.init(
             id: requireID(),
             title: title,
@@ -122,8 +112,22 @@ extension WorkExp: UserChildren {
             headline: headline,
             responsibilities: responsibilities,
             media: media,
-            industry: industry.compactMap({ try? $0.__reverted() }),
+            industry: industry.compactMap({ try? $0.reverted() }),
             userId: $user.id
         )
+    }
+}
+
+extension WorkExp: Mergeable {
+
+    func merge(_ other: WorkExp) {
+        title = other.title
+        companyName = other.companyName
+        location = other.location
+        startDate = other.startDate
+        endDate = other.endDate
+        headline = other.headline
+        responsibilities = other.responsibilities
+        media = other.media
     }
 }

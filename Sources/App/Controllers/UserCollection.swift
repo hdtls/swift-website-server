@@ -53,7 +53,7 @@ class UserCollection: RouteCollection {
                 return token.save(on: req.db)
             })
             .flatMapThrowing({
-                try AuthorizeMsg.init(user: user.__reverted(), token: token)
+                try AuthorizeMsg.init(user: user.reverted(), token: token)
             })
     }
 
@@ -111,7 +111,7 @@ class UserCollection: RouteCollection {
         return queryBuilder
             .all()
             .flatMapEachThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 
@@ -119,16 +119,16 @@ class UserCollection: RouteCollection {
     func update(_ req: Request) throws -> EventLoopFuture<User.Coding> {
         let userId = try req.auth.require(User.self).requireID()
         let coding = try req.content.decode(User.Coding.self)
-        let upgrade = try User.__converted(coding)
+        let upgrade = User.init(content: coding)
 
         return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ saved -> EventLoopFuture<User> in
-                saved.__merge(upgrade)
+                saved.merge(upgrade)
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 
@@ -148,7 +148,7 @@ class UserCollection: RouteCollection {
                 }
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 }

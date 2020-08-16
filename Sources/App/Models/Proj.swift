@@ -65,7 +65,9 @@ extension Project {
     }
 }
 
-extension Project: Transfer {
+extension Project: Serializing {
+
+    typealias SerializedObject = Coding
 
     struct Coding: Content, Equatable {
         var id: IDValue?
@@ -82,33 +84,21 @@ extension Project: Transfer {
         var userId: User.IDValue?
     }
 
-    static func __converted(_ coding: Coding) throws -> Project {
-        let proj = Project.init()
-        proj.id = coding.id
-        proj.name = coding.name
-        proj.genres = coding.genres
-        proj.summary = coding.summary
-        proj.artworkUrl = coding.artworkUrl?.path
-        proj.screenshotUrls = coding.screenshotUrls?.compactMap({ $0.path })
-        proj.kind = coding.kind
-        proj.startDate = coding.startDate
-        proj.endDate = coding.endDate
-        return proj
+    convenience init(content: SerializedObject) throws {
+        self.init()
+        id = content.id
+        name = content.name
+        genres = content.genres
+        summary = content.summary
+        artworkUrl = content.artworkUrl?.path
+        screenshotUrls = content.screenshotUrls?.compactMap({ $0.path })
+        kind = content.kind
+        startDate = content.startDate
+        endDate = content.endDate
     }
 
-    func __merge(_ another: Project) {
-        name = another.name
-        genres = another.genres
-        summary = another.summary
-        artworkUrl = another.artworkUrl
-        screenshotUrls = another.screenshotUrls
-        kind = another.kind
-        startDate = another.startDate
-        endDate = another.endDate
-    }
-
-    func __reverted() throws -> Coding {
-        try Coding.init(
+    func reverted() throws -> SerializedObject {
+        try SerializedObject.init(
             id: requireID(),
             name: name,
             genres: genres,
@@ -120,5 +110,19 @@ extension Project: Transfer {
             endDate: endDate,
             userId: $user.id
         )
+    }
+}
+
+extension Project: Mergeable {
+
+    func merge(_ other: Project) {
+        name = other.name
+        genres = other.genres
+        summary = other.summary
+        artworkUrl = other.artworkUrl
+        screenshotUrls = other.screenshotUrls
+        kind = other.kind
+        startDate = other.startDate
+        endDate = other.endDate
     }
 }

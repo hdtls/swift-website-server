@@ -64,6 +64,7 @@ extension EducationalExp {
 }
 
 extension EducationalExp: UserChildren {
+    typealias SerializedObject = Coding
 
     var _$user: Parent<User> {
         return $user
@@ -87,33 +88,20 @@ extension EducationalExp: UserChildren {
         var userId: User.IDValue?
     }
 
-    static func __converted(_ coding: Coding) throws -> EducationalExp {
-        let exp = EducationalExp.init()
-        exp.school = coding.school
-        exp.degree = coding.degree
-        exp.field = coding.field
-        exp.startYear = coding.startYear
-        exp.endYear = coding.endYear
-        exp.grade = coding.grade
-        exp.activities = coding.activities
-        exp.accomplishments = coding.accomplishments
-        exp.media = coding.media
-        return exp
+    convenience init(content: SerializedObject) throws {
+        self.init()
+        school = content.school
+        degree = content.degree
+        field = content.field
+        startYear = content.startYear
+        endYear = content.endYear
+        grade = content.grade
+        activities = content.activities
+        accomplishments = content.accomplishments
+        media = content.media
     }
 
-    func __merge(_ another: EducationalExp) {
-        school = another.school
-        degree = another.degree
-        field = another.field
-        startYear = another.startYear
-        endYear = another.endYear
-        grade = another.grade
-        activities = another.activities
-        accomplishments = another.accomplishments
-        media = another.media
-    }
-
-    func __reverted() throws -> Coding {
+    func reverted() throws -> Coding {
         try Coding.init(
             id: requireID(),
             school: school,
@@ -127,5 +115,20 @@ extension EducationalExp: UserChildren {
             media: media,
             userId: $user.id
         )
+    }
+}
+
+extension EducationalExp: Mergeable {
+
+    func merge(_ other: EducationalExp) {
+        school = other.school
+        degree = other.degree
+        field = other.field
+        startYear = other.startYear
+        endYear = other.endYear
+        grade = other.grade
+        activities = other.activities
+        accomplishments = other.accomplishments
+        media = other.media
     }
 }

@@ -89,7 +89,7 @@ final class User: Model {
         aboutMe: String? = nil,
         location: String? = nil,
         hobbies: [String]? = nil
-        ) {
+    ) {
         self.id = id
         self.username = username
         self.pwd = pwd
@@ -164,7 +164,8 @@ extension User {
 }
 
 // MARK: User coding helper.
-extension User: Transfer {
+extension User: Serializing {
+    typealias SerializedObject = Coding
 
     /// `Coding` use for updata user and make response to user query.
     struct Coding: Content, Equatable {
@@ -202,33 +203,20 @@ extension User: Transfer {
         var hobbies: [String]?
     }
 
-    static func __converted(_ coding: Coding) throws -> User {
-        let user = User.init()
-        user.firstName = coding.firstName
-        user.lastName = coding.lastName
-        user.screenName = coding.screenName
-        user.phone = coding.phone
-        user.emailAddress = coding.emailAddress
-        user.aboutMe = coding.aboutMe
-        user.location = coding.location
-        user.hobbies = coding.hobbies
-        return user
-    }
-
-    func __merge(_ user: User) {
-        firstName = user.firstName
-        lastName = user.lastName
-        screenName = user.screenName
-        avatarUrl = user.avatarUrl
-        phone = user.phone
-        emailAddress = user.emailAddress
-        aboutMe = user.aboutMe
-        location = user.location
-        hobbies = user.hobbies
+    convenience init(content: SerializedObject) {
+        self.init()
+        firstName = content.firstName
+        lastName = content.lastName
+        screenName = content.screenName
+        phone = content.phone
+        emailAddress = content.emailAddress
+        aboutMe = content.aboutMe
+        location = content.location
+        hobbies = content.hobbies
     }
     
-    func __reverted() throws -> Coding {
-        var coding = Coding.init(firstName: firstName, lastName: lastName)
+    func reverted() throws -> SerializedObject {
+        var coding = SerializedObject.init(firstName: firstName, lastName: lastName)
         coding.id = try requireID()
         coding.username = username
         coding.screenName = screenName
@@ -237,13 +225,28 @@ extension User: Transfer {
         coding.emailAddress = emailAddress
         coding.aboutMe = aboutMe
         coding.location = location
-        coding.social = $social.value?.compactMap({ try? $0.__reverted() })
-        coding.projects = $projects.value?.compactMap({ try? $0.__reverted() })
-        coding.eduExps = $eduExps.value?.compactMap({ try? $0.__reverted() })
-        coding.workExps = $workExps.value?.compactMap({ try? $0.__reverted() })
-        coding.social = $social.value?.compactMap({ try? $0.__reverted() })
-        coding.skill = try $skill.value?.first?.__reverted()
+        coding.social = $social.value?.compactMap({ try? $0.reverted() })
+        coding.projects = $projects.value?.compactMap({ try? $0.reverted() })
+        coding.eduExps = $eduExps.value?.compactMap({ try? $0.reverted() })
+        coding.workExps = $workExps.value?.compactMap({ try? $0.reverted() })
+        coding.social = $social.value?.compactMap({ try? $0.reverted() })
+        coding.skill = try $skill.value?.first?.reverted()
         coding.hobbies = hobbies
         return coding
+    }
+}
+
+extension User: Mergeable {
+
+    func merge(_ other: User) {
+        firstName = other.firstName
+        lastName = other.lastName
+        screenName = other.screenName
+        avatarUrl = other.avatarUrl
+        phone = other.phone
+        emailAddress = other.emailAddress
+        aboutMe = other.aboutMe
+        location = other.location
+        hobbies = other.hobbies
     }
 }

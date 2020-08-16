@@ -31,7 +31,8 @@ extension Industry {
     }
 }
 
-extension Industry: Transfer {
+extension Industry: Serializing {
+    typealias SerializedObject = Coding
 
     struct Coding: Content, Equatable {
         // `id` should not be nil except for creation action.
@@ -41,18 +42,19 @@ extension Industry: Transfer {
         var title: String?
     }
 
-    static func __converted(_ coding: Coding) throws -> Industry {
-        let industry = Industry.init()
-        industry.id = coding.id
-        industry.title = coding.title ?? ""
-        return industry
+    convenience init(content: SerializedObject) throws {
+        self.init(title: content.title ?? "")
+        id = content.id
     }
 
-    func __merge(_ another: Industry) {
-        title = another.title
+    func reverted() throws -> SerializedObject {
+        try SerializedObject.init(id: requireID(), title: title)
     }
+}
 
-    func __reverted() throws -> Coding {
-        try Coding.init(id: requireID(), title: title)
+extension Industry: Mergeable {
+
+    func merge(_ other: Industry) {
+        title = other.title
     }
 }

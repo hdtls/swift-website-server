@@ -31,7 +31,9 @@ extension Skill {
     }
 }
 
-extension Skill: Transfer {
+extension Skill: Serializing {
+
+    typealias SerializedObject = Coding
 
     struct Coding: Content, Equatable {
 
@@ -40,19 +42,21 @@ extension Skill: Transfer {
         var workflow: [String]?
     }
 
-    static func __converted(_ coding: Coding) throws -> Skill {
-        let skill = Skill.init()
-        skill.profesional = coding.profesional
-        skill.workflow = coding.workflow
-        return skill
+    convenience init(content: SerializedObject) {
+        self.init()
+        profesional = content.profesional
+        workflow = content.workflow
     }
 
-    func __merge(_ another: Skill) {
-        profesional = another.profesional
-        workflow = another.workflow
+    func reverted() throws -> SerializedObject {
+        try SerializedObject.init(id: requireID(), profesional: profesional, workflow: workflow)
     }
+}
 
-    func __reverted() throws -> Coding {
-        try Coding.init(id: requireID(), profesional: profesional, workflow: workflow)
+extension Skill: Mergeable {
+
+    func merge(_ other: Skill) {
+        profesional = other.profesional
+        workflow = other.workflow
     }
 }

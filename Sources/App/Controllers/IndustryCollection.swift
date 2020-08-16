@@ -16,12 +16,12 @@ class IndustryCollection: RouteCollection, RestfulApi {
         routes.on(.DELETE, path, use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        let coding = try req.content.decode(T.Coding.self)
+    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        let coding = try req.content.decode(T.SerializedObject.self)
         guard coding.title != nil else {
             throw Abort.init(.badRequest, reason: "Value required for key 'industry.title'")
         }
-        let industry = try T.__converted(coding)
+        let industry = try T.init(content: coding)
 
         return T.query(on: req.db)
             .filter(T.FieldKeys.title.rawValue, .equal, industry.title)
@@ -35,16 +35,16 @@ class IndustryCollection: RouteCollection, RestfulApi {
                 return industry.save(on: req.db)
             })
             .flatMapThrowing({
-                try industry.__reverted()
+                try industry.reverted()
             })
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        let coding = try req.content.decode(T.Coding.self)
+    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        let coding = try req.content.decode(T.SerializedObject.self)
         guard coding.title != nil else {
             throw Abort.init(.badRequest, reason: "Value required for key 'industry.title'")
         }
-        let upgrade = try T.__converted(coding)
+        let upgrade = try T.init(content: coding)
 
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort(.notFound)
@@ -53,11 +53,11 @@ class IndustryCollection: RouteCollection, RestfulApi {
         return T.find(id, on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
-                saved.__merge(upgrade)
+                saved.merge(upgrade)
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({
-                try $0.__reverted()
+                try $0.reverted()
             })
     }
 }
