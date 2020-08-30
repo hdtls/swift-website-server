@@ -14,7 +14,6 @@ extension User {
                 .field(FieldKeys.pwd.rawValue, .string, .required)
                 .field(FieldKeys.firstName.rawValue, .string, .required)
                 .field(FieldKeys.lastName.rawValue, .string, .required)
-                .field(FieldKeys.screenName.rawValue, .string)
                 .field(FieldKeys.avatarUrl.rawValue, .string)
                 .field(FieldKeys.phone.rawValue, .string)
                 .field(FieldKeys.emailAddress.rawValue, .string)

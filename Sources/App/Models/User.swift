@@ -27,9 +27,6 @@ final class User: Model {
     @Field(key: FieldKeys.lastName.rawValue)
     var lastName: String
 
-    @OptionalField(key: FieldKeys.screenName.rawValue)
-    var screenName: String?
-
     @OptionalField(key: FieldKeys.avatarUrl.rawValue)
     var avatarUrl: String?
 
@@ -82,7 +79,6 @@ final class User: Model {
         pwd: String,
         firstName: String,
         lastName: String,
-        screenName: String? = nil,
         avatarUrl: String? = nil,
         phone: String? = nil,
         emailAddress: String? = nil,
@@ -95,7 +91,6 @@ final class User: Model {
         self.pwd = pwd
         self.firstName = firstName
         self.lastName = lastName
-        self.screenName = screenName
         self.avatarUrl = avatarUrl
         self.phone = phone
         self.emailAddress = emailAddress
@@ -113,7 +108,6 @@ extension User {
         case pwd
         case firstName = "first_name"
         case lastName = "last_name"
-        case screenName = "screen_name"
         case avatarUrl = "avatar_url"
         case phone
         case emailAddress = "email_address"
@@ -173,11 +167,10 @@ extension User: Serializing {
         // MARK: Properties
         var id: User.IDValue?
         /// `username` is optional for decoding, required by encoding.
-        /// - note: For decoding we will query default logged in user's username instead.
+        /// - note: For decoding use logged in user's username instead.
         var username: String?
         var firstName: String
         var lastName: String
-        var screenName: String?
         var avatarUrl: String?
         var phone: String?
         var emailAddress: String?
@@ -207,7 +200,6 @@ extension User: Serializing {
         self.init()
         firstName = content.firstName
         lastName = content.lastName
-        screenName = content.screenName
         phone = content.phone
         emailAddress = content.emailAddress
         aboutMe = content.aboutMe
@@ -216,10 +208,9 @@ extension User: Serializing {
     }
     
     func reverted() throws -> SerializedObject {
-        var coding = SerializedObject.init(firstName: firstName, lastName: lastName)
+        var coding = SerializedObject(firstName: firstName, lastName: lastName)
         coding.id = try requireID()
         coding.username = username
-        coding.screenName = screenName
         coding.avatarUrl = avatarUrl?.absoluteURLString
         coding.phone = phone
         coding.emailAddress = emailAddress
@@ -241,8 +232,6 @@ extension User: Mergeable {
     func merge(_ other: User) {
         firstName = other.firstName
         lastName = other.lastName
-        screenName = other.screenName
-        avatarUrl = other.avatarUrl
         phone = other.phone
         emailAddress = other.emailAddress
         aboutMe = other.aboutMe
