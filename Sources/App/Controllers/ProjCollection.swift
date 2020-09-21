@@ -20,7 +20,8 @@ class ProjCollection: RouteCollection, RestfulApi {
         trusted.on(.POST, use: create)
         trusted.on(.PUT, .parameter(restfulIDKey), use: update)
         trusted.on(.POST, .parameter(restfulIDKey), "artwork", use: uploadArtworkImage)
-        trusted.on(.POST, .parameter(restfulIDKey), "screenshots", use: uploadScreenshotImages)
+        trusted.on(.POST, .parameter(restfulIDKey), "screenshots", use: uploadScreenshots)
+        trusted.on(.POST, .parameter(restfulIDKey), "screenshots", "pad", use: uploadPadScreenshots)
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
@@ -116,9 +117,15 @@ class ProjCollection: RouteCollection, RestfulApi {
         }
     }
 
-    func uploadScreenshotImages(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func uploadScreenshots(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         try uploadFiles(req) { (saved, urls) in
             saved.screenshotUrls = urls
+        }
+    }
+
+    func uploadPadScreenshots(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        try uploadFiles(req) { (saved, urls) in
+            saved.padScreenshotUrls = urls
         }
     }
 
