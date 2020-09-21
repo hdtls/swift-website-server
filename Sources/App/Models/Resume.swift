@@ -7,6 +7,7 @@ struct Resume {
         var id: String
         var title: String
         var profile: User.Coding?
+        var projects: [Project.Coding]?
         var works: [WorkExp.Coding]?
         var edu: [EducationalExp.Coding]?
         var skill: Skill.Coding?
