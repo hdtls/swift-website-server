@@ -67,8 +67,8 @@ final class User: Model {
     @Children(for: \.$user)
     var skill: [Skill]
 
-    @OptionalField(key: FieldKeys.hobbies.rawValue)
-    var hobbies: [String]?
+    @OptionalField(key: FieldKeys.interests.rawValue)
+    var interests: [String]?
 
     // MARK: Initializer
     required init() {}
@@ -84,7 +84,7 @@ final class User: Model {
         emailAddress: String? = nil,
         aboutMe: String? = nil,
         location: String? = nil,
-        hobbies: [String]? = nil
+        interests: [String]? = nil
     ) {
         self.id = id
         self.username = username
@@ -96,7 +96,7 @@ final class User: Model {
         self.emailAddress = emailAddress
         self.aboutMe = aboutMe
         self.location = location
-        self.hobbies = hobbies
+        self.interests = interests
     }
 }
 
@@ -115,7 +115,7 @@ extension User {
         case location
         case createdAt = "created_at"
         case updatedAt = "updated_at"
-        case hobbies
+        case interests
     }
 }
 
@@ -193,7 +193,7 @@ extension User: Serializing {
 
         var skill: Skill.Coding?
 
-        var hobbies: [String]?
+        var interests: [String]?
     }
 
     convenience init(content: SerializedObject) {
@@ -204,7 +204,7 @@ extension User: Serializing {
         emailAddress = content.emailAddress
         aboutMe = content.aboutMe
         location = content.location
-        hobbies = content.hobbies
+        interests = content.interests
     }
     
     func reverted() throws -> SerializedObject {
@@ -222,7 +222,7 @@ extension User: Serializing {
         coding.workExps = $workExps.value?.compactMap({ try? $0.reverted() })
         coding.social = $social.value?.compactMap({ try? $0.reverted() })
         coding.skill = try $skill.value?.first?.reverted()
-        coding.hobbies = hobbies
+        coding.interests = interests
         return coding
     }
 }
@@ -236,6 +236,6 @@ extension User: Mergeable {
         emailAddress = other.emailAddress
         aboutMe = other.aboutMe
         location = other.location
-        hobbies = other.hobbies
+        interests = other.interests
     }
 }
