@@ -5,7 +5,7 @@ final class EducationalExp: Model {
 
     typealias IDValue = UUID
 
-    static var schema: String = "educational_exp"
+    static var schema: String = "educational_exps"
 
     // MARK: Properties
     @ID()
