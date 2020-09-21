@@ -47,14 +47,13 @@ func registUserAndLoggedIn(
         XCTAssertEqual(authorizeMsg.user.username, userCreation.username)
         XCTAssertEqual(authorizeMsg.user.firstName, userCreation.firstName)
         XCTAssertEqual(authorizeMsg.user.lastName, userCreation.lastName)
-        XCTAssertNil(authorizeMsg.user.screenName)
         XCTAssertNil(authorizeMsg.user.phone)
         XCTAssertNil(authorizeMsg.user.emailAddress)
         XCTAssertNil(authorizeMsg.user.aboutMe)
         XCTAssertNil(authorizeMsg.user.location)
         XCTAssertNil(authorizeMsg.user.eduExps)
         XCTAssertNil(authorizeMsg.user.workExps)
-        XCTAssertNil(authorizeMsg.user.hobbies)
+        XCTAssertNil(authorizeMsg.user.interests)
 
         httpHeaders = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken))
     })
@@ -251,7 +250,7 @@ func assertCreateProj(
     headers: HTTPHeaders? = nil
 ) throws -> Project.Coding {
 
-    let proj = Project.Coding.init(name: "proj", summary: "proj_summary", kind: .software, startDate: "start_date", endDate: "end_date")
+    let proj = Project.Coding.init(name: "proj", summary: "proj_summary", kind: .app, visibility: .public, startDate: "start_date", endDate: "end_date")
 
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
 

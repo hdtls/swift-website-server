@@ -52,7 +52,8 @@ class ProjCollectionTests: XCAppCase {
                     name: proj.name,
                     genres: proj.genres,
                     summary: proj.summary,
-                    kind: .software,
+                    kind: .app,
+                    visibility: .public,
                     startDate: proj.startDate,
                     endDate: "2020-06-29"
                 )

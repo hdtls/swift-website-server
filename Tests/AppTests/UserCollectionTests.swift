@@ -57,7 +57,6 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
             XCTAssertEqual(user.lastName, userCreation.lastName)
-            XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
@@ -80,7 +79,6 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
             XCTAssertEqual(user.lastName, userCreation.lastName)
-            XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
@@ -110,7 +108,6 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
             XCTAssertEqual(user.lastName, userCreation.lastName)
-            XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
@@ -166,7 +163,6 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
             XCTAssertEqual(user.lastName, userCreation.lastName)
-            XCTAssertNil(user.screenName)
             XCTAssertNil(user.phone)
             XCTAssertNil(user.emailAddress)
             XCTAssertNil(user.aboutMe)
@@ -189,7 +185,6 @@ class UserCollectionTests: XCAppCase {
         let upgrade = User.Coding.init(
             firstName: "R",
             lastName: "J",
-            screenName: "Jack",
             phone: "+1 888888888",
             emailAddress: "test@test.com",
             aboutMe: "HELLO WORLD !!!"
@@ -205,7 +200,6 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, upgrade.firstName)
             XCTAssertEqual(user.lastName, upgrade.lastName)
-            XCTAssertEqual(user.screenName, upgrade.screenName)
             XCTAssertEqual(user.phone, upgrade.phone)
             XCTAssertEqual(user.emailAddress, upgrade.emailAddress)
             XCTAssertEqual(user.aboutMe, upgrade.aboutMe)
