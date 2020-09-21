@@ -4,10 +4,9 @@ import FluentMySQLDriver
 
 /// Called before your application initializes.
 public func bootstrap(_ app: Application) throws {
-    
+
     // JSON configuration
     let encoder = JSONEncoder()
-    encoder.keyEncodingStrategy = .convertToSnakeCase
     encoder.dateEncodingStrategy = .iso8601
 
     let decoder = JSONDecoder()
