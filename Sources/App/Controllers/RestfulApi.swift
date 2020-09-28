@@ -10,7 +10,7 @@ protocol RestfulApi {
     var restfulIDKey: String { get }
 
     /// Create new model
-    /// This operation will decode request content with `T.SerializedObject` and transfer it to type `T`
+    /// This operation will decode request content with `T.SerializedObject` and transfer it to type `T`
     /// then save to db after that a saved model reverted object will be return for user.
     func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject>
 
@@ -37,6 +37,16 @@ protocol RestfulApi {
     /// - warning: This operation is dangerous it will delete mdoel from db and can't be
     /// reverted.
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus>
+
+    /// Basic get query builder. by default change will be apply to `read` `update` and `delete` opertation.
+    func queryBuilder(on req: Request) throws -> QueryBuilder<T>
+
+    /// Final query builder  by default change apply to `update` and `delete`.
+    /// if you will changed this function impl please make sure call `queryBuilder(on:)` first.
+    func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T>
+
+    /// Common update function.
+    func performUpdate(_ upgrade: T, on req: Request) -> EventLoopFuture<T.SerializedObject>
 }
 
 extension RestfulApi {
@@ -48,59 +58,83 @@ extension RestfulApi where T.IDValue: LosslessStringConvertible {
 
     func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
+
         let model = try T.init(content: coding)
-        return model.save(on: req.db)
-            .flatMapThrowing({
-                try model.reverted()
-            })
+
+        return performUpdate(model, on: req)
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-
-        return T.find(id, on: req.db)
+        try queryBuilder(on: req)
+            .first()
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({ try $0.reverted() })
     }
 
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
-        return T.query(on: req.db)
+        T.query(on: req.db)
             .all()
             .flatMapEachThrowing({ try $0.reverted() })
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
+
         let upgrade = try T.init(content: coding)
 
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.notFound)
-        }
-
-        return T.find(id, on: req.db)
+        return try topLevelQueryBuilder(on: req)
+            .first()
             .unwrap(or: Abort(.notFound))
-            .flatMap({ saved -> EventLoopFuture<T> in
-                saved.merge(upgrade)
-                let newValue = saved
-                return newValue.update(on: req.db).map({ newValue })
-            })
-            .flatMapThrowing({
-                try $0.reverted()
+            .flatMap({
+                $0.merge(upgrade)
+                return self.performUpdate($0, on: req)
             })
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-        return T.find(id, on: req.db)
-            .unwrap(or: Abort.init(.notFound))
+        try topLevelQueryBuilder(on: req)
+            .first()
+            .unwrap(or: Abort(.notFound))
             .flatMap({
                 $0.delete(on: req.db)
             })
-            .map({ .ok })
+            .transform(to: .ok)
+    }
+
+    func queryBuilder(on req: Request) throws -> QueryBuilder<T> {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
+            throw Abort.init(.notFound)
+        }
+        return T.query(on: req.db)
+            .filter(\._$id == id)
+    }
+
+    func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
+        try queryBuilder(on: req)
+    }
+
+    func performUpdate(_ upgrade: T, on req: Request) -> EventLoopFuture<T.SerializedObject> {
+        upgrade.save(on: req.db)
+            .flatMapThrowing({
+                try upgrade.reverted()
+            })
+    }
+}
+
+extension RestfulApi where T: UserOwnable, T.IDValue: LosslessStringConvertible {
+
+    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        let coding = try req.content.decode(T.SerializedObject.self)
+
+        let model = try T.init(content: coding)
+        model._$user.id = try req.auth.require(User.self).requireID()
+
+        return performUpdate(model, on: req)
+    }
+
+    func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
+        let userId = try req.auth.require(User.self).requireID()
+        return try queryBuilder(on: req)
+            .filter(T.uidFieldKey, .equal, userId)
     }
 }

@@ -18,3 +18,12 @@ protocol Mergeable {
     /// Merge value from other model. used to update exsit model.
     func merge(_ other: Self)
 }
+
+protocol UserOwnable: Model {
+    var _$user: Parent<User> { get }
+    static var uidFieldKey: FieldKey { get }
+}
+
+extension UserOwnable {
+    static var uidFieldKey: FieldKey { return "user_id" }
+}
