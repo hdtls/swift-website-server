@@ -3,8 +3,9 @@ import Fluent
 
 /// Restful style api defination.
 /// by default it provide `CRUD` method if `T.IDValue` is `LosslessStringConvertible`
-protocol RestfulApi {
+protocol RestfulApi: RouteCollection {
     associatedtype T: Model, Serializing, Mergeable
+    var restfulPath: String { get }
 
     /// ID path for uri
     var restfulIDKey: String { get }
@@ -50,11 +51,23 @@ protocol RestfulApi {
 }
 
 extension RestfulApi {
+    var restfulPath: String { T.schema }
     var restfulIDKey: String { "id" }
 }
 
 /// Default `CRUD` implementation.
 extension RestfulApi where T.IDValue: LosslessStringConvertible {
+
+    func boot(routes: RoutesBuilder) throws {
+        let routes = routes.grouped(.constant(restfulPath))
+
+        let path  = PathComponent.parameter(restfulIDKey)
+
+        routes.on(.POST, use: create)
+        routes.on(.GET, path, use: read)
+        routes.on(.PUT, path, use: update)
+        routes.on(.DELETE, path, use: delete)
+    }
 
     func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
@@ -122,6 +135,24 @@ extension RestfulApi where T.IDValue: LosslessStringConvertible {
 }
 
 extension RestfulApi where T: UserOwnable, T.IDValue: LosslessStringConvertible {
+
+    func boot(routes: RoutesBuilder) throws {
+        let routes = routes.grouped(.constant(restfulPath))
+
+        let path  = PathComponent.parameter(restfulIDKey)
+
+        routes.on(.GET, path, use: read)
+
+        let trusted = routes.grouped([
+            User.authenticator(),
+            Token.authenticator(),
+            User.guardMiddleware()
+        ])
+
+        trusted.on(.POST, use: create)
+        trusted.on(.PUT, path, use: update)
+        trusted.on(.DELETE, path, use: delete)
+    }
 
     func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
