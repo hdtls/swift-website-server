@@ -4,8 +4,6 @@ import Fluent
 class ProjCollection: RouteCollection, RestfulApi {
     typealias T = Project
 
-    var pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
-
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped("projects")
 
@@ -19,80 +17,14 @@ class ProjCollection: RouteCollection, RestfulApi {
 
         trusted.on(.POST, use: create)
         trusted.on(.PUT, .parameter(restfulIDKey), use: update)
-        trusted.on(.POST, .parameter(restfulIDKey), "artwork", use: uploadArtworkImage)
-        trusted.on(.POST, .parameter(restfulIDKey), "screenshots", use: uploadScreenshots)
-        trusted.on(.POST, .parameter(restfulIDKey), "screenshots", "pad", use: uploadPadScreenshots)
+        trusted.on(.PATCH, .parameter(restfulIDKey), "artwork", use: uploadArtworkImage)
+        trusted.on(.PATCH, .parameter(restfulIDKey), "screenshots", use: uploadScreenshots)
+        trusted.on(.PATCH, .parameter(restfulIDKey), "screenshots", "pad", use: uploadPadScreenshots)
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let user = try req.auth.require(User.self)
-        let coding = try req.content.decode(T.SerializedObject.self)
-        let exp = try T.init(content: coding)
-
-        exp.$user.id = try user.requireID()
-
-        return exp.save(on: req.db)
-            .flatMapThrowing({ _ in
-                try exp.reverted()
-            })
-    }
-
-    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-
-        return T.find(id, on: req.db)
-            .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ try $0.reverted() })
-    }
-
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .all()
-            .flatMapEachThrowing({ try $0.reverted() })
-    }
-
-    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-        let coding = try req.content.decode(T.SerializedObject.self)
-        let upgrade = try T.init(content: coding)
-
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.notFound)
-        }
-
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .filter(\._$id == id)
-            .first()
-            .unwrap(or: Abort(.notFound))
-            .flatMap({ saved -> EventLoopFuture<T> in
-                saved.merge(upgrade)
-                return saved.update(on: req.db).map({ saved })
-            })
-            .flatMapThrowing({
-                try $0.reverted()
-            })
-    }
-
     func uploadFiles(_ req: Request, execute: @escaping (T, [String]) -> Void) throws -> EventLoopFuture<T.SerializedObject> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.notFound)
-        }
-
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .filter(\._$id == id)
+        return try topLevelQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
@@ -127,22 +59,5 @@ class ProjCollection: RouteCollection, RestfulApi {
         try uploadFiles(req) { (saved, urls) in
             saved.padScreenshotUrls = urls
         }
-    }
-
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .filter(.id, .equal, id)
-            .first()
-            .unwrap(or: Abort.init(.notFound))
-            .flatMap({
-                $0.delete(on: req.db)
-            })
-            .map({ .ok })
     }
 }

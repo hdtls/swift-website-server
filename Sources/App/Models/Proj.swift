@@ -90,7 +90,7 @@ final class Project: ProjProtocol, Model {
     var endDate: String
 
     // MARK: Relations
-    @Parent(key: FieldKeys.user.rawValue)
+    @Parent(key: uidFieldKey)
     var user: User
 
     init() {}
@@ -115,7 +115,6 @@ extension Project {
         case trackId = "track_id"
         case startDate = "start_date"
         case endDate = "end_date"
-        case user = "user_id"
     }
 }
 
@@ -201,4 +200,8 @@ extension Project: Mergeable {
         startDate = other.startDate
         endDate = other.endDate
     }
+}
+
+extension Project: UserOwnable {
+    var _$user: Parent<User> { return $user }
 }

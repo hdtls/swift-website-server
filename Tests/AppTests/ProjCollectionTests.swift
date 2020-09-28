@@ -10,8 +10,8 @@ class ProjCollectionTests: XCAppCase {
         try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
             .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
             .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
-            .test(.POST, path + "/\(uuid)/artwork", afterResponse: assertHttpUnauthorized)
-            .test(.POST, path + "/\(uuid)/screenshots", afterResponse: assertHttpUnauthorized)
+            .test(.PATCH, path + "/\(uuid)/artwork", afterResponse: assertHttpUnauthorized)
+            .test(.PATCH, path + "/\(uuid)/screenshots", afterResponse: assertHttpUnauthorized)
             .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
     }
 
