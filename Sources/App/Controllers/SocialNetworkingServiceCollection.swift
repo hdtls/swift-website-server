@@ -2,12 +2,12 @@ import Vapor
 
 /// In progress
 /// admin user request.
-class SocialNetworkingServiceCollection: RouteCollection, RestfulApi {
+class SocialNetworkingServiceCollection: RestfulApiCollection {
     typealias T = SocialNetworkingService
 
     func boot(routes: RoutesBuilder) throws {
 
-        let routes = routes.grouped("social", "services")
+        let routes = routes.grouped(.constant(SocialNetworking.schema), "services")
 
         let path = PathComponent.parameter(restfulIDKey)
 
@@ -22,10 +22,9 @@ class SocialNetworkingServiceCollection: RouteCollection, RestfulApi {
         guard coding.type != nil else {
             throw Abort.init(.badRequest, reason: "Value required for key 'type'")
         }
+
         let model = T.init(content: coding)
-        return model.save(on: req.db)
-            .flatMapThrowing({
-                try model.reverted()
-            })
+
+        return performUpdate(model, on: req)
     }
 }

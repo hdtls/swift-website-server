@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-class ProjCollection: RouteCollection, RestfulApi {
+class ProjCollection: RestfulApiCollection {
     typealias T = Project
 
     func boot(routes: RoutesBuilder) throws {
