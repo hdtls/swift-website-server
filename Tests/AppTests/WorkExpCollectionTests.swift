@@ -10,7 +10,7 @@ class WorkExpCollectionTests: XCAppCase {
 
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-            .test(.GET, path, afterResponse: assertHttpNotFound)
+//            .test(.GET, path, afterResponse: assertHttpNotFound)
             .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
             .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
             .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)

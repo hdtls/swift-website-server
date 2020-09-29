@@ -1,27 +1,9 @@
 import Vapor
 import Fluent
 
-class WorkExpCollection: RouteCollection, RestfulApi {
+class WorkExpCollection: RestfulApiCollection {
     typealias T = WorkExp
-
-    var pidFieldKey: FieldKey = T.FieldKeys.user.rawValue
-
-    func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped("works")
-
-        routes.on(.GET, .parameter(restfulIDKey), use: read)
-
-        let trusted = routes.grouped([
-            User.authenticator(),
-            Token.authenticator(),
-            User.guardMiddleware(),
-            Token.guardMiddleware()
-        ])
-
-        trusted.on(.POST, use: create)
-        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
-        trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
-    }
+    let path = "works"
 
     func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let user = try req.auth.require(User.self)
@@ -29,16 +11,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
 
         let exp = T.init(content: coding)
 
-        let industries = try coding.industry.map({ coding -> Industry in
-            // `Industry.id` is not required by `Industry.__converted(_:)`, but
-            // required by create relation of `workExp` and `industry`, so we will
-            // add additional check to make sure it have `id` to attach with.
-
-            guard coding.id != nil else {
-                throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
-            }
-            return try Industry.init(content: coding)
-        })
+        let industries = try _industriesMaker(coding: coding)
         
         exp.$user.id = try user.requireID()
 
@@ -54,52 +27,20 @@ class WorkExpCollection: RouteCollection, RestfulApi {
             })
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-
-        return T.query(on: req.db)
-            .filter(\._$id == id)
-            .with(\.$industry)
-            .first()
-            .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ try $0.reverted() })
-    }
-
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
+     
         return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
             .with(\.$industry)
             .all()
             .flatMapEachThrowing({ try $0.reverted() })
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
         let coding = try req.content.decode(T.SerializedObject.self)
         let upgrade = T.init(content: coding)
-        let industries = try coding.industry.map({ coding -> Industry in
-            // `Industry.id` is not required by `Industry.__converted(_:)`, but
-            // required by create relation of `workExp` and `industry`, so we will
-            // add additional check to make sure it have `id` to attach with.
-            guard coding.id != nil else {
-                throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
-            }
-            return try Industry.init(content: coding)
-        })
+        let industries = try _industriesMaker(coding: coding)
 
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.notFound)
-        }
-
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .filter(\._$id == id)
-            .with(\.$industry)
+        return try topLevelQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
@@ -131,15 +72,7 @@ class WorkExpCollection: RouteCollection, RestfulApi {
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let user = try req.auth.require(User.self)
-        let userID = try user.requireID()
-        guard let expID = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-        return T.query(on: req.db)
-            .filter(pidFieldKey, .equal, userID)
-            .filter(.id, .equal, expID)
-            .with(\.$industry)
+        try topLevelQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ exp in
@@ -148,5 +81,27 @@ class WorkExpCollection: RouteCollection, RestfulApi {
                 })
             })
             .map({ .ok })
+    }
+
+    func queryBuilder(on req: Request) throws -> QueryBuilder<WorkExp> {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
+            throw Abort.init(.notFound)
+        }
+
+        return T.query(on: req.db)
+            .filter(\._$id == id)
+            .with(\.$industry)
+    }
+
+    private func _industriesMaker(coding: T.SerializedObject) throws -> [Industry] {
+        try coding.industry.map({ coding -> Industry in
+            // `Industry.id` is not required by `Industry.__converted(_:)`, but
+            // required by create relation of `workExp` and `industry`, so we will
+            // add additional check to make sure it have `id` to attach with.
+            guard coding.id != nil else {
+                throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
+            }
+            return try Industry.init(content: coding)
+        })
     }
 }

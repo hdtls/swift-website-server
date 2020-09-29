@@ -62,13 +62,9 @@ extension WorkExp {
     }
 }
 
-extension WorkExp: UserChildren {
+extension WorkExp: Serializing {
 
     typealias SerializedObject = Coding
-
-    var _$user: Parent<User> {
-        return $user
-    }
     
     struct Coding: Content, Equatable {
         // MARK: Properties
@@ -129,5 +125,15 @@ extension WorkExp: Mergeable {
         headline = other.headline
         responsibilities = other.responsibilities
         media = other.media
+    }
+}
+
+extension WorkExp: UserOwnable {
+    static var uidFieldKey: FieldKey {
+        return FieldKeys.user.rawValue
+    }
+    
+    var _$user: Parent<User> {
+        return $user
     }
 }
