@@ -60,3 +60,13 @@ extension Skill: Mergeable {
         workflow = other.workflow
     }
 }
+
+extension Skill: UserOwnable {
+    static var uidFieldKey: FieldKey {
+        return FieldKeys.user.rawValue
+    }
+
+    var _$user: Parent<User> {
+        $user
+    }
+}

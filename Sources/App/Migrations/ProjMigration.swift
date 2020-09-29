@@ -22,7 +22,7 @@ extension Project {
                 .flatMap({
                     database.schema(Project.schema)
                         .id()
-                        .field(Project.uidFieldKey, .uuid, .references(User.schema, .id))
+                        .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
                         .field(FieldKeys.name.rawValue, .string, .required)
                         .field(FieldKeys.note.rawValue, .string)
                         .field(FieldKeys.genres.rawValue, .array(of: .string))
