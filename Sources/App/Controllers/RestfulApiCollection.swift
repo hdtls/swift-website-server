@@ -5,7 +5,7 @@ import Fluent
 /// by default it provide `CRUD` method if `T.IDValue` is `LosslessStringConvertible`
 protocol RestfulApiCollection: RouteCollection {
     associatedtype T: Model, Serializing, Mergeable
-    var restfulPath: String { get }
+    var path: String { get }
 
     /// ID path for uri
     var restfulIDKey: String { get }
@@ -51,7 +51,7 @@ protocol RestfulApiCollection: RouteCollection {
 }
 
 extension RestfulApiCollection {
-    var restfulPath: String { T.schema }
+    var path: String { T.schema }
     var restfulIDKey: String { "id" }
 }
 
@@ -59,7 +59,7 @@ extension RestfulApiCollection {
 extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
 
     func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped(.constant(restfulPath))
+        let routes = routes.grouped(path.components(separatedBy: "/").map(PathComponent.constant))
 
         let path  = PathComponent.parameter(restfulIDKey)
 
@@ -137,7 +137,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
 extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringConvertible {
 
     func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped(.constant(restfulPath))
+        let routes = routes.grouped(path.components(separatedBy: "/").map(PathComponent.constant))
 
         let path  = PathComponent.parameter(restfulIDKey)
 
