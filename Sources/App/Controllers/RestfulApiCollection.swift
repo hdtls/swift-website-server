@@ -3,7 +3,7 @@ import Fluent
 
 /// Restful style api defination.
 /// by default it provide `CRUD` method if `T.IDValue` is `LosslessStringConvertible`
-protocol RestfulApi: RouteCollection {
+protocol RestfulApiCollection: RouteCollection {
     associatedtype T: Model, Serializing, Mergeable
     var restfulPath: String { get }
 
@@ -50,13 +50,13 @@ protocol RestfulApi: RouteCollection {
     func performUpdate(_ upgrade: T, on req: Request) -> EventLoopFuture<T.SerializedObject>
 }
 
-extension RestfulApi {
+extension RestfulApiCollection {
     var restfulPath: String { T.schema }
     var restfulIDKey: String { "id" }
 }
 
 /// Default `CRUD` implementation.
-extension RestfulApi where T.IDValue: LosslessStringConvertible {
+extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
 
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(.constant(restfulPath))
@@ -134,7 +134,7 @@ extension RestfulApi where T.IDValue: LosslessStringConvertible {
     }
 }
 
-extension RestfulApi where T: UserOwnable, T.IDValue: LosslessStringConvertible {
+extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringConvertible {
 
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(.constant(restfulPath))
