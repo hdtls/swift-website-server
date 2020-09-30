@@ -3,7 +3,7 @@ import XCTVapor
 
 class SocialNetworkingSereviceCollectionTests: XCAppCase {
 
-    let path = "social/services"
+    let path = "\(SocialNetworking.schema)/services"
 
     func testCreate() throws {
         try assertCreateSocialNetworkingService(app)

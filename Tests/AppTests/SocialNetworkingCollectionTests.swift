@@ -3,7 +3,7 @@ import XCTVapor
 
 class SocialNetworkingCollectionTests: XCAppCase {
 
-    let path = "social"
+    let path = SocialNetworking.schema
 
     func testCreate() {
         XCTAssertNoThrow(try assertCreateSocialNetworking(app))
@@ -13,7 +13,7 @@ class SocialNetworkingCollectionTests: XCAppCase {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
             .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
-            .test(.GET, "social", afterResponse: assertHttpNotFound)
+            .test(.GET, path, afterResponse: assertHttpNotFound)
             .test(.PUT, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
             .test(.DELETE, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
         )

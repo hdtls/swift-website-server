@@ -33,12 +33,8 @@ extension SocialNetworking {
     }
 }
 
-extension SocialNetworking: UserChildren {
+extension SocialNetworking: Serializing {
     typealias SerializedObject = Coding
-
-    var _$user: Parent<User> {
-        return $user
-    }
 
     struct Coding: Content, Equatable {
         var id: SocialNetworking.IDValue?
@@ -74,5 +70,15 @@ extension SocialNetworking: Mergeable {
     // Only `url` property can be update.
     func merge(_ other: SocialNetworking) {
         url = other.url
+    }
+}
+
+extension SocialNetworking: UserOwnable {
+    static var uidFieldKey: FieldKey {
+        return FieldKeys.user.rawValue
+    }
+
+    var _$user: Parent<User> {
+        return $user
     }
 }
