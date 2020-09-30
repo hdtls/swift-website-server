@@ -70,7 +70,7 @@ func assertCreateSocialNetworkingService(
 
     var service: SocialNetworkingService.Coding!
 
-    try app.test(.POST, "social/services", beforeRequest: {
+    try app.test(.POST, "\(SocialNetworking.schema)/services", beforeRequest: {
         try $0.content.encode(socialNetworkingService)
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
@@ -97,7 +97,7 @@ func assertCreateSocialNetworking(
 
     let service = try assertCreateSocialNetworkingService(app)
 
-    try app.test(.POST, "social", headers: httpHeaders, beforeRequest: {
+    try app.test(.POST, SocialNetworking.schema, headers: httpHeaders, beforeRequest: {
         try $0.content.encode(
             SocialNetworking.Coding.init(url: "https://twitter.com/uid", service: service)
         )
@@ -141,8 +141,8 @@ func assertCreateIndustry(
 func assertCreateWorkExperiance(
     _ app: Application,
     headers: HTTPHeaders? = nil
-) throws -> WorkExp.Coding {
-    let exp = WorkExp.Coding.init(
+) throws -> Experience.Coding {
+    let exp = Experience.Coding.init(
         title: "iOS Developer",
         companyName: "XXX",
         location: "XXX",
@@ -155,16 +155,16 @@ func assertCreateWorkExperiance(
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
     let industry = try assertCreateIndustry(app, industry: exp.industry.first)
 
-    var coding: WorkExp.Coding!
+    var coding: Experience.Coding!
 
-    try app.test(.POST, "exp/works", headers: httpHeaders, beforeRequest: {
+    try app.test(.POST, Experience.schema, headers: httpHeaders, beforeRequest: {
         var workExpCoding = exp
         workExpCoding.industry = [industry]
         try $0.content.encode(workExpCoding)
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
 
-        coding = try $0.content.decode(WorkExp.Coding.self)
+        coding = try $0.content.decode(Experience.Coding.self)
         XCTAssertNotNil(coding.id)
         XCTAssertNotNil(coding.userId)
         XCTAssertEqual(coding.title, exp.title)
@@ -186,9 +186,9 @@ func assertCreateWorkExperiance(
 func assertCreateEduExperiance(
     _ app: Application,
     headers: HTTPHeaders? = nil
-) throws -> EducationalExp.Coding {
+) throws -> Education.Coding {
 
-    let edu = EducationalExp.Coding.init(
+    let edu = Education.Coding.init(
         school: "BALABALA",
         degree: "PhD",
         field: "xxx",
@@ -197,14 +197,14 @@ func assertCreateEduExperiance(
     )
 
     let headers = try registUserAndLoggedIn(app, headers: headers)
-    var coding: EducationalExp.Coding!
+    var coding: Education.Coding!
 
-    try app.test(.POST, "exp/edu", headers: headers, beforeRequest: {
+    try app.test(.POST, Education.schema, headers: headers, beforeRequest: {
         try $0.content.encode(edu)
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
 
-        coding = try $0.content.decode(EducationalExp.Coding.self)
+        coding = try $0.content.decode(Education.Coding.self)
         XCTAssertNotNil(coding.id)
         XCTAssertNotNil(coding.userId)
         XCTAssertEqual(coding.school, edu.school)

@@ -1,13 +1,13 @@
 import Fluent
 
-extension WorkExp {
+extension Experience {
 
     static let migration: Migration = .init()
 
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(WorkExp.schema)
+            database.schema(Experience.schema)
                 .id()
                 .field(FieldKeys.title.rawValue, .string, .required)
                 .field(FieldKeys.companyName.rawValue, .string, .required)
@@ -22,7 +22,7 @@ extension WorkExp {
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(WorkExp.schema).delete()
+            database.schema(Experience.schema).delete()
         }
     }
 }

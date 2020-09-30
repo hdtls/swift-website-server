@@ -1,11 +1,11 @@
 import Vapor
 import Fluent
 
-final class WorkExp: Model {
+final class Experience: Model {
 
     typealias IDValue = UUID
     
-    static let schema: String = "work_exps"
+    static let schema: String = "experiences"
 
     // MARK: Properties
     @ID()
@@ -39,7 +39,7 @@ final class WorkExp: Model {
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
 
-    @Siblings(through: WorkExpIndustrySiblings.self, from: \.$workExp, to: \.$industry)
+    @Siblings(through: ExpIndustrySiblings.self, from: \.$experience, to: \.$industry)
     var industry: [Industry]
 
     // MARK: Initializer
@@ -47,7 +47,7 @@ final class WorkExp: Model {
 }
 
 // MARK: Field keys
-extension WorkExp {
+extension Experience {
 
     enum FieldKeys: FieldKey {
         case title
@@ -62,13 +62,13 @@ extension WorkExp {
     }
 }
 
-extension WorkExp: Serializing {
+extension Experience: Serializing {
 
     typealias SerializedObject = Coding
     
     struct Coding: Content, Equatable {
         // MARK: Properties
-        var id: WorkExp.IDValue?
+        var id: Experience.IDValue?
         var title: String
         var companyName: String
         var location: String
@@ -83,7 +83,7 @@ extension WorkExp: Serializing {
         var userId: User.IDValue?
     }
 
-    /// Convert `Coding` to `WorkExp`, used for decoding request content.
+    /// Convert `Coding` to `Experience`, used for decoding request content.
     /// - note: `user` and `industry` eager loading property will set on route operation.
     convenience init(content: Coding) {
         self.init()
@@ -114,9 +114,9 @@ extension WorkExp: Serializing {
     }
 }
 
-extension WorkExp: Mergeable {
+extension Experience: Mergeable {
 
-    func merge(_ other: WorkExp) {
+    func merge(_ other: Experience) {
         title = other.title
         companyName = other.companyName
         location = other.location
@@ -128,7 +128,7 @@ extension WorkExp: Mergeable {
     }
 }
 
-extension WorkExp: UserOwnable {
+extension Experience: UserOwnable {
     static var uidFieldKey: FieldKey {
         return FieldKeys.user.rawValue
     }

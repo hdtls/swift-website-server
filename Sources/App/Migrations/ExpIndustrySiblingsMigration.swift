@@ -1,21 +1,21 @@
 import Fluent
 
-extension WorkExpIndustrySiblings {
+extension ExpIndustrySiblings {
 
     static let migration: Migration = .init()
 
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(WorkExpIndustrySiblings.schema)
+            database.schema(ExpIndustrySiblings.schema)
                 .id()
-                .field(FieldKeys.workExp.rawValue, .uuid, .required)
+                .field(FieldKeys.experience.rawValue, .uuid, .required)
                 .field(FieldKeys.industry.rawValue, .uuid, .required)
                 .create()
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(WorkExpIndustrySiblings.schema).delete()
+            database.schema(ExpIndustrySiblings.schema).delete()
         }
     }
 }

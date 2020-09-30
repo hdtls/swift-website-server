@@ -1,16 +1,16 @@
 import Vapor
 import Fluent
 
-final class WorkExpIndustrySiblings: Model {
+final class ExpIndustrySiblings: Model {
     typealias IDValue = UUID
 
-    static var schema: String = "work_exp_industry_siblings"
+    static var schema: String = "exp_industry_siblings"
 
     @ID()
     var id: IDValue?
 
-    @Parent(key: FieldKeys.workExp.rawValue)
-    var workExp: WorkExp
+    @Parent(key: FieldKeys.experience.rawValue)
+    var experience: Experience
 
     @Parent(key: FieldKeys.industry.rawValue)
     var industry: Industry
@@ -18,10 +18,10 @@ final class WorkExpIndustrySiblings: Model {
     init() {}
 }
 
-extension WorkExpIndustrySiblings {
+extension ExpIndustrySiblings {
 
     enum FieldKeys: FieldKey {
-        case workExp = "work_exp_id"
+        case experience = "experience_id"
         case industry = "industry_id"
     }
 }

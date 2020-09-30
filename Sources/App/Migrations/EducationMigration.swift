@@ -1,13 +1,13 @@
 import Fluent
 
-extension EducationalExp {
+extension Education {
 
     static let migration: Migration = .init()
 
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(EducationalExp.schema)
+            database.schema(Education.schema)
                 .id()
                 .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
                 .field(FieldKeys.school.rawValue, .string, .required)
@@ -23,7 +23,7 @@ extension EducationalExp {
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(EducationalExp.schema).delete()
+            database.schema(Education.schema).delete()
         }
     }
 }

@@ -1,9 +1,9 @@
 import XCTVapor
 @testable import App
 
-class EduExpCollectionTests: XCAppCase {
+class EducationCollectionTests: XCAppCase {
 
-    let path = "exp/edu"
+    let path = Education.schema
 
     func testAuthorizeRequire() {
         let uuid = UUID.init().uuidString
@@ -31,7 +31,7 @@ class EduExpCollectionTests: XCAppCase {
         try app.test(.GET, path + "/" + exp.id!.uuidString, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(EducationalExp.Coding.self)
+            let coding = try $0.content.decode(Education.Coding.self)
             XCTAssertEqual(coding.id, exp.id)
             XCTAssertEqual(coding.userId, exp.userId)
             XCTAssertEqual(coding.school, exp.school)
@@ -47,7 +47,7 @@ class EduExpCollectionTests: XCAppCase {
     func testUpdate() throws {
         let headers = try registUserAndLoggedIn(app)
         let exp = try assertCreateEduExperiance(app, headers: headers)
-        let upgrade = EducationalExp.Coding.init(
+        let upgrade = Education.Coding.init(
             school: "ABC",
             degree: "PhD",
             field: "xxx",
@@ -59,7 +59,7 @@ class EduExpCollectionTests: XCAppCase {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(EducationalExp.Coding.self)
+            let coding = try $0.content.decode(Education.Coding.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)

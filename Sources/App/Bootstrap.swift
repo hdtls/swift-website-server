@@ -30,17 +30,17 @@ public func bootstrap(_ app: Application) throws {
 
     app.migrations.add(User.migration)
     app.migrations.add(Token.migration)
-    app.migrations.add(WorkExp.migration)
+    app.migrations.add(Experience.migration)
     app.migrations.add(SocialNetworking.migration)
     app.migrations.add(Industry.migration)
-    app.migrations.add(EducationalExp.migration)
-    app.migrations.add(WorkExpIndustrySiblings.migration)
+    app.migrations.add(Education.migration)
+    app.migrations.add(ExpIndustrySiblings.migration)
     app.migrations.add(SocialNetworkingService.migration)
     app.migrations.add(Skill.migration)
     app.migrations.add(Project.migration)
 
     try app.autoMigrate().wait()
-    
+
     // Register routes
     try routes(app)
 }

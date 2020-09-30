@@ -1,11 +1,11 @@
 import Vapor
 import Fluent
 
-final class EducationalExp: Model {
+final class Education: Model {
 
     typealias IDValue = UUID
 
-    static var schema: String = "educational_exps"
+    static var schema: String = "education"
 
     // MARK: Properties
     @ID()
@@ -47,7 +47,7 @@ final class EducationalExp: Model {
 }
 
 // MARK: Field keys
-extension EducationalExp {
+extension Education {
 
     enum FieldKeys: FieldKey {
         case school
@@ -63,12 +63,8 @@ extension EducationalExp {
     }
 }
 
-extension EducationalExp: UserChildren {
+extension Education: Serializing {
     typealias SerializedObject = Coding
-
-    var _$user: Parent<User> {
-        return $user
-    }
     
     struct Coding: Content, Equatable {
 
@@ -118,9 +114,9 @@ extension EducationalExp: UserChildren {
     }
 }
 
-extension EducationalExp: Mergeable {
+extension Education: Mergeable {
 
-    func merge(_ other: EducationalExp) {
+    func merge(_ other: Education) {
         school = other.school
         degree = other.degree
         field = other.field
@@ -130,5 +126,15 @@ extension EducationalExp: Mergeable {
         activities = other.activities
         accomplishments = other.accomplishments
         media = other.media
+    }
+}
+
+extension Education: UserOwnable {
+    static var uidFieldKey: FieldKey {
+        return FieldKeys.user.rawValue
+    }
+
+    var _$user: Parent<User> {
+        return $user
     }
 }

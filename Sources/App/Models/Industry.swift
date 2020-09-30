@@ -13,8 +13,8 @@ final class Industry: Model {
     @Field(key: FieldKeys.title.rawValue)
     var title: String
 
-    @Siblings(through: WorkExpIndustrySiblings.self, from: \.$industry, to: \.$workExp)
-    var workExp: [WorkExp]
+    @Siblings(through: ExpIndustrySiblings.self, from: \.$industry, to: \.$experience)
+    var experience: [Experience]
 
     init() {}
 

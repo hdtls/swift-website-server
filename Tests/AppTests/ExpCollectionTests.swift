@@ -1,9 +1,9 @@
 import XCTVapor
 @testable import App
 
-class WorkExpCollectionTests: XCAppCase {
+class ExpCollectionTests: XCAppCase {
 
-    let path = "exp/works"
+    let path = Experience.schema
 
     func testAuthorizeRequire() {
         let uuid = UUID.init().uuidString
@@ -32,7 +32,7 @@ class WorkExpCollectionTests: XCAppCase {
         try app.test(.GET, path + "/\(exp.id!.uuidString)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(WorkExp.Coding.self)
+            let coding = try $0.content.decode(Experience.Coding.self)
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
             XCTAssertEqual(coding.title, exp.title)
@@ -52,7 +52,7 @@ class WorkExpCollectionTests: XCAppCase {
 
         let exp = try assertCreateWorkExperiance(app, headers: headers)
 
-        let upgrade = WorkExp.Coding.init(
+        let upgrade = Experience.Coding.init(
             title: exp.title,
             companyName: exp.companyName,
             location: exp.location,
@@ -65,7 +65,7 @@ class WorkExpCollectionTests: XCAppCase {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(WorkExp.Coding.self)
+            let coding = try $0.content.decode(Experience.Coding.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)

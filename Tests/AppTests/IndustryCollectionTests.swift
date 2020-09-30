@@ -9,7 +9,7 @@ class IndustryCollectionTests: XCAppCase {
         XCTAssertNoThrow(try assertCreateIndustry(app))
     }
 
-    func testCreateWithIndustry() throws {
+    func testCreateWithConflictIndustry() throws {
         let industry = try assertCreateIndustry(app)
 
         try app.test(.POST, path, beforeRequest: {
