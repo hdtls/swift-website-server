@@ -2,16 +2,21 @@ import Vapor
 
 class FileCollection: RouteCollection {
 
-    let path: String
+    enum MediaType: String {
+        case images
+        case files
+    }
+
+    let type: MediaType
     let maximumBodySize: ByteCount
 
-    init(path: String, maximumBodySize: ByteCount = "1mb") {
-        self.path = path
+    init(type: MediaType, maximumBodySize: ByteCount = "100mb") {
+        self.type = type
         self.maximumBodySize = maximumBodySize
     }
 
     func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped(.init(stringLiteral: path))
+        let routes = routes.grouped(.init(stringLiteral: type.rawValue))
 
         routes.on(.GET, .anything, use: read)
 
@@ -50,7 +55,12 @@ class FileCollection: RouteCollection {
         return req.eventLoop.makeSucceededFuture(req.fileio.streamFile(at: filePath))
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<[String]> {
-        try uploadMultipleFiles(req).flatMapEachThrowing({ $0.absoluteURLString })
+    func create(_ req: Request) throws -> EventLoopFuture<String> {
+        switch type {
+        case .images:
+            return try uploadImageFile(req).map { $0.absoluteURLString }
+        default:
+            return try uploadFile(req, relative: req.application.directory.publicDirectory).map { $0.absoluteURLString }
+        }
     }
 }

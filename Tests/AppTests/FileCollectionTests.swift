@@ -3,28 +3,26 @@ import XCTVapor
 
 class FileCollectionTests: XCAppCase {
 
-    struct MultipartFormData: Encodable {
-        var multipart: [String]
-    }
-    let multipartFormData = MultipartFormData.init(multipart: ["picture.jpg"])
-    let path = "images"
+    let file = File(data: "HELLO WORLD!!!", filename: "hello.txt")
+    let path = "files"
 
     func testAuthorizeRequire() {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-            .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpServerError)
+                .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
         )
     }
 
     func testCreate() throws {
+
         let headers = try registUserAndLoggedIn(app)
 
         try app.test(.POST, path, headers: headers, beforeRequest: {
-            try $0.content.encode(multipartFormData, using: FormDataEncoder.init())
+            try $0.content.encode(["file" : file], as: .formData)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let urls = try $0.content.decode([String].self)
-            XCTAssertEqual(urls.count, 1)
+            XCTAssertNotNil($0.body.string)
+            XCTAssertContains($0.body.string, "/static/")
         })
     }
 
@@ -33,12 +31,11 @@ class FileCollectionTests: XCAppCase {
         var url: String!
 
         try app.test(.POST, path, headers: headers, beforeRequest: {
-            try $0.content.encode(multipartFormData, using: FormDataEncoder.init())
+            try $0.content.encode(["file" : file], as: .formData)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let urls = try $0.content.decode([String].self)
-            XCTAssertEqual(urls.count, 1)
-            url = urls.first!
+            url = $0.body.string
+            XCTAssertNotNil($0.body.string)
         })
 
         try app.test(.GET, (url.path ?? ""), afterResponse: {

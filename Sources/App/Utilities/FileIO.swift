@@ -1,64 +1,37 @@
 import Vapor
 
 extension FileIO {
-    func writeFile(_ byteBuffer: ByteBuffer, path: String) -> EventLoopFuture<String> {
+    func writeFile(
+        _ byteBuffer: ByteBuffer,
+        path: String,
+        relative: String
+    ) -> EventLoopFuture<String> {
+        let relative = relative.hasSuffix("/") ? String(relative.dropLast()) : relative
 
-        let filepath = path.components(separatedBy: "/").dropLast().joined(separator: "/")
+        let path = path.hasPrefix("/") ? path : "/" + path
+
+        let directory = relative + path.split(separator: "/", omittingEmptySubsequences: false).dropLast().joined(separator: "/")
+
         try? FileManager.default.createDirectory(
-            atPath: filepath,
+            atPath: directory,
             withIntermediateDirectories: true
         )
-        print(filepath)
-        return writeFile(byteBuffer, at: path).map({ path })
+
+        let filepath = relative + path
+
+        return writeFile(byteBuffer, at: filepath).map({ path })
     }
 }
-
-struct MultipartFormData: Codable {
-    var multipart: [Data]
-}
-
-func uploadMultipleFiles(
-    _ req: Request,
-    path: String = "images"
-) throws -> EventLoopFuture<[String]> {
-
-    let multipartFormData = try req.content.decode(MultipartFormData.self)
-
-    guard !multipartFormData.multipart.isEmpty else {
-        throw Abort(.badRequest)
-    }
-
-    let futures = multipartFormData.multipart.map({ data -> EventLoopFuture<String> in
-
-        var filepath = _filepath(data, relative: path)
-        let byteBuffer = ByteBuffer.init(data: data)
-
-        // TODO: Decode file extension from formdata.
-        let fileExtension = path == "images" ? ".jpg" : ""
-        filepath += fileExtension
-
-        return req.fileio.writeFile(byteBuffer, path: req.application.directory.publicDirectory + filepath)
-    })
-
-    return EventLoopFuture.whenAllSucceed(futures, on: req.eventLoop)
-}
-
 
 /// Auto generate filepath with file content hash.
 /// - Parameters:
-///   - file: file data.
+///   - file: file.
 ///   - path: relative path
 /// - Returns: solved file location the value is a tuple of filename and directory.
-fileprivate func _filepath(
-    _ file: Data,
-    relative path: String = ""
-) -> String {
+fileprivate func _filepath(_ file: MultipartFileProtocol, relative: String = "") -> String {
+    var directory = relative.hasSuffix("/") ? relative : relative + "/"
 
-    var directory = path.hasSuffix("/") ? path : path + "/"
-
-    let filename = Insecure.MD5.hash(data: file).hex
-
-    var prefix = filename.prefix(6)
+    var prefix = file.filename.prefix(8)
 
     // Add subpath with filename slices.
     let maxLength = 2
@@ -67,9 +40,41 @@ fileprivate func _filepath(
         prefix.removeFirst(maxLength)
     }
 
-    return directory + filename
+    return directory + file.filename
 }
 
-func uploadImageFiles(_ req: Request) throws -> EventLoopFuture<[String]> {
-    return try uploadMultipleFiles(req)
+struct MultipartFormData: Content {    
+    var image: MultipartImage?
+    var file: MultipartFile?
+}
+
+func uploadImageFile(_ req: Request) throws -> EventLoopFuture<String> {
+    let multipartFormData = try req.content.decode(MultipartFormData.self)
+
+    guard let multipartImage = multipartFormData.image else {
+        throw Abort(.badRequest, reason: "Invalid image buffer.")
+    }
+
+    let filepath = _filepath(multipartImage, relative: "/images")
+
+    return req.fileio.writeFile(
+        multipartImage.data,
+        path: filepath,
+        relative: req.application.directory.publicDirectory
+    )
+}
+
+func uploadFile(_ req: Request, relative path: String) throws -> EventLoopFuture<String> {
+    let multipartFormData = try req.content.decode(MultipartFormData.self)
+    guard let multipartFile = multipartFormData.file else {
+        throw Abort(.badRequest, reason: "Invalid file buffer.")
+    }
+
+    let filepath = "/static/\(UUID().uuidString)\(multipartFile.extension != nil ? ".\(multipartFile.extension!)" : "")"
+
+    return req.fileio.writeFile(
+        multipartFile.data,
+        path: filepath,
+        relative: path
+    )
 }
