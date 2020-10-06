@@ -147,10 +147,16 @@ extension Project: Serializing {
 
     convenience init(content: SerializedObject) throws {
         self.init()
+        id = content.id
         name = content.name
         note = content.note
         genres = content.genres
         summary = content.summary
+        artworkUrl = content.artworkUrl?.path
+        backgroundImageUrl = content.backgroundImageUrl?.path
+        promoImageUrl = content.promoImageUrl?.path
+        screenshotUrls = content.screenshotUrls?.compactMap({ $0.path })
+        padScreenshotUrls = content.padScreenshotUrls?.compactMap({ $0.path })
         kind = content.kind
         visibility = content.visibility
         trackViewUrl = content.trackViewUrl
@@ -166,11 +172,11 @@ extension Project: Serializing {
             note: note,
             genres: genres,
             summary: summary,
-            artworkUrl: artworkUrl,
-            backgroundImageUrl: backgroundImageUrl,
-            promoImageUrl: promoImageUrl,
-            screenshotUrls: screenshotUrls,
-            padScreenshotUrls: padScreenshotUrls,
+            artworkUrl: artworkUrl?.absoluteURLString,
+            backgroundImageUrl: backgroundImageUrl?.absoluteURLString,
+            promoImageUrl: promoImageUrl?.absoluteURLString,
+            screenshotUrls: screenshotUrls?.compactMap({ $0.absoluteURLString }),
+            padScreenshotUrls: padScreenshotUrls?.compactMap({ $0.absoluteURLString }),
             kind: kind,
             visibility: visibility,
             trackViewUrl: trackViewUrl,
@@ -189,8 +195,8 @@ extension Project: Mergeable {
         note = other.note
         genres = other.genres
         summary = other.summary
-        artworkUrl = other.artworkUrl?.path
-        backgroundImageUrl = other.backgroundImageUrl?.path
+        artworkUrl = other.artworkUrl
+        backgroundImageUrl = other.backgroundImageUrl
         promoImageUrl = other.promoImageUrl
         screenshotUrls = other.screenshotUrls
         padScreenshotUrls = other.padScreenshotUrls

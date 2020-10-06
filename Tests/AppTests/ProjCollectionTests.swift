@@ -10,9 +10,44 @@ class ProjCollectionTests: XCAppCase {
         try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
             .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
             .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
-            .test(.PATCH, path + "/\(uuid)/artwork", afterResponse: assertHttpUnauthorized)
-            .test(.PATCH, path + "/\(uuid)/screenshots", afterResponse: assertHttpUnauthorized)
             .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
+    }
+
+    func _testProjCreation(with headers: HTTPHeaders, without key: String) throws {
+
+        var json = [
+            "name": "",
+            "summary" : "",
+            "kind" : "app",
+            "visibility" : "public",
+            "startDate" : "",
+            "endDate" : ""
+        ]
+
+        json.removeValue(forKey: key)
+
+        try app.test(.POST, "projects", headers: headers, beforeRequest: {
+            try $0.content.encode(json)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .badRequest)
+            XCTAssertContains($0.body.string, "Value required for key '\(key)'")
+        })
+    }
+
+    func testInvalidCreate() throws {
+        let headers = try registUserAndLoggedIn(app)
+
+        try _testProjCreation(with: headers, without: "name")
+
+        try _testProjCreation(with: headers, without: "summary")
+
+        try _testProjCreation(with: headers, without: "kind")
+
+        try _testProjCreation(with: headers, without: "visibility")
+
+        try _testProjCreation(with: headers, without: "startDate")
+
+        try _testProjCreation(with: headers, without: "endDate")
     }
 
     func testCreate() throws {
@@ -32,12 +67,22 @@ class ProjCollectionTests: XCAppCase {
 
             let coding = try $0.content.decode(Project.Coding.self)
             XCTAssertNotNil(coding.id)
-            XCTAssertNotNil(coding.userId)
             XCTAssertEqual(coding.name, proj.name)
+            XCTAssertEqual(coding.note, proj.note)
             XCTAssertEqual(coding.genres, proj.genres)
             XCTAssertEqual(coding.summary, proj.summary)
+            XCTAssertEqual(coding.artworkUrl, proj.artworkUrl)
+            XCTAssertEqual(coding.backgroundImageUrl, proj.backgroundImageUrl)
+            XCTAssertEqual(coding.promoImageUrl, proj.promoImageUrl)
+            XCTAssertEqual(coding.screenshotUrls, proj.screenshotUrls)
+            XCTAssertEqual(coding.padScreenshotUrls, proj.padScreenshotUrls)
+            XCTAssertEqual(coding.kind, proj.kind)
+            XCTAssertEqual(coding.visibility, proj.visibility)
+            XCTAssertEqual(coding.trackViewUrl, proj.trackViewUrl)
+            XCTAssertEqual(coding.trackId, proj.trackId)
             XCTAssertEqual(coding.startDate, proj.startDate)
             XCTAssertEqual(coding.endDate, proj.endDate)
+            XCTAssertNotNil(coding.userId)
         })
     }
 
@@ -65,8 +110,18 @@ class ProjCollectionTests: XCAppCase {
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
             XCTAssertEqual(coding.name, proj.name)
+            XCTAssertEqual(coding.note, proj.note)
             XCTAssertEqual(coding.genres, proj.genres)
             XCTAssertEqual(coding.summary, proj.summary)
+            XCTAssertEqual(coding.artworkUrl, proj.artworkUrl)
+            XCTAssertEqual(coding.backgroundImageUrl, proj.backgroundImageUrl)
+            XCTAssertEqual(coding.promoImageUrl, proj.promoImageUrl)
+            XCTAssertEqual(coding.screenshotUrls, proj.screenshotUrls)
+            XCTAssertEqual(coding.padScreenshotUrls, proj.padScreenshotUrls)
+            XCTAssertEqual(coding.kind, proj.kind)
+            XCTAssertEqual(coding.visibility, proj.visibility)
+            XCTAssertEqual(coding.trackViewUrl, proj.trackViewUrl)
+            XCTAssertEqual(coding.trackId, proj.trackId)
             XCTAssertEqual(coding.startDate, proj.startDate)
             XCTAssertEqual(coding.endDate, "2020-06-29")
         })
