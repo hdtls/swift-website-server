@@ -108,6 +108,10 @@ class UserCollection: RouteCollection {
             queryBuilder.with(\.$skill)
         }
 
+        if (try? req.query.get(Bool.self, at: "incl_blog")) ?? false {
+            queryBuilder.with(\.$blog)
+        }
+
         return queryBuilder
             .all()
             .flatMapEachThrowing({

@@ -42,7 +42,7 @@ class UserCollectionTests: XCAppCase {
         try registUserAndLoggedIn(app)
     }
     
-    func testQueryWithInvalidUserID() throws {
+    func testQueryWithUserIDThatDoesNotExsit() throws {
         try app.test(.GET, path + "/notfound", afterResponse: assertHttpNotFound)
     }
     
@@ -70,7 +70,7 @@ class UserCollectionTests: XCAppCase {
     func testQueryWithUserIDAndQueryParameters() throws {
         try registUserAndLoggedIn(app, userCreation)
 
-        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true&incl_blog=true"
         try app.test(.GET, path + "/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
@@ -87,6 +87,7 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.projects, [])
             XCTAssertEqual(user.eduExps, [])
             XCTAssertEqual(user.workExps, [])
+            XCTAssertEqual(user.blog, [])
             XCTAssertNil(user.skill)
         })
     }
@@ -99,8 +100,10 @@ class UserCollectionTests: XCAppCase {
         let eduExp = try assertCreateEduExperiance(app, headers: headers)
         let proj = try assertCreateProj(app, headers: headers)
         let skill = try assertCreateSkill(app, headers: headers)
+        var blog = try assertCreateBlog(app, headers: headers)
+        blog.content = nil
 
-        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true&incl_blog=true"
         try app.test(.GET, path + "/\(userCreation.username)\(query)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let user = try $0.content.decode(User.Coding.self)
@@ -120,8 +123,11 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.eduExps?.first, eduExp)
             XCTAssertEqual(user.workExps?.count, 1)
             XCTAssertEqual(user.workExps?.first, workExp)
+            XCTAssertEqual(user.blog?.count, 1)
+            XCTAssertEqual(user.blog?.first, blog)
             XCTAssertEqual(user.skill, skill)
         })
+        .test(.DELETE, Blog.schema + "/\(blog.id!.uuidString)", headers: headers)
     }
 
     func testQueryAll() throws {
@@ -148,8 +154,10 @@ class UserCollectionTests: XCAppCase {
         let eduExpCoding = try assertCreateEduExperiance(app, headers: headers)
         let projCoding = try assertCreateProj(app, headers: headers)
         let skillCoding = try assertCreateSkill(app, headers: headers)
-
-        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true"
+        var blog = try assertCreateBlog(app, headers: headers)
+        blog.content = nil
+        
+        let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true&incl_blog=true"
         try app.test(.GET, path + query, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
@@ -175,9 +183,12 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual(user.workExps!.first, workExpCoding)
             XCTAssertEqual(user.projects!.count, 1)
             XCTAssertEqual(user.projects!.first, projCoding)
+            XCTAssertEqual(user.blog!.count, 1)
+            XCTAssertEqual(user.blog!.first, blog)
             XCTAssertNotNil(user.skill)
             XCTAssertEqual(user.skill, skillCoding)
         })
+        .test(.DELETE, Blog.schema + "/\(blog.id!.uuidString)", headers: headers)
     }
     
     func testUpdate() throws {

@@ -67,6 +67,9 @@ final class User: Model {
     @Children(for: \.$user)
     var skill: [Skill]
 
+    @Children(for: \.$user)
+    var blog: [Blog]
+
     @OptionalField(key: FieldKeys.interests.rawValue)
     var interests: [String]?
 
@@ -180,18 +183,20 @@ extension User: Serializing {
         // MARK: Relations
         /// Links that user owned.
         /// - note: Only use for encoding user model.
-        var social: [SocialNetworking.Coding]?
+        var social: [SocialNetworking.SerializedObject]?
 
         /// Projects
-        var projects: [Project.Coding]?
+        var projects: [Project.SerializedObject]?
 
         /// Education experiances
-        var eduExps: [Education.Coding]?
+        var eduExps: [Education.SerializedObject]?
 
         /// Experiances
-        var workExps: [Experience.Coding]?
+        var workExps: [Experience.SerializedObject]?
 
-        var skill: Skill.Coding?
+        var blog: [Blog.SerializedObject]?
+
+        var skill: Skill.SerializedObject?
 
         var interests: [String]?
     }
@@ -221,6 +226,7 @@ extension User: Serializing {
         coding.eduExps = $eduExps.value?.compactMap({ try? $0.reverted() })
         coding.workExps = $workExps.value?.compactMap({ try? $0.reverted() })
         coding.social = $social.value?.compactMap({ try? $0.reverted() })
+        coding.blog = $blog.value?.compactMap({ try? $0.reverted() })
         coding.skill = try $skill.value?.first?.reverted()
         coding.interests = interests
         return coding

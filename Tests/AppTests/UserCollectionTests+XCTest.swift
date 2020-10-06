@@ -16,7 +16,7 @@ extension UserCollectionTests {
                 ("testCreateWithInvalidPassword", testCreateWithInvalidPassword),
                 ("testCreateWithConflictUsername", testCreateWithConflictUsername),
                 ("testCreate", testCreate),
-                ("testQueryWithInvalidUserID", testQueryWithInvalidUserID),
+                ("testQueryWithUserIDThatDoesNotExsit", testQueryWithUserIDThatDoesNotExsit),
                 ("testQueryWithUserID", testQueryWithUserID),
                 ("testQueryWithUserIDAndQueryParameters", testQueryWithUserIDAndQueryParameters),
                 ("testQueryWithUserIDAndQueryParametersAfterAddChildrens", testQueryWithUserIDAndQueryParametersAfterAddChildrens),
