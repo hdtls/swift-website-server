@@ -38,6 +38,7 @@ public func bootstrap(_ app: Application) throws {
     app.migrations.add(SocialNetworkingService.migration)
     app.migrations.add(Skill.migration)
     app.migrations.add(Project.migration)
+    app.migrations.add(Blog.migration)
 
     try app.autoMigrate().wait()
 

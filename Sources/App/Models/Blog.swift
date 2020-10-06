@@ -20,8 +20,8 @@ final class Blog: Model {
     @OptionalField(key: FieldKeys.artworkUrl.rawValue)
     var artworkUrl: String?
 
-    @OptionalField(key: FieldKeys.excerpt.rawValue)
-    var excerpt: String?
+    @Field(key: FieldKeys.excerpt.rawValue)
+    var excerpt: String
 
     @OptionalField(key: FieldKeys.tags.rawValue)
     var tags: [String]?
@@ -70,8 +70,11 @@ extension Blog: Serializing {
         var alias: String
         var title: String
         var artworkUrl: String?
-        var excerpt: String?
+        var excerpt: String
         var tags: [String]?
+
+        // Content should be required property
+        // but in encoding of `Route.readAll(_:)` content will be ignored
         var content: String?
         var createAt: String?
         var updateAt: String?
@@ -80,8 +83,11 @@ extension Blog: Serializing {
         var userId: User.IDValue?
     }
 
-    // require `content.userId` be setted before call this initializer.
     convenience init(content: SerializedObject) throws {
+        guard let article = content.content else {
+            throw Abort(.badRequest, reason: "Value required for key 'content'.")
+        }
+
         self.init()
         id = content.id
         alias = content.alias
@@ -92,7 +98,7 @@ extension Blog: Serializing {
         // Before save blog to db `contentUrl` is use to store content.
         // this value will upgrade to file url after `blog.content` is
         // writed to a local file.
-        contentUrl = content.content ?? ""
+        contentUrl = article
     }
 
     func reverted() throws -> SerializedObject {
@@ -103,7 +109,6 @@ extension Blog: Serializing {
             artworkUrl: artworkUrl?.absoluteURLString,
             excerpt: excerpt,
             tags: tags,
-            content: nil,
             createAt: $createdAt.timestamp,
             updateAt: $updatedAt.timestamp,
             userId: $user.id
@@ -116,6 +121,7 @@ extension Blog: Mergeable {
 
     func merge(_ other: Blog) {
         title = other.title
+        alias = other.alias
         artworkUrl = other.artworkUrl
         excerpt = other.excerpt
         tags = other.tags

@@ -18,6 +18,7 @@ class LinuxMainRunnerImpl: LinuxMainRunner {
    @available(*, deprecated, message: "not actually deprecated. Just deprecated to allow deprecated tests (which test deprecated functionality) without warnings")
    func run() {
        XCTMain([
+             testCase(BlogCollectionTests.allTests),
              testCase(EducationCollectionTests.allTests),
              testCase(ExpCollectionTests.allTests),
              testCase(FileCollectionTests.allTests),
