@@ -96,3 +96,7 @@ extension MultipartImage: MultipartPartConvertible {
         self.init(data: multipart.body, filename: filename)
     }
 }
+
+struct MultipartFileCoding: Content {
+    let url: String
+}

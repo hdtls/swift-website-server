@@ -21,8 +21,8 @@ class FileCollectionTests: XCAppCase {
             try $0.content.encode(["file" : file], as: .formData)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            XCTAssertNotNil($0.body.string)
-            XCTAssertContains($0.body.string, "/static/")
+            let content = try $0.content.decode(MultipartFileCoding.self)
+            XCTAssertNotNil(content.url)
         })
     }
 
@@ -34,8 +34,9 @@ class FileCollectionTests: XCAppCase {
             try $0.content.encode(["file" : file], as: .formData)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            url = $0.body.string
-            XCTAssertNotNil($0.body.string)
+            let content = try $0.content.decode(MultipartFileCoding.self)
+            XCTAssertNotNil(content.url)
+            url = content.url
         })
 
         try app.test(.GET, (url.path ?? ""), afterResponse: {

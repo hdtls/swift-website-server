@@ -55,12 +55,18 @@ class FileCollection: RouteCollection {
         return req.eventLoop.makeSucceededFuture(req.fileio.streamFile(at: filePath))
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<String> {
+    func create(_ req: Request) throws -> EventLoopFuture<MultipartFileCoding> {
         switch type {
         case .images:
-            return try uploadImageFile(req).map { $0.absoluteURLString }
+            return try uploadImageFile(req)
+                .map {
+                    MultipartFileCoding.init(url: $0.absoluteURLString)
+                }
         default:
-            return try uploadFile(req, relative: req.application.directory.publicDirectory).map { $0.absoluteURLString }
+            return try uploadFile(req, relative: req.application.directory.publicDirectory)
+                .map {
+                    MultipartFileCoding.init(url: $0.absoluteURLString)
+                }
         }
     }
 }
