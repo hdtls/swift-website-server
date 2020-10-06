@@ -24,7 +24,7 @@ class ResumeCollection: RouteCollection {
             .with(\.$projects)
             .with(\.$eduExps)
             .with(\.$workExps) {
-                $0.with(\.$industry)
+                $0.with(\.$industries)
             }
             .with(\.$social) {
                 $0.with(\.$service)

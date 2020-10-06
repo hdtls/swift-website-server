@@ -32,7 +32,7 @@ class ExpCollectionTests: XCAppCase {
         try app.test(.GET, path + "/\(exp.id!.uuidString)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(Experience.Coding.self)
+            let coding = try $0.content.decode(Experience.SerializedObject.self)
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
             XCTAssertEqual(coding.title, exp.title)
@@ -40,8 +40,8 @@ class ExpCollectionTests: XCAppCase {
             XCTAssertEqual(coding.location, exp.location)
             XCTAssertEqual(coding.startDate, exp.startDate)
             XCTAssertEqual(coding.endDate, exp.endDate)
-            XCTAssertEqual(coding.industry.count, 1)
-            XCTAssertNotNil(coding.industry.first!.id)
+            XCTAssertEqual(coding.industries.count, 1)
+            XCTAssertNotNil(coding.industries.first!.id)
             XCTAssertNil(coding.headline)
             XCTAssertNil(coding.responsibilities)
         })
@@ -52,20 +52,20 @@ class ExpCollectionTests: XCAppCase {
 
         let exp = try assertCreateWorkExperiance(app, headers: headers)
 
-        let upgrade = Experience.Coding.init(
+        let upgrade = Experience.SerializedObject.init(
             title: exp.title,
             companyName: exp.companyName,
             location: exp.location,
             startDate: exp.startDate,
             endDate: "2020-06-29",
-            industry: []
+            industries: []
         )
 
         try app.test(.PUT, path + "/" + exp.id!.uuidString, headers: headers, beforeRequest: {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Experience.Coding.self)
+            let coding = try $0.content.decode(Experience.SerializedObject.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
@@ -74,7 +74,7 @@ class ExpCollectionTests: XCAppCase {
             XCTAssertEqual(coding.location, upgrade.location)
             XCTAssertEqual(coding.startDate, upgrade.startDate)
             XCTAssertEqual(coding.endDate, upgrade.endDate)
-            XCTAssertEqual(coding.industry.count, 0)
+            XCTAssertEqual(coding.industries.count, 0)
             XCTAssertNil(coding.headline)
             XCTAssertNil(coding.responsibilities)
         })

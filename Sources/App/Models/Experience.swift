@@ -40,7 +40,7 @@ final class Experience: Model {
     var user: User
 
     @Siblings(through: ExpIndustrySiblings.self, from: \.$experience, to: \.$industry)
-    var industry: [Industry]
+    var industries: [Industry]
 
     // MARK: Initializer
     init() {}
@@ -79,12 +79,12 @@ extension Experience: Serializing {
         var media: String?
 
         // MARK: Relations
-        var industry: [Industry.Coding]
+        var industries: [Industry.Coding]
         var userId: User.IDValue?
     }
 
     /// Convert `Coding` to `Experience`, used for decoding request content.
-    /// - note: `user` and `industry` eager loading property will set on route operation.
+    /// - note: `user` and `industries` eager loading property will set on route operation.
     convenience init(content: Coding) {
         self.init()
         title = content.title
@@ -108,7 +108,7 @@ extension Experience: Serializing {
             headline: headline,
             responsibilities: responsibilities,
             media: media,
-            industry: industry.compactMap({ try? $0.reverted() }),
+            industries: industries.compactMap({ try? $0.reverted() }),
             userId: $user.id
         )
     }

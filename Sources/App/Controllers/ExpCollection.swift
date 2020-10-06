@@ -16,10 +16,10 @@ class ExpCollection: RestfulApiCollection {
 
         return exp.save(on: req.db)
             .flatMap({
-                exp.$industry.attach(industries, on: req.db)
+                exp.$industries.attach(industries, on: req.db)
             })
             .flatMap({
-                exp.$industry.get(on: req.db)
+                exp.$industries.get(on: req.db)
             })
             .flatMapThrowing({ _ in
                 try exp.reverted()
@@ -29,7 +29,7 @@ class ExpCollection: RestfulApiCollection {
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
      
         return T.query(on: req.db)
-            .with(\.$industry)
+            .with(\.$industries)
             .all()
             .flatMapEachThrowing({ try $0.reverted() })
     }
@@ -45,20 +45,20 @@ class ExpCollection: RestfulApiCollection {
             .flatMap({ saved -> EventLoopFuture<T> in
                 saved.merge(upgrade)
 
-                let difference = industries.difference(from: saved.industry) {
+                let difference = industries.difference(from: saved.industries) {
                     $0.id == $1.id
                 }
 
                 return EventLoopFuture<Void>.andAllSucceed(difference.map({
                     switch $0 {
                     case .insert(offset: _, element: let industry, associatedWith: _):
-                        return saved.$industry.attach(industry, on: req.db)
+                        return saved.$industries.attach(industry, on: req.db)
                     case .remove(offset: _, element: let industry, associatedWith: _):
-                        return saved.$industry.detach(industry, on: req.db)
+                        return saved.$industries.detach(industry, on: req.db)
                     }
                 }), on: req.eventLoop)
                 .flatMap({
-                    saved.$industry.get(reload: true, on: req.db)
+                    saved.$industries.get(reload: true, on: req.db)
                 })
                 .flatMap({ _ in
                     saved.update(on: req.db)
@@ -75,7 +75,7 @@ class ExpCollection: RestfulApiCollection {
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ exp in
-                exp.$industry.detach(exp.industry, on: req.db).flatMap({
+                exp.$industries.detach(exp.industries, on: req.db).flatMap({
                     exp.delete(on: req.db)
                 })
             })
@@ -89,11 +89,11 @@ class ExpCollection: RestfulApiCollection {
 
         return T.query(on: req.db)
             .filter(\._$id == id)
-            .with(\.$industry)
+            .with(\.$industries)
     }
 
     private func _industriesMaker(coding: T.SerializedObject) throws -> [Industry] {
-        try coding.industry.map({ coding -> Industry in
+        try coding.industries.map({ coding -> Industry in
             // `Industry.id` is not required by `Industry.__converted(_:)`, but
             // required by create relation of `experience` and `industry`, so we will
             // add additional check to make sure it have `id` to attach with.

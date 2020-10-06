@@ -141,30 +141,30 @@ func assertCreateIndustry(
 func assertCreateWorkExperiance(
     _ app: Application,
     headers: HTTPHeaders? = nil
-) throws -> Experience.Coding {
-    let exp = Experience.Coding.init(
+) throws -> Experience.SerializedObject {
+    let exp = Experience.SerializedObject.init(
         title: "iOS Developer",
         companyName: "XXX",
         location: "XXX",
         startDate: "2020-02-20",
         endDate: "-",
-        industry: [
-            Industry.Coding.init(title: "International Trade & Development")
+        industries: [
+            Industry.SerializedObject.init(title: "International Trade & Development")
         ]
     )
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
-    let industry = try assertCreateIndustry(app, industry: exp.industry.first)
+    let industry = try assertCreateIndustry(app, industry: exp.industries.first)
 
-    var coding: Experience.Coding!
+    var coding: Experience.SerializedObject!
 
     try app.test(.POST, Experience.schema, headers: httpHeaders, beforeRequest: {
         var workExpCoding = exp
-        workExpCoding.industry = [industry]
+        workExpCoding.industries = [industry]
         try $0.content.encode(workExpCoding)
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
 
-        coding = try $0.content.decode(Experience.Coding.self)
+        coding = try $0.content.decode(Experience.SerializedObject.self)
         XCTAssertNotNil(coding.id)
         XCTAssertNotNil(coding.userId)
         XCTAssertEqual(coding.title, exp.title)
@@ -172,9 +172,9 @@ func assertCreateWorkExperiance(
         XCTAssertEqual(coding.location, exp.location)
         XCTAssertEqual(coding.startDate, exp.startDate)
         XCTAssertEqual(coding.endDate, exp.endDate)
-        XCTAssertEqual(coding.industry.count, 1)
-        XCTAssertEqual(coding.industry.first!.id, industry.id)
-        XCTAssertEqual(coding.industry.first!.title, industry.title)
+        XCTAssertEqual(coding.industries.count, 1)
+        XCTAssertEqual(coding.industries.first!.id, industry.id)
+        XCTAssertEqual(coding.industries.first!.title, industry.title)
         XCTAssertNil(coding.headline)
         XCTAssertNil(coding.responsibilities)
     })
