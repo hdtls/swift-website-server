@@ -138,9 +138,9 @@ class UserCollection: RouteCollection {
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ saved -> EventLoopFuture<User> in
                 do {
-                    return try uploadMultipleFiles(req)
+                    return try uploadImageFile(req)
                         .flatMap({
-                            saved.avatarUrl = $0.first!
+                            saved.avatarUrl = $0
                             return saved.update(on: req.db).map({ saved })
                         })
                 } catch {

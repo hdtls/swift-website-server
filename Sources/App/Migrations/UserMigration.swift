@@ -19,8 +19,8 @@ extension User {
                 .field(FieldKeys.emailAddress.rawValue, .string)
                 .field(FieldKeys.aboutMe.rawValue, .sql(raw: "VARCHAR(1024)"))
                 .field(FieldKeys.location.rawValue, .string)
-                .field(FieldKeys.createdAt.rawValue, .datetime, .required)
-                .field(FieldKeys.updatedAt.rawValue, .datetime, .required)
+                .field(FieldKeys.createdAt.rawValue, .datetime)
+                .field(FieldKeys.updatedAt.rawValue, .datetime)
                 .field(FieldKeys.interests.rawValue, .array(of: .string))
                 .create()
         }

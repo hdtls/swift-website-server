@@ -59,10 +59,10 @@ final class User: Model {
     var projects: [Project]
 
     @Children(for: \.$user)
-    var eduExps: [EducationalExp]
+    var eduExps: [Education]
 
     @Children(for: \.$user)
-    var workExps: [WorkExp]
+    var workExps: [Experience]
 
     @Children(for: \.$user)
     var skill: [Skill]
@@ -186,10 +186,10 @@ extension User: Serializing {
         var projects: [Project.Coding]?
 
         /// Education experiances
-        var eduExps: [EducationalExp.Coding]?
+        var eduExps: [Education.Coding]?
 
         /// Experiances
-        var workExps: [WorkExp.Coding]?
+        var workExps: [Experience.Coding]?
 
         var skill: Skill.Coding?
 
