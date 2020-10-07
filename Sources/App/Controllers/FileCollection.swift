@@ -28,7 +28,6 @@ class FileCollection: RouteCollection {
     }
 
     func create(_ req: Request) throws -> EventLoopFuture<MultipartFileCoding> {
-        req.content.contentType
         switch type {
         case .images:
             return try uploadImageFile(req)
