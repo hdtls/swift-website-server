@@ -1,53 +1,133 @@
 import XCTVapor
 @testable import App
 
+@discardableResult
+func assertCreateSkill(
+    _ app: Application,
+    headers: HTTPHeaders? = nil
+) throws -> Skill.SerializedObject {
+    let skill = ["professional": ["xxx"], "workflow": ["xxx"]]
+
+    let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
+
+    var coding: Skill.SerializedObject!
+
+    try app.test(.POST, "skills", headers: httpHeaders, beforeRequest: {
+        try $0.content.encode(skill)
+    }, afterResponse: {
+        XCTAssertEqual($0.status, .ok)
+
+        coding = try $0.content.decode(Skill.SerializedObject.self)
+        XCTAssertNotNil(coding.id)
+        XCTAssertEqual(coding.professional, skill["professional"])
+        XCTAssertEqual(coding.workflow, skill["workflow"])
+    })
+
+    return coding
+}
+
+
 class SkillCollectionTests: XCAppCase {
 
-    let path = "skills"
+    let path = Skill.schema
 
     func testAuthorizeRequire() throws {
-        try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-            .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
+        XCTAssertNoThrow(
+            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
+                .test(.GET, path + "/1", afterResponse: assertHttpNotFound)
+                .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
+                .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
+        )
     }
 
     func testCreate() throws {
         try assertCreateSkill(app)
     }
 
+    func testCreateWithoutProfessional() throws {
+        let json = ["workflow": ["xxx"]]
+        let headers = try registUserAndLoggedIn(app)
+
+        try app.test(.POST, path, headers: headers, beforeRequest: {
+            try $0.content.encode(json)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .badRequest)
+            XCTAssertContains($0.body.string, "Value required for key 'professional'")
+        })
+    }
+
+    func testCreateWithoutWorkflow() throws {
+        let skill = ["professional": ["xxx"]]
+        let headers = try registUserAndLoggedIn(app)
+
+        try app.test(.POST, path, headers: headers, beforeRequest: {
+            try $0.content.encode(skill)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .ok)
+
+            let coding = try $0.content.decode(Skill.SerializedObject.self)
+
+            XCTAssertNotNil(coding.id)
+            XCTAssertEqual(coding.professional, skill["professional"])
+            XCTAssertEqual(coding.workflow, skill["workflow"])
+        })
+    }
+
+    func testCreateWithInvalidDataType() throws {
+        let json = ["professional" : ""]
+        let headers = try registUserAndLoggedIn(app)
+
+        try app.test(.POST, path, headers: headers, beforeRequest: {
+            try $0.content.encode(json)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .badRequest)
+            XCTAssertContains($0.body.string, "Value of type 'Array<Any>' required for key 'professional'")
+        })
+    }
+
     func testQuery() throws {
         let saved = try assertCreateSkill(app)
 
-        try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
-            .test(.GET, path + "/\(saved.id!)", afterResponse: {
+        try app.test(.GET, path + "/\(saved.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Skill.Coding.self)
+            let coding = try $0.content.decode(Skill.SerializedObject.self)
 
             XCTAssertEqual(coding.id, saved.id)
-            XCTAssertEqual(coding.profesional, saved.profesional)
+            XCTAssertEqual(coding.professional, saved.professional)
             XCTAssertEqual(coding.workflow, saved.workflow)
         })
     }
 
+    func testQueryWithNonExistentID() throws {
+        try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
+    }
+
     func testUpdate() throws {
         let headers = try registUserAndLoggedIn(app)
-        let upgrade = Skill.Coding.init(profesional: nil, workflow: ["xxx", "xxxx"])
+        let upgrade = ["professional": [], "workflow": ["xxx", "xxxx"]]
 
         let saved = try assertCreateSkill(app, headers: headers)
         
-        try app.test(.PUT, path + "/1", headers: headers, beforeRequest: {
-            try $0.content.encode(upgrade)
-        }, afterResponse: assertHttpNotFound)
-        .test(.PUT, path + "/\(saved.id!)", headers: headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(saved.id!)", headers: headers, beforeRequest: {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Skill.Coding.self)
+            let coding = try $0.content.decode(Skill.SerializedObject.self)
 
             XCTAssertEqual(coding.id, saved.id)
-            XCTAssertNil(coding.profesional)
-            XCTAssertEqual(coding.workflow, upgrade.workflow)
+            XCTAssertEqual(coding.professional, [])
+            XCTAssertEqual(coding.workflow, upgrade["workflow"])
         })
+    }
+
+    func testUpdateWithNoExistentID() throws {
+        let headers = try registUserAndLoggedIn(app)
+
+        let upgrade: [String : [String]] = ["professional" : []]
+
+        try app.test(.PUT, path + "/1", headers: headers, beforeRequest: {
+            try $0.content.encode(upgrade)
+        }, afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
@@ -55,7 +135,12 @@ class SkillCollectionTests: XCAppCase {
 
         let saved = try assertCreateSkill(app, headers: headers)
 
+        try app.test(.DELETE, path + "/\(saved.id!)", headers: headers, afterResponse: assertHttpOk)
+    }
+
+    func testDeleteWithNonExistentID() throws {
+        let headers = try registUserAndLoggedIn(app)
+
         try app.test(.DELETE, path + "/1", headers: headers, afterResponse: assertHttpNotFound)
-            .test(.DELETE, path + "/\(saved.id!)", headers: headers, afterResponse: assertHttpOk)
     }
 }

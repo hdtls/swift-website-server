@@ -10,8 +10,8 @@ final class Skill: Model {
     @ID()
     var id: IDValue?
 
-    @OptionalField(key: FieldKeys.profesional.rawValue)
-    var profesional: [String]?
+    @Field(key: FieldKeys.professional.rawValue)
+    var professional: [String]
 
     @OptionalField(key: FieldKeys.workflow.rawValue)
     var workflow: [String]?
@@ -25,7 +25,7 @@ final class Skill: Model {
 extension Skill {
 
     enum FieldKeys: FieldKey {
-        case profesional
+        case professional
         case workflow
         case user = "user_id"
     }
@@ -38,25 +38,25 @@ extension Skill: Serializing {
     struct Coding: Content, Equatable {
 
         var id: IDValue?
-        var profesional: [String]?
+        var professional: [String]
         var workflow: [String]?
     }
 
     convenience init(content: SerializedObject) {
         self.init()
-        profesional = content.profesional
+        professional = content.professional
         workflow = content.workflow
     }
 
     func reverted() throws -> SerializedObject {
-        try SerializedObject.init(id: requireID(), profesional: profesional, workflow: workflow)
+        try SerializedObject.init(id: requireID(), professional: professional, workflow: workflow)
     }
 }
 
 extension Skill: Mergeable {
 
     func merge(_ other: Skill) {
-        profesional = other.profesional
+        professional = other.professional
         workflow = other.workflow
     }
 }

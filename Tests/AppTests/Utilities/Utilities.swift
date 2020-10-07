@@ -220,31 +220,6 @@ func assertCreateEduExperiance(
 }
 
 @discardableResult
-func assertCreateSkill(
-    _ app: Application,
-    headers: HTTPHeaders? = nil
-) throws -> Skill.Coding {
-    let skill = Skill.Coding.init(profesional: ["xxx"], workflow: ["xxx"])
-
-    let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
-
-    var coding: Skill.Coding!
-
-    try app.test(.POST, "skills", headers: httpHeaders, beforeRequest: {
-        try $0.content.encode(skill)
-    }, afterResponse: {
-        XCTAssertEqual($0.status, .ok)
-
-        coding = try $0.content.decode(Skill.Coding.self)
-        XCTAssertNotNil(coding.id)
-        XCTAssertEqual(coding.profesional, skill.profesional)
-        XCTAssertEqual(coding.workflow, skill.workflow)
-    })
-
-    return coding
-}
-
-@discardableResult
 func assertCreateProj(
     _ app: Application,
     headers: HTTPHeaders? = nil

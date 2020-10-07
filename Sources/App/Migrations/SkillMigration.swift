@@ -9,7 +9,7 @@ extension Skill {
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(Skill.schema)
                 .id()
-                .field(FieldKeys.profesional.rawValue, .array(of: .string))
+                .field(FieldKeys.professional.rawValue, .array(of: .string))
                 .field(FieldKeys.workflow.rawValue, .array(of: .string))
                 .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
                 .create()
