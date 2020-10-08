@@ -21,10 +21,10 @@ public func bootstrap(_ app: Application) throws {
     app.middleware.use(FileMiddleware.init(publicDirectory: app.directory.publicDirectory))
 
     app.databases.use(.mysql(
-        hostname: Environment.get("DATABASE_HOST") ?? "localhost",
-        username: Environment.get("DATABASE_USERNAME") ?? "vapor_username",
-        password: Environment.get("DATABASE_PASSWORD") ?? "vapor_password",
-        database: Environment.get("DATABASE_NAME") ?? "vapor_database",
+        hostname: Environment.get("MYSQL_HOST") ?? "localhost",
+        username: Environment.get("MYSQL_USER") ?? "mysql.user",
+        password: Environment.get("MYSQL_PASSWORD") ?? "mysql.pwd",
+        database: Environment.get("MYSQL_DATABASE") ?? "website_testing",
         tlsConfiguration: .forClient(certificateVerification: .none)
         ), as: .mysql)
 

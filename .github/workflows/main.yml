@@ -1,25 +1,30 @@
 name: CI
 
-on: [ push, pull_request]
+on: [push, pull_request]
 
 jobs:
   test:
-    container: swift:5.2
+    strategy:
+      fail-fast: false
+      matrix:
+        dbimage:
+          - mysql:latest
+    container: swift:5.3
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql
+        image: ${{ matrix.dbimage }}
         env:
-          MYSQL_USER: vapor_username
-          MYSQL_PASSWORD: vapor_password
-          MYSQL_DATABASE: vapor_database
-          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+          MYSQL_USER: mysql.user
+          MYSQL_PASSWORD: mysql.pwd
+          MYSQL_DATABASE: website_testing
+          MYSQL_RANDOM_ROOT_PASSWORD: "yes"
     steps:
       - name: Check out test case
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer
         env:
-          DATABASE_HOST: mysql
+          MYSQL_HOST: mysql
         run: swift test --enable-test-discovery --sanitize=thread
 
   push_to_registry:
