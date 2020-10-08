@@ -24,8 +24,8 @@ func assertCreateBlog(_ app: Application, headers: HTTPHeaders? = nil) throws ->
         XCTAssertEqual(coding.excerpt, blog.excerpt)
         XCTAssertEqual(coding.tags, blog.tags)
         XCTAssertEqual(coding.content, blog.content)
-        XCTAssertNotNil(coding.createAt)
-        XCTAssertNotNil(coding.updateAt)
+        XCTAssertNotNil(coding.createdAt)
+        XCTAssertNotNil(coding.updatedAt)
     })
 
     return coding
@@ -90,8 +90,8 @@ class BlogCollectionTests: XCAppCase {
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertNotNil(coding.content)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createAt, blog.createAt)
-            XCTAssertEqual(coding.updateAt, blog.updateAt)
+            XCTAssertEqual(coding.createdAt, blog.createdAt)
+            XCTAssertEqual(coding.updatedAt, blog.updatedAt)
         })
 
         try app.test(.GET, path + "/\(blog.alias)", afterResponse: {
@@ -108,8 +108,8 @@ class BlogCollectionTests: XCAppCase {
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertNotNil(coding.content)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createAt, blog.createAt)
-            XCTAssertEqual(coding.updateAt, blog.updateAt)
+            XCTAssertEqual(coding.createdAt, blog.createdAt)
+            XCTAssertEqual(coding.updatedAt, blog.updatedAt)
         })
 
         try _deleteBlog(blog, headers: headers)

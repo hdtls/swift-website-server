@@ -76,8 +76,8 @@ extension Blog: Serializing {
         // Content should be required property
         // but in encoding of `Route.readAll(_:)` content will be ignored
         var content: String?
-        var createAt: String?
-        var updateAt: String?
+        var createdAt: String?
+        var updatedAt: String?
 
         // MARK: Relations
         var userId: User.IDValue?
@@ -109,8 +109,8 @@ extension Blog: Serializing {
             artworkUrl: artworkUrl?.absoluteURLString,
             excerpt: excerpt,
             tags: tags,
-            createAt: $createdAt.timestamp,
-            updateAt: $updatedAt.timestamp,
+            createdAt: $createdAt.timestamp,
+            updatedAt: $updatedAt.timestamp,
             userId: $user.id
         )
     }
