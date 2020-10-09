@@ -16,6 +16,11 @@
 #
 version: "3.7"
 
+x-mysql: mysql
+  MYSQL_USER: mysql.user
+  MYSQL_PASSWORD: mysql.pwd
+  MYSQL_DATABASE: website_testing
+
 services:
 
   runtime:
@@ -30,9 +35,7 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       MYSQL_HOST: db
-      MYSQL_USER: mysql.user
-      MYSQL_PASSWORD: mysql.pwd
-      MYSQL_DATABASE: website_testing
+      <<: *mysql
 
   app:
     <<: *common
@@ -51,9 +54,7 @@ services:
   db:
     image: mysql:latest
     environment:
-      MYSQL_USER: mysql.user
-      MYSQL_PASSWORD: mysql.pwd
-      MYSQL_DATABASE: website_testing
+      <<: *mysql
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
     ports:
       - "3306:3306"
