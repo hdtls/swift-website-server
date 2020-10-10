@@ -65,6 +65,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
 
         routes.on(.POST, use: create)
         routes.on(.GET, path, use: read)
+        routes.on(.GET, use: readAll)
         routes.on(.PUT, path, use: update)
         routes.on(.DELETE, path, use: delete)
     }
@@ -138,6 +139,8 @@ extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringCo
 
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(path.components(separatedBy: "/").map(PathComponent.constant))
+
+        routes.on(.GET, use: readAll)
 
         let path  = PathComponent.parameter(restfulIDKey)
 
