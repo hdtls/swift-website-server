@@ -9,7 +9,7 @@ class ApiCollection: RouteCollection {
     func readAllApi(_ req: Request) throws -> EventLoopFuture<Response> {
 
         // create absolute file path
-        let filePath = req.application.directory.resourcesDirectory + "docs/api.md"
+        let filePath = req.application.directory.workingDirectory + "docs/api.md"
 
         // check if file exists and is not a directory
         var isDir: ObjCBool = false

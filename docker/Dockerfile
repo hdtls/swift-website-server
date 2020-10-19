@@ -25,6 +25,9 @@ COPY . .
 # Build everything, with optimizations and test discovery
 RUN swift build --enable-test-discovery -c release
 
+# Makedir
+# RUN mkdir -p Public Resources
+
 # Switch to the staging area
 WORKDIR /staging
 
@@ -33,8 +36,8 @@ RUN cp "$(swift build --package-path /build -c release --show-bin-path)/Run" ./
 
 # Uncomment the next line if you need to load resources from the `Public` directory.
 # Ensure that by default, neither the directory nor any of its contents are writable.
-# RUN mv /build/Public ./Public && chmod -R a-w ./Public
-RUN mv /build/Resources ./Resources
+# RUN mv /build/Public Public && mv /build/Resources Resources
+RUN mv /build/docs docs
 
 # ================================
 # Run image
