@@ -13,7 +13,7 @@ class SocialNetworkingCollectionTests: XCAppCase {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
             .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
-            .test(.GET, path, afterResponse: assertHttpNotFound)
+                .test(.GET, path, afterResponse: assertHttpOk)
             .test(.PUT, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
             .test(.DELETE, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
         )

@@ -28,13 +28,13 @@ jobs:
         run: swift test --enable-test-discovery --sanitize=thread
 
   push_to_registry:
-    if: ${{ startsWith(github.ref, 'refs/tags/*') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Build and push docker to registry
-        uses: docker/build-push-action@v1.1.0
+        uses: docker/build-push-action@v2
         with:
           dockerfile: ./docker/Dockerfile
           registry: ${{ secrets.DOCKER_REGISTRY }}
