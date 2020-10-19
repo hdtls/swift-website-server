@@ -24,13 +24,13 @@ x-mysql: &mysql
 services:
 
   runtime:
-    image: swift-website:latest
+    image: swift-portal-backend:latest
     build:
       context: ..
       dockerfile: docker/Dockerfile
 
   common: &common
-    image: swift-website:latest
+    image: swift-portal-backend:latest
     depends_on: [db, runtime]
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
