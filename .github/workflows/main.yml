@@ -32,14 +32,76 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Build and push docker to registry
-        uses: docker/build-push-action@v2
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Repository metadata
+        id: repository
+        uses: actions/github-script@v3
         with:
-          dockerfile: ./docker/Dockerfile
+          script: |
+            const repo = await github.repos.get(context.repo)
+            return repo.data
+      -
+        name: Prepare image description.
+        id: prepare
+        run: |
+          DOCKER_IMAGE=${{ secrets.DOCKER_REGISTRY }}/${{ github.repository }}
+          VERSION=noop
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            VERSION=nightly
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          elif [[ $GITHUB_REF == refs/heads/* ]]; then
+            VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+            if [ "${{ github.event.repository.default_branch }}" = "$VERSION" ]; then
+              VERSION=edge
+            fi
+          elif [[ $GITHUB_REF == refs/pull/* ]]; then
+            VERSION=pr-${{ github.event.number }}
+          fi
+
+          TAGS="${DOCKER_IMAGE}:${VERSION}"
+
+          if [[ $VERSION =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            MINOR=${VERSION%.*}
+            MAJOR=${MINOR%.*}
+            TAGS="$TAGS,${DOCKER_IMAGE}:${MINOR},${DOCKER_IMAGE}:${MAJOR},${DOCKER_IMAGE}:latest"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            TAGS="$TAGS,${DOCKER_IMAGE}:sha-${GITHUB_SHA::8}"
+          fi
+
+          echo ::set-output name=version::${VERSION}
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+      -
+        name: Setup docker buildx
+        id: builder
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to registry
+        uses: docker/login-action@v1
+        with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          repository: ${{ github.repository }}
-          tag_with_ref: true
-          tags: latest
+      -
+        name: Build and push docker to registry
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          tags: ${{ steps.prepare.outputs.tags }}
+          labels: |
+            org.opencontainers.image.title=${{ fromJson(steps.repository.outputs.result).name }}
+            org.opencontainers.image.description=${{ fromJson(steps.repository.outputs.result).description }}
+            org.opencontainers.image.url=${{ fromJson(steps.repository.outputs.result).html_url }}
+            org.opencontainers.image.source=${{ fromJson(steps.repository.outputs.result).clone_url }}
+            org.opencontainers.image.version=${{ steps.prepare.outputs.version }}
+            org.opencontainers.image.created=${{ steps.prepare.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=${{ fromJson(steps.repository.outputs.result).license.spdx_id }}
