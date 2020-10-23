@@ -67,17 +67,19 @@ struct MultipartImage: Codable, MultipartImageProtocol {
         self.data = data
         self.filename = filename
         self.dimensions = "0x0"
-
+        var fileExtension = ""
         var byteBuffer = data
-
-        guard let serializer = ImageSerializerFactory.default.serializer(for: byteBuffer) else {
-            return
-        }
 
         let contentHash = Insecure.MD5.hash(data: byteBuffer.readData(length: byteBuffer.readableBytes)!)
 
-        self.filename = "\(contentHash.hex).\(serializer.fileExtension)"
-        self.dimensions = serializer.dimensions(data)
+        if let serializer = ImageSerializerFactory.default.serializer(for: data) {
+            fileExtension = serializer.fileExtension
+            self.dimensions = serializer.dimensions(data)
+        } else {
+            fileExtension = self.extension ?? ""
+        }
+
+        self.filename = fileExtension.isEmpty ? contentHash.hex : contentHash.hex + "." + fileExtension
     }
 }
 
