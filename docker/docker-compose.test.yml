@@ -21,16 +21,19 @@ x-mysql: &mysql
   MYSQL_PASSWORD: mysql.pwd
   MYSQL_DATABASE: website_testing
 
+x-imagefile: &imagefile
+  image: swift-portal-backend:latest
+
 services:
 
   runtime:
-    image: swift-portal-backend:latest
+    <<: *imagefile
     build:
       context: ..
       dockerfile: docker/Dockerfile
 
   common: &common
-    image: swift-portal-backend:latest
+    <<: *imagefile
     depends_on: [db, runtime]
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
