@@ -1,4 +1,5 @@
 import Vapor
+import Fluent
 
 class UserCollection: RouteCollection {
     let profile = "profile/"
@@ -9,17 +10,21 @@ class UserCollection: RouteCollection {
 
         let users = routes.grouped("users")
 
+        let path  = PathComponent.parameter(restfulIDKey)
+
         users.on(.POST, use: create)
         users.on(.GET, use: readAll)
-        users.on(.GET, .parameter(restfulIDKey), use: read)
+        users.on(.GET, path, use: read)
+        users.on(.GET, path, "blog", use: readAllBlog)
+        users.on(.GET, path, "resume", use: readResume)
 
         let trusted = users.grouped([
             User.authenticator(),
             Token.authenticator(),
             User.guardMiddleware()
         ])
-        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
-        trusted.on(.PATCH, .parameter(restfulIDKey), "profile", body: .collect(maxSize: "100kb"), use: patch)
+        trusted.on(.PUT, path, use: update)
+        trusted.on(.PATCH, path, "profile", body: .collect(maxSize: "100kb"), use: patch)
     }
 
     /// Register new user with `User.Creation` msg. when success a new user and token is registed.
@@ -152,6 +157,39 @@ class UserCollection: RouteCollection {
                 }
             })
             .flatMapThrowing({
+                try $0.reverted()
+            })
+    }
+}
+
+extension UserCollection {
+    func readAllBlog(_ req: Request) throws -> EventLoopFuture<[Blog.SerializedObject]> {
+        let queryBuilder = User.query(on: req.db)
+
+        if let id = req.parameters.get(restfulIDKey, as: User.IDValue.self) {
+            queryBuilder.filter(\._$id == id)
+        } else if let id = req.parameters.get(restfulIDKey) {
+            queryBuilder.filter(User.FieldKeys.username.rawValue, .equal, id)
+        } else {
+            throw Abort(.notFound)
+        }
+
+        return queryBuilder.first()
+            .unwrap(or: Abort(.notFound))
+            .flatMap({
+                $0.$blog.query(on: req.db)
+                    .field(\.$id)
+                    .field(\.$alias)
+                    .field(\.$title)
+                    .field(\.$artworkUrl)
+                    .field(\.$excerpt)
+                    .field(\.$tags)
+                    .field(\.$createdAt)
+                    .field(\.$updatedAt)
+                    .field(\.$user.$id)
+                    .all()
+            })
+            .flatMapEachThrowing({
                 try $0.reverted()
             })
     }
