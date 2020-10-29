@@ -9,7 +9,6 @@ public func routes(_ app: Application) throws {
     
     try app.register(collection: FileCollection.init(type: .files))
     try app.register(collection: FileCollection.init(type: .images))
-    try app.register(collection: ResumeCollection.init())
     try app.register(collection: UserCollection.init())
     try app.register(collection: DefaultOwnableApiImpl<Education>.init())
     try app.register(collection: ExpCollection.init())
