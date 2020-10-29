@@ -75,32 +75,6 @@ final class User: Model {
 
     // MARK: Initializer
     required init() {}
-
-    init(
-        id: User.IDValue? = nil,
-        username: String,
-        pwd: String,
-        firstName: String,
-        lastName: String,
-        avatarUrl: String? = nil,
-        phone: String? = nil,
-        emailAddress: String? = nil,
-        aboutMe: String? = nil,
-        location: String? = nil,
-        interests: [String]? = nil
-    ) {
-        self.id = id
-        self.username = username
-        self.pwd = pwd
-        self.firstName = firstName
-        self.lastName = lastName
-        self.avatarUrl = avatarUrl
-        self.phone = phone
-        self.emailAddress = emailAddress
-        self.aboutMe = aboutMe
-        self.location = location
-        self.interests = interests
-    }
 }
 
 // MARK: Field keys
@@ -151,12 +125,11 @@ extension User {
     }
 
     convenience init(_ creation: Creation) throws {
-        self.init(
-            username: creation.username,
-            pwd: try Bcrypt.hash(creation.password),
-            firstName: creation.firstName,
-            lastName: creation.lastName
-        )
+        self.init()
+        username = creation.username
+        pwd = try Bcrypt.hash(creation.password)
+        firstName = creation.firstName
+        lastName = creation.lastName
     }
 }
 
@@ -169,9 +142,7 @@ extension User: Serializing {
 
         // MARK: Properties
         var id: User.IDValue?
-        /// `username` is optional for decoding, required by encoding.
-        /// - note: For decoding use logged in user's username instead.
-        var username: String?
+        var username: String
         var firstName: String
         var lastName: String
         var avatarUrl: String?
@@ -179,6 +150,7 @@ extension User: Serializing {
         var emailAddress: String?
         var aboutMe: String?
         var location: String?
+        var interests: [String]?
 
         // MARK: Relations
         /// Links that user owned.
@@ -197,14 +169,14 @@ extension User: Serializing {
         var blog: [Blog.SerializedObject]?
 
         var skill: Skill.SerializedObject?
-
-        var interests: [String]?
     }
 
     convenience init(content: SerializedObject) {
         self.init()
+        username = content.username
         firstName = content.firstName
         lastName = content.lastName
+        avatarUrl = content.avatarUrl?.path
         phone = content.phone
         emailAddress = content.emailAddress
         aboutMe = content.aboutMe
@@ -213,14 +185,18 @@ extension User: Serializing {
     }
     
     func reverted() throws -> SerializedObject {
-        var coding = SerializedObject(firstName: firstName, lastName: lastName)
+        var coding = SerializedObject(
+            username: username,
+            firstName: firstName,
+            lastName: lastName
+        )
         coding.id = try requireID()
-        coding.username = username
         coding.avatarUrl = avatarUrl?.absoluteURLString
         coding.phone = phone
         coding.emailAddress = emailAddress
         coding.aboutMe = aboutMe
         coding.location = location
+        coding.interests = interests
         coding.social = $social.value?.compactMap({ try? $0.reverted() })
         coding.projects = $projects.value?.compactMap({ try? $0.reverted() })
         coding.eduExps = $eduExps.value?.compactMap({ try? $0.reverted() })
@@ -228,7 +204,6 @@ extension User: Serializing {
         coding.social = $social.value?.compactMap({ try? $0.reverted() })
         coding.blog = $blog.value?.compactMap({ try? $0.reverted() })
         coding.skill = try $skill.value?.first?.reverted()
-        coding.interests = interests
         return coding
     }
 }
@@ -236,8 +211,10 @@ extension User: Serializing {
 extension User: Mergeable {
 
     func merge(_ other: User) {
+        username = other.username
         firstName = other.firstName
         lastName = other.lastName
+        avatarUrl = other.avatarUrl
         phone = other.phone
         emailAddress = other.emailAddress
         aboutMe = other.aboutMe

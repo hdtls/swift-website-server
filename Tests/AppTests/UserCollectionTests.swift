@@ -11,12 +11,45 @@ class UserCollectionTests: XCAppCase {
         )
     }
 
-    func testCreateWithInvalidUsername() throws {
+    func testCreateWithInvalidPayload() throws {
+        let json = [
+            "firstName" : userCreation.firstName,
+            "lastName" : userCreation.lastName,
+            "password" : userCreation.password,
+            "username" : userCreation.username
+        ]
+
         try app.test(.POST, path, beforeRequest: {
-            var invalid = userCreation
-            invalid.username = ""
-            try $0.content.encode(invalid)
-        }, afterResponse: assertHttpBadRequest)
+            var payload = json
+            payload["username"] = nil
+            try $0.content.encode(payload)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .badRequest)
+        })
+        .test(.POST, path, beforeRequest: {
+            var payload = json
+            payload["firstName"] = nil
+            try $0.content.encode(payload)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .badRequest)
+            XCTAssertContains($0.body.string, "Value required for key 'firstName'")
+        })
+        .test(.POST, path, beforeRequest: {
+            var payload = json
+            payload["lastName"] = nil
+            try $0.content.encode(payload)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .badRequest)
+            XCTAssertContains($0.body.string, "Value required for key 'lastName'")
+        })
+        .test(.POST, path, beforeRequest: {
+            var payload = json
+            payload["password"] = nil
+            try $0.content.encode(payload)
+        }, afterResponse: {
+            XCTAssertEqual($0.status, .badRequest)
+//            XCTAssertContains($0.body.string, "Value required for key 'password'")
+        })
     }
     
     func testCreateWithInvalidPassword() throws {
@@ -33,7 +66,7 @@ class UserCollectionTests: XCAppCase {
         try app.test(.POST, path, beforeRequest: {
             try $0.content.encode(userCreation)
         }, afterResponse: {
-            XCTAssertEqual($0.status, .conflict)
+            XCTAssertEqual($0.status, .unprocessableEntity)
         })
     }
     
@@ -43,6 +76,7 @@ class UserCollectionTests: XCAppCase {
     
     func testQueryWithUserIDThatDoesNotExsit() throws {
         try app.test(.GET, path + "/notfound", afterResponse: assertHttpNotFound)
+            .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
     }
     
     func testQueryWithUserID() throws {
@@ -193,6 +227,7 @@ class UserCollectionTests: XCAppCase {
     func testUpdate() throws {
         let headers = try registUserAndLoggedIn(app)
         let upgrade = User.Coding.init(
+            username: "test",
             firstName: "R",
             lastName: "J",
             phone: "+1 888888888",
@@ -207,7 +242,7 @@ class UserCollectionTests: XCAppCase {
 
             let user = try $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
-            XCTAssertEqual(user.username, userCreation.username)
+            XCTAssertEqual(user.username, upgrade.username)
             XCTAssertEqual(user.firstName, upgrade.firstName)
             XCTAssertEqual(user.lastName, upgrade.lastName)
             XCTAssertEqual(user.phone, upgrade.phone)

@@ -12,7 +12,7 @@ extension UserCollectionTests {
    static var allTests : [(String, (UserCollectionTests) -> () throws -> Void)] {
       return [
                 ("testAuthorizeRequire", testAuthorizeRequire),
-                ("testCreateWithInvalidUsername", testCreateWithInvalidUsername),
+                ("testCreateWithInvalidPayload", testCreateWithInvalidPayload),
                 ("testCreateWithInvalidPassword", testCreateWithInvalidPassword),
                 ("testCreateWithConflictUsername", testCreateWithConflictUsername),
                 ("testCreate", testCreate),

@@ -1,14 +1,12 @@
 import Vapor
-import Fluent
+import FluentMySQLDriver
 
-class UserCollection: RouteCollection {
-    let profile = "profile/"
-
-    let restfulIDKey = "id"
+class UserCollection: RestfulApiCollection {
+    typealias T = User
 
     func boot(routes: RoutesBuilder) throws {
 
-        let users = routes.grouped("users")
+        let users = routes.grouped(.constant(path))
 
         let path  = PathComponent.parameter(restfulIDKey)
 
@@ -24,7 +22,8 @@ class UserCollection: RouteCollection {
             User.guardMiddleware()
         ])
         trusted.on(.PUT, path, use: update)
-        trusted.on(.PATCH, path, "profile", body: .collect(maxSize: "100kb"), use: patch)
+        trusted.on(.DELETE, path, use: delete)
+        trusted.on(.PATCH, path, "profile_image", body: .collect(maxSize: "100kb"), use: patch)
     }
 
     /// Register new user with `User.Creation` msg. when success a new user and token is registed.
@@ -38,21 +37,18 @@ class UserCollection: RouteCollection {
 
         var token: Token!
 
-        return User.query(on: req.db)
-            .filter(\.$username, .equal, user.username)
-            .first()
-            .flatMap({
-                // If there is already have a user and username same as
-                // `user.username` just throw a msg.
-                guard $0 == nil else {
-                    let error = Abort(.conflict, reason: "Username already taken")
-                    return req.eventLoop.makeFailedFuture(error)
+        return user.save(on: req.db)
+            .flatMapErrorThrowing({
+                if case MySQLError.duplicateEntry = $0 {
+                    throw Abort.init(.unprocessableEntity, reason: "Value for key 'username' already exsit.")
                 }
-                return user.save(on: req.db)
+                throw $0
             })
             .flatMap({
                 guard let unsafeToken = try? Token.init(user) else {
-                    return req.eventLoop.makeFailedFuture(Abort(.internalServerError))
+                    return user.delete(on: req.db).flatMap({
+                        req.eventLoop.makeFailedFuture(Abort(.internalServerError))
+                    })
                 }
                 token = unsafeToken
                 return token.save(on: req.db)
@@ -143,6 +139,7 @@ class UserCollection: RouteCollection {
 
     func patch(_ req: Request) throws -> EventLoopFuture<User.Coding> {
         let userId = try req.auth.require(User.self).requireID()
+
         return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ saved -> EventLoopFuture<User> in
@@ -163,6 +160,7 @@ class UserCollection: RouteCollection {
 }
 
 extension UserCollection {
+    // MARK: Blog
     func readAllBlog(_ req: Request) throws -> EventLoopFuture<[Blog.SerializedObject]> {
         let queryBuilder = User.query(on: req.db)
 
@@ -196,6 +194,7 @@ extension UserCollection {
 }
 
 extension UserCollection {
+    // MARK: CV
     func readResume(_ req: Request) throws -> EventLoopFuture<User.SerializedObject> {
         let queryBuilder = User.query(on: req.db)
         // Support for `id` and `username` check.
