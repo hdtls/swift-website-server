@@ -23,6 +23,7 @@ extension UserCollectionTests {
                 ("testQueryAll", testQueryAll),
                 ("testQueryAllWithQueryParametersAfterAddChildrens", testQueryAllWithQueryParametersAfterAddChildrens),
                 ("testUpdate", testUpdate),
+                ("testQueryBlogThatAssociatedWithSpecialUser", testQueryBlogThatAssociatedWithSpecialUser),
            ]
    }
 }

@@ -3,7 +3,7 @@ import XCTVapor
 
 class UserCollectionTests: XCAppCase {
     
-    let path = "users"
+    let path = User.schema
 
     func testAuthorizeRequire() {
         XCTAssertNoThrow(
@@ -25,7 +25,6 @@ class UserCollectionTests: XCAppCase {
             invalid.password = "111"
             try $0.content.encode(invalid)
         }, afterResponse: assertHttpBadRequest)
-
     }
     
     func testCreateWithConflictUsername() throws {
@@ -219,5 +218,28 @@ class UserCollectionTests: XCAppCase {
             XCTAssertNil(user.eduExps)
             XCTAssertNil(user.workExps)
         })
+    }
+
+    func testQueryBlogThatAssociatedWithSpecialUser() throws {
+        let headers = try registUserAndLoggedIn(app)
+        let blog = try assertCreateBlog(app, headers: headers)
+
+        try app.test(.GET, path + "/\(userCreation.username)" + "/blog", afterResponse: {
+            XCTAssertEqual($0.status, .ok)
+
+            let serializedBlog = try $0.content.decode([Blog.SerializedObject].self).first
+
+            XCTAssertNotNil(serializedBlog)
+            XCTAssertEqual(serializedBlog?.id, blog.id)
+            XCTAssertEqual(serializedBlog?.alias, blog.alias)
+            XCTAssertEqual(serializedBlog?.title, blog.title)
+            XCTAssertEqual(serializedBlog?.artworkUrl, blog.artworkUrl)
+            XCTAssertEqual(serializedBlog?.excerpt, blog.excerpt)
+            XCTAssertEqual(serializedBlog?.tags, blog.tags)
+            XCTAssertEqual(serializedBlog?.createdAt, blog.createdAt)
+            XCTAssertEqual(serializedBlog?.updatedAt, blog.updatedAt)
+            XCTAssertEqual(serializedBlog?.userId, blog.userId)
+        })
+        .test(.DELETE, Blog.schema + "/\(blog.id!.uuidString)", headers: headers)
     }
 }

@@ -13,9 +13,15 @@ extension SkillCollectionTests {
       return [
                 ("testAuthorizeRequire", testAuthorizeRequire),
                 ("testCreate", testCreate),
+                ("testCreateWithoutProfessional", testCreateWithoutProfessional),
+                ("testCreateWithoutWorkflow", testCreateWithoutWorkflow),
+                ("testCreateWithInvalidDataType", testCreateWithInvalidDataType),
                 ("testQuery", testQuery),
+                ("testQueryWithNonExistentID", testQueryWithNonExistentID),
                 ("testUpdate", testUpdate),
+                ("testUpdateWithNoExistentID", testUpdateWithNoExistentID),
                 ("testDelete", testDelete),
+                ("testDeleteWithNonExistentID", testDeleteWithNonExistentID),
            ]
    }
 }
