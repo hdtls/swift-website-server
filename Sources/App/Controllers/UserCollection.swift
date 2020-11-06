@@ -60,8 +60,8 @@ class UserCollection: RestfulApiCollection {
 
     /// Query user with specified`userID`.
     /// - seealso: `UserCollection.queryAllUsers(_:)`
-    func read(_ req: Request) -> EventLoopFuture<User.Coding> {
-        readAll(req)
+    func read(_ req: Request) throws -> EventLoopFuture<User.Coding> {
+        try readAll(req)
             .map({ $0.first })
             .unwrap(or: Abort.init(.notFound))
     }
@@ -71,7 +71,24 @@ class UserCollection: RestfulApiCollection {
     /// `incl_edu_exp`:  default is `false`, if `true` the result of user will include user's education experiances.
     /// `incl_sns`:  default is `false`, if `true` the result of user will include user's web links.
     /// - note: This is a mix function the `userID` is optional value.
-    func readAll(_ req: Request) -> EventLoopFuture<[User.Coding]> {
+    func readAll(_ req: Request) throws -> EventLoopFuture<[User.Coding]> {
+        struct SupportedQueries: Decodable {
+            var includeExperience: Bool?
+            var includeEducation: Bool?
+            var includeSNS: Bool?
+            var includeProjects: Bool?
+            var includeSkill: Bool?
+            var includeBlog: Bool?
+
+            enum CodingKeys: String, CodingKey {
+                case includeExperience = "incl_wrk_exp"
+                case includeEducation = "incl_edu_exp"
+                case includeSNS = "incl_sns"
+                case includeProjects = "incl_projs"
+                case includeSkill = "incl_skill"
+                case includeBlog = "incl_blog"
+            }
+        }
 
         var queryBuilder = User.query(on: req.db)
 
@@ -83,33 +100,35 @@ class UserCollection: RestfulApiCollection {
             queryBuilder = queryBuilder.filter(\.$username, .equal, userID)
         }
 
+        let supportedQueries = try req.query.decode(SupportedQueries.self)
+
         // Include work experiances to query if the key `incl_wrk_exp` exist.
-        if (try? req.query.get(Bool.self, at: "incl_wrk_exp")) ?? false {
+        if supportedQueries.includeExperience ?? false {
             queryBuilder.with(\.$workExps) {
                 $0.with(\.$industries)
             }
         }
 
         // Include edu experiances to query if the key `incl_wrk_exp` exist.
-        if (try? req.query.get(Bool.self, at: "incl_edu_exp")) ?? false {
+        if supportedQueries.includeEducation ?? false {
             queryBuilder.with(\.$eduExps)
         }
 
-        if (try? req.query.get(Bool.self, at: "incl_sns")) ?? false {
+        if supportedQueries.includeSNS ?? false {
             queryBuilder.with(\.$social) {
                 $0.with(\.$service)
             }
         }
 
-        if (try? req.query.get(Bool.self, at: "incl_projs")) ?? false {
+        if supportedQueries.includeProjects ?? false {
             queryBuilder.with(\.$projects)
         }
 
-        if (try? req.query.get(Bool.self, at: "incl_skill")) ?? false {
+        if supportedQueries.includeSkill ?? false {
             queryBuilder.with(\.$skill)
         }
 
-        if (try? req.query.get(Bool.self, at: "incl_blog")) ?? false {
+        if supportedQueries.includeBlog ?? false {
             queryBuilder.with(\.$blog)
         }
 
