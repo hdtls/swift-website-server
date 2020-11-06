@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "swift-portal-backend",
+    name: "swift-website-server",
     platforms: [
         .macOS(.v10_15)
     ],
