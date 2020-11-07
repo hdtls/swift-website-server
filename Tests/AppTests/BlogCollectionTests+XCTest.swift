@@ -17,6 +17,8 @@ extension BlogCollectionTests {
                 ("testQueryWithIDThatDoesNotExsit", testQueryWithIDThatDoesNotExsit),
                 ("testQueryWithID", testQueryWithID),
                 ("testUpdate", testUpdate),
+                ("testUpdateBlogWithNewCategory", testUpdateBlogWithNewCategory),
+                ("testUpdateBlogWithRemoveCategory", testUpdateBlogWithRemoveCategory),
                 ("testUpdateBlogAlias", testUpdateBlogAlias),
                 ("testDeleteWithIDThatDoesNotExsit", testDeleteWithIDThatDoesNotExsit),
                 ("testDelete", testDelete),

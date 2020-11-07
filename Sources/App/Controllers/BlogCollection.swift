@@ -94,12 +94,15 @@ class BlogCollection: RestfulApiCollection {
 
         return try specifiedIDQueryBuilder(on: req)
             .filter(T.uidFieldKey, .equal, userId)
+            .with(\.$categories)
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMap({ saved in
-                saved.delete(on: req.db).flatMap({
-                    self._removeBlog(saved.alias, on: req)
-                    return req.eventLoop.makeSucceededFuture(.ok)
+                saved.$categories.detach(saved.categories, on: req.db).flatMap({
+                    saved.delete(on: req.db).flatMap({
+                        self._removeBlog(saved.alias, on: req)
+                        return req.eventLoop.makeSucceededFuture(.ok)
+                    })
                 })
             })
     }
