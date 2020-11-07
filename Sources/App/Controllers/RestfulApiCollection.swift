@@ -39,8 +39,9 @@ protocol RestfulApiCollection: RouteCollection {
     /// reverted.
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus>
 
-    /// Basic get query builder. by default change will be apply to `read` `update` and `delete` opertation.
-    func queryBuilder(on req: Request) throws -> QueryBuilder<T>
+    /// Query builder with specified id required.
+    /// This will be apply to `read` `update` and `delete` opertation.
+    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T>
 
     /// Final query builder  by default change apply to `update` and `delete`.
     /// if you will changed this function impl please make sure call `queryBuilder(on:)` first.
@@ -79,7 +80,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        try queryBuilder(on: req)
+        try specifiedIDQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({ try $0.reverted() })
@@ -114,7 +115,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
             .transform(to: .ok)
     }
 
-    func queryBuilder(on req: Request) throws -> QueryBuilder<T> {
+    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
@@ -123,7 +124,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     }
 
     func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
-        try queryBuilder(on: req)
+        try specifiedIDQueryBuilder(on: req)
     }
 
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
@@ -173,7 +174,7 @@ extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringCo
 
     func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
         let userId = try req.auth.require(User.self).requireID()
-        return try queryBuilder(on: req)
+        return try specifiedIDQueryBuilder(on: req)
             .filter(T.uidFieldKey, .equal, userId)
     }
 

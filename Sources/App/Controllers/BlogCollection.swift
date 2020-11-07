@@ -28,10 +28,6 @@ class BlogCollection: RestfulApiCollection {
         trusted.on(.DELETE, path, use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        return try performUpdate(on: req)
-    }
-
     func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         var model: T!
 

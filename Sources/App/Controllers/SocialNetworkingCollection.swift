@@ -5,7 +5,7 @@ class SocialNetworkingCollection: RestfulApiCollection {
 
     typealias T = SocialNetworking
 
-    func queryBuilder(on req: Request) throws -> QueryBuilder<SocialNetworking> {
+    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<SocialNetworking> {
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }

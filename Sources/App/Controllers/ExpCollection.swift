@@ -82,7 +82,7 @@ class ExpCollection: RestfulApiCollection {
             .map({ .ok })
     }
 
-    func queryBuilder(on req: Request) throws -> QueryBuilder<Experience> {
+    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<Experience> {
         guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
             throw Abort.init(.notFound)
         }
