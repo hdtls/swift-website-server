@@ -43,6 +43,12 @@ protocol RestfulApiCollection: RouteCollection {
     /// This will be apply to `read` `update` and `delete` opertation.
     func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T>
 
+    /// Applying fields that will query in request. this affect query item that has specified id. for query all items
+    /// use `applyingFieldsForQueryAll(_:)` instead.
+    /// - Parameter builder: receiver
+    func applyingFields(_ builder: QueryBuilder<T>) -> QueryBuilder<T>
+    func applyingFieldsForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T>
+
     /// Final query builder  by default change apply to `update` and `delete`.
     /// if you will changed this function impl please make sure call `queryBuilder(on:)` first.
     func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T>
@@ -80,14 +86,20 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        try specifiedIDQueryBuilder(on: req)
+        var builder = try specifiedIDQueryBuilder(on: req)
+        builder = applyingFields(builder)
+
+        return builder
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({ try $0.reverted() })
     }
 
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
-        T.query(on: req.db)
+        var builder = T.query(on: req.db)
+        builder = applyingFieldsForQueryAll(builder)
+
+        return builder
             .all()
             .flatMapEachThrowing({ try $0.reverted() })
     }
@@ -123,8 +135,18 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
             .filter(\._$id == id)
     }
 
+    func applyingFields(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
+        builder
+    }
+
+    func applyingFieldsForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
+        builder
+    }
+
     func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
-        try specifiedIDQueryBuilder(on: req)
+        var builder = try specifiedIDQueryBuilder(on: req)
+        builder = applyingFields(builder)
+        return builder
     }
 
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
@@ -172,9 +194,15 @@ extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringCo
         trusted.on(.DELETE, path, use: delete)
     }
 
-    func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
+    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
+        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
+            throw Abort.init(.notFound)
+        }
+
         let userId = try req.auth.require(User.self).requireID()
-        return try specifiedIDQueryBuilder(on: req)
+
+        return T.query(on: req.db)
+            .filter(\._$id == id)
             .filter(T.uidFieldKey, .equal, userId)
     }
 

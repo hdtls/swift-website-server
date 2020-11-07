@@ -180,10 +180,6 @@ class BlogCollection: RestfulApiCollection {
         return builder
     }
 
-    func applyingFields(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
-        builder
-    }
-
     func applyingFieldsForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
         builder
             .field(\.$id)
