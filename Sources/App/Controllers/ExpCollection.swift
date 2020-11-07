@@ -4,67 +4,25 @@ import Fluent
 class ExpCollection: RestfulApiCollection {
     typealias T = Experience
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let user = try req.auth.require(User.self)
-        let coding = try req.content.decode(T.SerializedObject.self)
+    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        let userId = try req.auth.require(User.self).requireID()
 
-        let exp = T.init(content: coding)
-
-        let industries = try _industriesMaker(coding: coding)
-        
-        exp.$user.id = try user.requireID()
-
-        return exp.save(on: req.db)
+        return try specifiedIDQueryBuilder(on: req)
+            .filter(T.uidFieldKey, .equal, userId)
+            .with(\.$industries)
+            .first()
+            .unwrap(orError: Abort(.notFound))
             .flatMap({
-                exp.$industries.attach(industries, on: req.db)
-            })
-            .flatMap({
-                exp.$industries.get(on: req.db)
-            })
-            .flatMapThrowing({ _ in
-                try exp.reverted()
+                do {
+                    return try self.performUpdate($0, on: req)
+                } catch {
+                    return req.eventLoop.makeFailedFuture(error)
+                }
             })
     }
 
     func applyingEagerLoaders(_ builder: QueryBuilder<Experience>) -> QueryBuilder<Experience> {
         builder.with(\.$industries)
-    }
-
-    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let coding = try req.content.decode(T.SerializedObject.self)
-        let upgrade = T.init(content: coding)
-        let industries = try _industriesMaker(coding: coding)
-
-        return try specifiedIDQueryBuilder(on: req)
-            .with(\.$industries)
-            .first()
-            .unwrap(or: Abort(.notFound))
-            .flatMap({ saved -> EventLoopFuture<T> in
-                saved.merge(upgrade)
-
-                let difference = industries.difference(from: saved.industries) {
-                    $0.id == $1.id
-                }
-
-                return EventLoopFuture<Void>.andAllSucceed(difference.map({
-                    switch $0 {
-                    case .insert(offset: _, element: let industry, associatedWith: _):
-                        return saved.$industries.attach(industry, on: req.db)
-                    case .remove(offset: _, element: let industry, associatedWith: _):
-                        return saved.$industries.detach(industry, on: req.db)
-                    }
-                }), on: req.eventLoop)
-                .flatMap({
-                    saved.$industries.get(reload: true, on: req.db)
-                })
-                .flatMap({ _ in
-                    saved.update(on: req.db)
-                })
-                .map({ saved })
-            })
-            .flatMapThrowing({
-                try $0.reverted()
-            })
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
@@ -78,6 +36,43 @@ class ExpCollection: RestfulApiCollection {
                 })
             })
             .map({ .ok })
+    }
+
+    func performUpdate(_ original: Experience?, on req: Request) throws -> EventLoopFuture<Experience.Coding> {
+
+        let serializedObject = try req.content.decode(T.SerializedObject.self)
+
+        let industries = try _industriesMaker(coding: serializedObject)
+
+        var upgrade = T.init(content: serializedObject)
+        upgrade.$user.id = try req.auth.require(User.self).requireID()
+
+        if let original = original {
+            original.merge(upgrade)
+            upgrade = original
+        }
+
+        return upgrade.save(on: req.db)
+            .flatMap({ () -> EventLoopFuture<[Industry]> in
+                let difference = industries.difference(from: upgrade.$industries.value ?? []) {
+                    $0.id == $1.id
+                }
+
+                return EventLoopFuture<Void>.andAllSucceed(difference.map({
+                    switch $0 {
+                    case .insert(offset: _, element: let industry, associatedWith: _):
+                        return upgrade.$industries.attach(industry, on: req.db)
+                    case .remove(offset: _, element: let industry, associatedWith: _):
+                        return upgrade.$industries.detach(industry, on: req.db)
+                    }
+                }), on: req.eventLoop)
+                .flatMap({
+                    upgrade.$industries.get(reload: true, on: req.db)
+                })
+            })
+            .flatMapThrowing({ _ in
+                try upgrade.reverted()
+            })
     }
 
     private func _industriesMaker(coding: T.SerializedObject) throws -> [Industry] {
