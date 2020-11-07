@@ -1,5 +1,5 @@
 import Vapor
-import Fluent
+import FluentMySQLDriver
 
 /// Restful style api defination.
 /// by default it provide `CRUD` method if `T.IDValue` is `LosslessStringConvertible`
@@ -47,12 +47,16 @@ protocol RestfulApiCollection: RouteCollection {
     func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T>
 
     /// Common update function.
-    func performUpdate(_ upgrade: T, on req: Request) -> EventLoopFuture<T.SerializedObject>
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject>
 }
 
 extension RestfulApiCollection {
     var path: String { T.schema }
     var restfulIDKey: String { "id" }
+
+    func performUpdate(on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        try performUpdate(nil, on: req)
+    }
 }
 
 /// Default `CRUD` implementation.
@@ -71,11 +75,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     }
 
     func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let coding = try req.content.decode(T.SerializedObject.self)
-
-        let model = try T.init(content: coding)
-
-        return performUpdate(model, on: req)
+        try performUpdate(on: req)
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
@@ -92,16 +92,15 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let coding = try req.content.decode(T.SerializedObject.self)
-
-        let upgrade = try T.init(content: coding)
-
         return try topLevelQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({
-                $0.merge(upgrade)
-                return self.performUpdate($0, on: req)
+                do {
+                    return try self.performUpdate($0, on: req)
+                } catch {
+                    return req.eventLoop.makeFailedFuture(error)
+                }
             })
     }
 
@@ -127,8 +126,23 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
         try queryBuilder(on: req)
     }
 
-    func performUpdate(_ upgrade: T, on req: Request) -> EventLoopFuture<T.SerializedObject> {
-        upgrade.save(on: req.db)
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        let coding = try req.content.decode(T.SerializedObject.self)
+
+        var upgrade = try T.init(content: coding)
+
+        if let original = original {
+            original.merge(upgrade)
+            upgrade = original
+        }
+
+        return upgrade.save(on: req.db)
+            .flatMapErrorThrowing({
+                if case MySQLError.duplicateEntry(let localizedErrorDescription) = $0 {
+                    throw Abort.init(.unprocessableEntity, reason: localizedErrorDescription)
+                }
+                throw $0
+            })
             .flatMapThrowing({
                 try upgrade.reverted()
             })
@@ -157,18 +171,26 @@ extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringCo
         trusted.on(.DELETE, path, use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let coding = try req.content.decode(T.SerializedObject.self)
-
-        let model = try T.init(content: coding)
-        model._$user.id = try req.auth.require(User.self).requireID()
-
-        return performUpdate(model, on: req)
-    }
-
     func topLevelQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
         let userId = try req.auth.require(User.self).requireID()
         return try queryBuilder(on: req)
             .filter(T.uidFieldKey, .equal, userId)
+    }
+
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+        let coding = try req.content.decode(T.SerializedObject.self)
+
+        var upgrade = try T.init(content: coding)
+        upgrade._$user.id = try req.auth.require(User.self).requireID()
+
+        if let original = original {
+            original.merge(upgrade)
+            upgrade = original
+        }
+
+        return upgrade.save(on: req.db)
+            .flatMapThrowing({
+                try upgrade.reverted()
+            })
     }
 }

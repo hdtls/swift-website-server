@@ -29,7 +29,7 @@ class BlogCollection: RestfulApiCollection {
     }
 
     func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        return try performUpdate1(on: req)
+        return try performUpdate(on: req)
     }
 
     func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
@@ -86,7 +86,7 @@ class BlogCollection: RestfulApiCollection {
             .unwrap(orError: Abort(.notFound))
             .flatMap({
                 do {
-                    return try self.performUpdate1($0, on: req)
+                    return try self.performUpdate($0, on: req)
                 } catch {
                     return req.eventLoop.makeFailedFuture(error)
                 }
@@ -108,7 +108,7 @@ class BlogCollection: RestfulApiCollection {
             })
     }
 
-    func performUpdate1(_ original: T? = nil, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
 
         let serializedObject = try req.content.decode(T.SerializedObject.self)
 

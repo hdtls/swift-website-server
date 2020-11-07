@@ -17,14 +17,22 @@ class SocialNetworkingServiceCollection: RestfulApiCollection {
         routes.on(.DELETE, path, use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<SocialNetworking.Service.Coding> {
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.Coding> {
         let coding = try req.content.decode(T.SerializedObject.self)
         guard coding.type != nil else {
             throw Abort.init(.badRequest, reason: "Value required for key 'type'")
         }
 
-        let model = T.init(content: coding)
+        var upgrade = T.init(content: coding)
 
-        return performUpdate(model, on: req)
+        if let original = original {
+            original.merge(upgrade)
+            upgrade = original
+        }
+
+        return upgrade.save(on: req.db)
+            .flatMapThrowing({
+                try upgrade.reverted()
+            })
     }
 }
