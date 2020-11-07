@@ -13,6 +13,9 @@ final class BlogCategory: Model {
     @Field(key: FieldKeys.name.rawValue)
     var name: String
 
+    @Siblings(through: BlogCategorySiblings.self, from: \.$category, to: \.$blog)
+    var blog: [Blog]
+
     init() {}
 
     init(id: IDValue?, name: String) {

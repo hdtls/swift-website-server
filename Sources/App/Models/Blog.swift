@@ -39,6 +39,9 @@ final class Blog: Model {
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
 
+    @Siblings(through: BlogCategorySiblings.self, from: \.$blog, to: \.$category)
+    var categories: [BlogCategory]
+
     // MARK: Initializer
     init() {}
 }
@@ -64,6 +67,7 @@ extension Blog: Serializing {
     typealias SerializedObject = Coding
 
     struct Coding: Content, Equatable {
+
         // `Blog` does not support auto generate id value.
         // This value is used as `Blog.id` and file identifier,
         var id: IDValue?
@@ -81,13 +85,10 @@ extension Blog: Serializing {
 
         // MARK: Relations
         var userId: User.IDValue?
+        var categories: [BlogCategory.SerializedObject]
     }
 
     convenience init(content: SerializedObject) throws {
-        guard let article = content.content else {
-            throw Abort(.badRequest, reason: "Value required for key 'content'.")
-        }
-
         self.init()
         id = content.id
         alias = content.alias
@@ -95,10 +96,9 @@ extension Blog: Serializing {
         artworkUrl = content.artworkUrl?.path
         excerpt = content.excerpt
         tags = content.tags
-        // Before save blog to db `contentUrl` is use to store content.
-        // this value will upgrade to file url after `blog.content` is
-        // writed to a local file.
-        contentUrl = article
+
+        // Set default value for `contentUrl`
+        contentUrl = ""
     }
 
     func reverted() throws -> SerializedObject {
@@ -111,7 +111,8 @@ extension Blog: Serializing {
             tags: tags,
             createdAt: $createdAt.timestamp,
             updatedAt: $updatedAt.timestamp,
-            userId: $user.id
+            userId: $user.id,
+            categories: $categories.value?.compactMap({ try? $0.reverted() }) ?? []
         )
     }
 }

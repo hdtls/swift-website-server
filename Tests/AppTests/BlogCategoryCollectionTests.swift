@@ -1,8 +1,10 @@
 import XCTVapor
 @testable import App
 
-func assertCreateBlogCategory(_ app: Application, headers: HTTPHeaders? = nil) throws -> BlogCategory.SerializedObject {
-    let category = BlogCategory.SerializedObject.init(id: nil, name: "swift")
+func assertCreateBlogCategory(
+    _ app: Application,
+    category: BlogCategory.SerializedObject = .init(id: nil, name: "swift"),
+    headers: HTTPHeaders? = nil) throws -> BlogCategory.SerializedObject {
 
     let headers = try registUserAndLoggedIn(app, headers: headers)
 
@@ -15,7 +17,7 @@ func assertCreateBlogCategory(_ app: Application, headers: HTTPHeaders? = nil) t
 
         coding = try $0.content.decode(BlogCategory.SerializedObject.self)
         XCTAssertNotNil(coding.id)
-        XCTAssertEqual(coding.name, coding.name)
+        XCTAssertEqual(coding.name, category.name)
     })
 
     return coding
