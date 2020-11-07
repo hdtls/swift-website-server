@@ -115,7 +115,16 @@ class BlogCollectionTests: XCAppCase {
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(Blog.SerializedObject.self)
-            XCTAssertEqual(coding, blog)
+            XCTAssertEqual(coding.id, blog.id)
+            XCTAssertEqual(coding.alias, blog.alias)
+            XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
+            XCTAssertEqual(coding.content, blog.content)
+            XCTAssertEqual(coding.createdAt, blog.createdAt)
+            XCTAssertEqual(coding.excerpt, blog.excerpt)
+            XCTAssertEqual(coding.tags, blog.tags)
+            XCTAssertEqual(coding.title, blog.title)
+            XCTAssertEqual(coding.userId, blog.userId)
+            XCTAssertEqual(coding.categories, blog.categories)
         })
 
         try app.test(.PUT, path + "/" + blog.alias, headers: headers, beforeRequest: {
@@ -123,7 +132,16 @@ class BlogCollectionTests: XCAppCase {
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(Blog.SerializedObject.self)
-            XCTAssertEqual(coding, blog)
+            XCTAssertEqual(coding.id, blog.id)
+            XCTAssertEqual(coding.alias, blog.alias)
+            XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
+            XCTAssertEqual(coding.content, blog.content)
+            XCTAssertEqual(coding.createdAt, blog.createdAt)
+            XCTAssertEqual(coding.excerpt, blog.excerpt)
+            XCTAssertEqual(coding.tags, blog.tags)
+            XCTAssertEqual(coding.title, blog.title)
+            XCTAssertEqual(coding.userId, blog.userId)
+            XCTAssertEqual(coding.categories, blog.categories)
         })
 
         try _deleteBlog(blog, headers: headers)

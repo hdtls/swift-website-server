@@ -39,7 +39,7 @@ class ExpCollection: RestfulApiCollection {
         let upgrade = T.init(content: coding)
         let industries = try _industriesMaker(coding: coding)
 
-        return try topLevelQueryBuilder(on: req)
+        return try specifiedIDQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
@@ -71,7 +71,7 @@ class ExpCollection: RestfulApiCollection {
     }
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try topLevelQueryBuilder(on: req)
+        try specifiedIDQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ exp in
