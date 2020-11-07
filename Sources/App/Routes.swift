@@ -19,5 +19,5 @@ public func routes(_ app: Application) throws {
     try app.register(collection: DefaultOwnableApiImpl<Skill>.init())
     try app.register(collection: DefaultOwnableApiImpl<Project>.init())
     try app.register(collection: BlogCollection.init())
-    try app.register(collection: BlogCategoryCollection.init())
+    try app.register(collection: DefaultApiImpl<BlogCategory>.init())
 }
