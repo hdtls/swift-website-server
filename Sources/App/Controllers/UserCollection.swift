@@ -129,7 +129,9 @@ class UserCollection: RestfulApiCollection {
         }
 
         if supportedQueries.includeBlog ?? false {
-            queryBuilder.with(\.$blog)
+            queryBuilder.with(\.$blog) {
+                $0.with(\.$categories)
+            }
         }
 
         return queryBuilder
