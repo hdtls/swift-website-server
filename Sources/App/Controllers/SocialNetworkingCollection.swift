@@ -5,14 +5,8 @@ class SocialNetworkingCollection: RestfulApiCollection {
 
     typealias T = SocialNetworking
 
-    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<SocialNetworking> {
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-
-        return T.query(on: req.db)
-            .filter(\._$id == id)
-            .with(\.$service)
+    func applyingFields(_ builder: QueryBuilder<SocialNetworking>) -> QueryBuilder<SocialNetworking> {
+        builder.with(\.$service)
     }
 
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<SocialNetworking.Coding> {

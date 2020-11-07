@@ -104,6 +104,35 @@ class BlogCollection: RestfulApiCollection {
             })
     }
 
+    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
+        let builder = T.query(on: req.db)
+        if let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) {
+            builder.filter(\._$id == id)
+        } else if let alias = req.parameters.get(restfulIDKey) {
+            builder.filter(\.$alias == alias)
+        } else {
+            throw Abort(.badRequest)
+        }
+        return builder
+    }
+
+    func applyingFieldsForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
+        builder
+            .field(\.$id)
+            .field(\.$alias)
+            .field(\.$title)
+            .field(\.$artworkUrl)
+            .field(\.$excerpt)
+            .field(\.$tags)
+            .field(\.$createdAt)
+            .field(\.$updatedAt)
+            .field(\.$user.$id)
+    }
+
+    func applyingEagerLoaders(_ builder: QueryBuilder<Blog>) -> QueryBuilder<T> {
+        builder.with(\.$categories)
+    }
+
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
 
         let serializedObject = try req.content.decode(T.SerializedObject.self)
@@ -166,39 +195,6 @@ class BlogCollection: RestfulApiCollection {
             result.content = content
             return result
         })
-    }
-
-    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
-        let builder = T.query(on: req.db)
-        if let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) {
-            builder.filter(\._$id == id)
-        } else if let alias = req.parameters.get(restfulIDKey) {
-            builder.filter(\.$alias == alias)
-        } else {
-            throw Abort(.badRequest)
-        }
-        return builder
-    }
-
-    func applyingFieldsForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
-        builder
-            .field(\.$id)
-            .field(\.$alias)
-            .field(\.$title)
-            .field(\.$artworkUrl)
-            .field(\.$excerpt)
-            .field(\.$tags)
-            .field(\.$createdAt)
-            .field(\.$updatedAt)
-            .field(\.$user.$id)
-    }
-
-    func applyingEagerLoaders(_ builder: QueryBuilder<Blog>) -> QueryBuilder<T> {
-        builder.with(\.$categories)
-    }
-
-    func applyingEagerLoadersForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
-        builder.with(\.$categories)
     }
 
     private func _filepath(_ req: Request, alias: String) -> String {

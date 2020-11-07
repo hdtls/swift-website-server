@@ -40,14 +40,29 @@ protocol RestfulApiCollection: RouteCollection {
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus>
 
     /// Query builder with specified id required.
-    /// This will be apply to `read` `update` and `delete` opertation.
+    /// This will be apply to `read(_:)` `update(_:)` and `delete(_:)` opertation.
     func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T>
 
-    /// Applying fields that will query in request. this affect query item that has specified id. for query all items
-    /// use `applyingFieldsForQueryAll(_:)` instead.
+    /// Applying fields that will query in request. By default this effect `read(_:)`.
+    /// - seealso `applyingFieldsForQueryAll(_:)` for query all items..
     /// - Parameter builder: receiver
     func applyingFields(_ builder: QueryBuilder<T>) -> QueryBuilder<T>
+
+    /// Applying fields that will query in request. By default this effect `readAll(_:)`.
+    /// - seealso `applyingFields(_:)` for single item query.
+    /// - Parameter builder: receiver
     func applyingFieldsForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T>
+
+    /// Applying eager loaders to query request. By default this will effect default impl of `read(_:)`
+    /// - seealso `applyingEagerLoadersForQueryAll(_:)` for query all items.
+    /// - Parameter builder: receiver
+    func applyingEagerLoaders(_ builder: QueryBuilder<T>) -> QueryBuilder<T>
+
+    /// Applying eager loaders to query request. By default this will effect default impl of `readAll(_:)`
+    /// By default return `applyingEagerLoaders(_:)`
+    /// - seealso `applyingEagerLoaders(_:)` for single item query.
+    /// - Parameter builder: receiver
+    func applyingEagerLoadersForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T>
 
     /// Common update function.
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject>
@@ -84,6 +99,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         var builder = try specifiedIDQueryBuilder(on: req)
         builder = applyingFields(builder)
+        builder = applyingEagerLoaders(builder)
 
         return builder
             .first()
@@ -94,6 +110,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
         var builder = T.query(on: req.db)
         builder = applyingFieldsForQueryAll(builder)
+        builder = applyingEagerLoadersForQueryAll(builder)
 
         return builder
             .all()
@@ -137,6 +154,14 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
 
     func applyingFieldsForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
         builder
+    }
+
+    func applyingEagerLoaders(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
+        builder
+    }
+
+    func applyingEagerLoadersForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
+        applyingEagerLoaders(builder)
     }
 
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {

@@ -5,17 +5,7 @@ import Vapor
 class SocialNetworkingServiceCollection: RestfulApiCollection {
     typealias T = SocialNetworkingService
 
-    func boot(routes: RoutesBuilder) throws {
-
-        let routes = routes.grouped(.constant(SocialNetworking.schema), "services")
-
-        let path = PathComponent.parameter(restfulIDKey)
-
-        routes.on(.POST, use: create)
-        routes.on(.GET, path, use: read)
-        routes.on(.PUT, path, use: update)
-        routes.on(.DELETE, path, use: delete)
-    }
+    var path: String = SocialNetworking.schema + "/services"
 
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.Coding> {
         let coding = try req.content.decode(T.SerializedObject.self)

@@ -26,12 +26,8 @@ class ExpCollection: RestfulApiCollection {
             })
     }
 
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
-     
-        return T.query(on: req.db)
-            .with(\.$industries)
-            .all()
-            .flatMapEachThrowing({ try $0.reverted() })
+    func applyingEagerLoaders(_ builder: QueryBuilder<Experience>) -> QueryBuilder<Experience> {
+        builder.with(\.$industries)
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
@@ -40,6 +36,7 @@ class ExpCollection: RestfulApiCollection {
         let industries = try _industriesMaker(coding: coding)
 
         return try specifiedIDQueryBuilder(on: req)
+            .with(\.$industries)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({ saved -> EventLoopFuture<T> in
@@ -72,6 +69,7 @@ class ExpCollection: RestfulApiCollection {
 
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         try specifiedIDQueryBuilder(on: req)
+            .with(\.$industries)
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ exp in
@@ -80,16 +78,6 @@ class ExpCollection: RestfulApiCollection {
                 })
             })
             .map({ .ok })
-    }
-
-    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<Experience> {
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
-
-        return T.query(on: req.db)
-            .filter(\._$id == id)
-            .with(\.$industries)
     }
 
     private func _industriesMaker(coding: T.SerializedObject) throws -> [Industry] {
