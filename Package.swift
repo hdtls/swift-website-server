@@ -42,7 +42,5 @@ let package = Package(
             .product(name: "XCTVapor", package: "vapor"),
         ]),
     ],
-    swiftLanguageVersions: [
-        .v5
-    ]
+    swiftLanguageVersions: [.v5]
 )
