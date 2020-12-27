@@ -22,7 +22,7 @@ x-mysql: &mysql
   MYSQL_DATABASE: website_testing
 
 x-imagefile: &imagefile
-  image: swift-portal-backend:latest
+  image: swift-website-server:latest
 
 services:
 
