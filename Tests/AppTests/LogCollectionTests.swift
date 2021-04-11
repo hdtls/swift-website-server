@@ -1,9 +1,17 @@
 import XCTVapor
 @testable import App
 
-class LogCollectionTests: XCAppCase {
+class LogCollectionTests: XCTestCase {
 
     let path = "login"
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
 
     func testLoginWithWrongMsg() throws {
         try registUserAndLoggedIn(app)
@@ -19,9 +27,18 @@ class LogCollectionTests: XCAppCase {
     }
 
     func testLogin() throws {
-        try registUserAndLoggedIn(app)
-
-        let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTE="
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+        
+        try registUserAndLoggedIn(app, userCreation, headers: nil)
+        
+        let credentials = "\(userCreation.username):\(userCreation.password)".data(using: .utf8)!.base64EncodedString()
+        
+        let headers = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic \(credentials)"
         ))
         try app.test(.POST, path, headers: headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)

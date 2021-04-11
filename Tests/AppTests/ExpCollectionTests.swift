@@ -1,9 +1,23 @@
 import XCTVapor
 @testable import App
 
-class ExpCollectionTests: XCAppCase {
+class ExpCollectionTests: XCTestCase {
 
     let path = Experience.schema
+    
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() {
         let uuid = UUID.init().uuidString

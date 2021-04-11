@@ -1,10 +1,24 @@
 import XCTVapor
 @testable import App
 
-class FileCollectionTests: XCAppCase {
+class FileCollectionTests: XCTestCase {
 
     let file = File(data: "HELLO WORLD!!!", filename: "hello.txt")
     let path = "files"
+    
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() {
         XCTAssertNoThrow(

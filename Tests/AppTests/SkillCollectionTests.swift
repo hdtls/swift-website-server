@@ -4,7 +4,7 @@ import XCTVapor
 @discardableResult
 func assertCreateSkill(
     _ app: Application,
-    headers: HTTPHeaders? = nil
+    headers: HTTPHeaders? = authorized
 ) throws -> Skill.SerializedObject {
     let skill = ["professional": ["xxx"], "workflow": ["xxx"]]
 
@@ -27,10 +27,23 @@ func assertCreateSkill(
 }
 
 
-class SkillCollectionTests: XCAppCase {
+class SkillCollectionTests: XCTestCase {
 
     let path = Skill.schema
-
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        app.shutdown()
+    }
+    
     func testAuthorizeRequire() throws {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)

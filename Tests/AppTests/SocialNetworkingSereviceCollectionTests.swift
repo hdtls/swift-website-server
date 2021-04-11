@@ -1,9 +1,22 @@
 import XCTVapor
 @testable import App
 
-class SocialNetworkingSereviceCollectionTests: XCAppCase {
+class SocialNetworkingSereviceCollectionTests: XCTestCase {
 
     let path = "\(SocialNetworking.schema)/services"
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        app.shutdown()
+    }
 
     func testCreate() throws {
         try assertCreateSocialNetworkingService(app)

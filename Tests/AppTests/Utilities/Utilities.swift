@@ -21,12 +21,13 @@ func assertHttpBadRequest(_ response: XCTHTTPResponse) throws {
     XCTAssertEqual(response.status, .badRequest)
 }
 
-let userCreation = User.Creation.init(firstName: "J", lastName: "K", username: "test", password: "111111")
+var authorized: HTTPHeaders?
+
 @discardableResult
 func registUserAndLoggedIn(
     _ app: Application,
-    _ userCreation: User.Creation = userCreation,
-    headers: HTTPHeaders? = nil
+    _ userCreation: User.Creation = .init(firstName: "z", lastName: "f", username: String(UUID().uuidString.prefix(8)), password: "uuidString"),
+    headers: HTTPHeaders? = authorized
 ) throws -> HTTPHeaders {
 
     var httpHeaders = headers
@@ -56,6 +57,7 @@ func registUserAndLoggedIn(
         XCTAssertNil(authorizeMsg.user.interests)
 
         httpHeaders = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Bearer " + authorizeMsg.accessToken))
+        authorized = httpHeaders
     })
 
     return httpHeaders!
@@ -88,7 +90,7 @@ func assertCreateSocialNetworkingService(
 @discardableResult
 func assertCreateSocialNetworking(
     _ app: Application,
-    headers: HTTPHeaders? = nil
+    headers: HTTPHeaders? = authorized
 ) throws -> SocialNetworking.Coding {
 
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
@@ -121,20 +123,25 @@ func assertCreateIndustry(
     industry: Industry.Coding? = nil
 ) throws -> Industry.Coding {
 
-    var coding: Industry.Coding!
+    var expect = industry
+    
+    if expect == nil {
+        expect = Industry.Coding.init(title: String(UUID().uuidString.prefix(6)))
+    }
 
     try app.test(.POST, Industry.schema, beforeRequest: {
-        try $0.content.encode(industry ?? Industry.Coding.init(title: "International Trade & Development"))
+        try $0.content.encode(expect!)
     }, afterResponse: {
         XCTAssertEqual($0.status, .ok)
 
-        coding = try $0.content.decode(Industry.Coding.self)
+        let coding = try $0.content.decode(Industry.Coding.self)
         XCTAssertNotNil(coding.id)
-        XCTAssertEqual(coding.title, industry?.title ?? "International Trade & Development")
-
+        XCTAssertEqual(coding.title, expect?.title)
+        
+        expect = coding
     })
 
-    return coding
+    return expect!
 }
 
 @discardableResult
@@ -149,7 +156,7 @@ func assertCreateWorkExperiance(
         startDate: "2020-02-20",
         endDate: "-",
         industries: [
-            Industry.SerializedObject.init(title: "International Trade & Development")
+            Industry.SerializedObject.init(title: String(UUID().uuidString.prefix(6)))
         ]
     )
     let httpHeaders = try registUserAndLoggedIn(app, headers: headers)

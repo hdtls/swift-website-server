@@ -13,7 +13,7 @@ func assertCreateBlog(
 
     if blog == nil {
         let category = try assertCreateBlogCategory(app, headers: headers)
-        blog = Blog.SerializedObject.init(alias: "hello-vapor", title: "Hello Vapor", excerpt: "", content: "", categories: [category])
+        blog = Blog.SerializedObject.init(alias: UUID().uuidString, title: "Hello Vapor", excerpt: "", content: "", categories: [category])
     }
 
     var coding: Blog.SerializedObject!
@@ -40,9 +40,22 @@ func assertCreateBlog(
     return coding
 }
 
-class BlogCollectionTests: XCAppCase {
+class BlogCollectionTests: XCTestCase {
 
     let path = Blog.schema
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() {
         let uuid = UUID.init().uuidString
@@ -92,12 +105,6 @@ class BlogCollectionTests: XCAppCase {
             XCTAssertEqual(coding, blog)
         })
 
-        try app.test(.GET, path + "/\(blog.alias)", afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
-            XCTAssertEqual(coding, blog)
-        })
-
         try _deleteBlog(blog, headers: headers)
     }
 
@@ -127,23 +134,6 @@ class BlogCollectionTests: XCAppCase {
             XCTAssertEqual(coding.categories, blog.categories)
         })
 
-        try app.test(.PUT, path + "/" + blog.alias, headers: headers, beforeRequest: {
-            try $0.content.encode(blog)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
-            XCTAssertEqual(coding.id, blog.id)
-            XCTAssertEqual(coding.alias, blog.alias)
-            XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-            XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
-            XCTAssertEqual(coding.excerpt, blog.excerpt)
-            XCTAssertEqual(coding.tags, blog.tags)
-            XCTAssertEqual(coding.title, blog.title)
-            XCTAssertEqual(coding.userId, blog.userId)
-            XCTAssertEqual(coding.categories, blog.categories)
-        })
-
         try _deleteBlog(blog, headers: headers)
     }
 
@@ -151,27 +141,10 @@ class BlogCollectionTests: XCAppCase {
         let headers = try registUserAndLoggedIn(app)
 
         var blog = try assertCreateBlog(app, headers: headers)
-        let category = try assertCreateBlogCategory(app, category: .init(id: nil, name: "server side swift"), headers: headers)
+        let category = try assertCreateBlogCategory(app, headers: headers)
         blog.categories.append(category)
 
         try app.test(.PUT, path + "/" + blog.id!.uuidString, headers: headers, beforeRequest: {
-            try $0.content.encode(blog)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
-            XCTAssertEqual(coding.id, blog.id)
-            XCTAssertEqual(coding.alias, blog.alias)
-            XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-            XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
-            XCTAssertEqual(coding.excerpt, blog.excerpt)
-            XCTAssertEqual(coding.tags, blog.tags)
-            XCTAssertEqual(coding.title, blog.title)
-            XCTAssertEqual(coding.userId, blog.userId)
-            XCTAssertEqual(coding.categories.count, blog.categories.count)
-        })
-
-        try app.test(.PUT, path + "/" + blog.alias, headers: headers, beforeRequest: {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -194,9 +167,9 @@ class BlogCollectionTests: XCAppCase {
     func testUpdateBlogWithRemoveCategory() throws {
         let headers = try registUserAndLoggedIn(app)
 
-        let category1 = try assertCreateBlogCategory(app, category: .init(id: nil, name: "server side swift"), headers: headers)
-        let category2 = try assertCreateBlogCategory(app, category: .init(id: nil, name: "server"), headers: headers)
-        let category3 = try assertCreateBlogCategory(app, category: .init(id: nil, name: "vapor"), headers: headers)
+        let category1 = try assertCreateBlogCategory(app, headers: headers)
+        let category2 = try assertCreateBlogCategory(app, headers: headers)
+        let category3 = try assertCreateBlogCategory(app, headers: headers)
 
         let categories = [category1, category2, category3]
 

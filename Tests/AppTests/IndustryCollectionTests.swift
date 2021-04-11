@@ -1,10 +1,23 @@
 import XCTVapor
 @testable import App
 
-class IndustryCollectionTests: XCAppCase {
+class IndustryCollectionTests: XCTestCase {
 
     let path = Industry.schema
-
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        app.shutdown()
+    }
+    
     func testCreate() {
         XCTAssertNoThrow(try assertCreateIndustry(app))
     }
@@ -50,13 +63,15 @@ class IndustryCollectionTests: XCAppCase {
     func testUpdate() throws {
         let industry = try assertCreateIndustry(app)
         
+        let title = String(UUID().uuidString.prefix(6))
+        
         try app.test(.PUT, path + "/\(industry.id!)", beforeRequest: {
-            try $0.content.encode(Industry.Coding.init(title: "12345"))
+            try $0.content.encode(Industry.Coding.init(title: title))
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(Industry.Coding.self)
             XCTAssertNotNil(coding.id)
-            XCTAssertEqual(coding.title, "12345")
+            XCTAssertEqual(coding.title, title)
         })
     }
     

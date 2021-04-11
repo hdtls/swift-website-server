@@ -60,7 +60,7 @@ extension SocialNetworking: Serializing {
             id: requireID(),
             userId: $user.id,
             url: url,
-            service: service.dataTransferObject()
+            service: $service.value?.dataTransferObject()
         )
     }
 }

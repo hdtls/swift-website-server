@@ -1,9 +1,22 @@
 import XCTVapor
 @testable import App
 
-class UserCollectionTests: XCAppCase {
+class UserCollectionTests: XCTestCase {
     
     let path = User.schema
+    var app: Application!
+    
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
+        app = .init(.testing)
+        try bootstrap(app)
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() {
         XCTAssertNoThrow(
@@ -13,10 +26,10 @@ class UserCollectionTests: XCAppCase {
 
     func testCreateWithInvalidPayload() throws {
         let json = [
-            "firstName" : userCreation.firstName,
-            "lastName" : userCreation.lastName,
-            "password" : userCreation.password,
-            "username" : userCreation.username
+            "firstName" : "1",
+            "lastName" : "2",
+            "password" : "1234567",
+            "username" : "qwertyu"
         ]
 
         try app.test(.POST, path, beforeRequest: {
@@ -54,14 +67,22 @@ class UserCollectionTests: XCAppCase {
     
     func testCreateWithInvalidPassword() throws {
         try app.test(.POST, path, beforeRequest: {
-            var invalid = userCreation
+            var invalid = User.Creation.init(firstName: "J", lastName: "K", username: "test", password: "111111")
+
             invalid.password = "111"
             try $0.content.encode(invalid)
         }, afterResponse: assertHttpBadRequest)
     }
     
     func testCreateWithConflictUsername() throws {
-        try registUserAndLoggedIn(app)
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+
+        try registUserAndLoggedIn(app, userCreation, headers: nil)
         
         try app.test(.POST, path, beforeRequest: {
             try $0.content.encode(userCreation)
@@ -80,12 +101,21 @@ class UserCollectionTests: XCAppCase {
     }
     
     func testQueryWithUserID() throws {
-        try registUserAndLoggedIn(app, userCreation)
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+        
+        try registUserAndLoggedIn(app, userCreation, headers: nil)
+        
+        var user: User.SerializedObject!
         
         try app.test(.GET, path + "/\(userCreation.username)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let user = try $0.content.decode(User.Coding.self)
+            user = try! $0.content.decode(User.Coding.self)
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
             XCTAssertEqual(user.firstName, userCreation.firstName)
@@ -101,7 +131,14 @@ class UserCollectionTests: XCAppCase {
     }
     
     func testQueryWithUserIDAndQueryParameters() throws {
-        try registUserAndLoggedIn(app, userCreation)
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+        
+        try registUserAndLoggedIn(app, userCreation, headers: nil)
 
         let query = "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true&incl_blog=true"
         try app.test(.GET, path + "/\(userCreation.username)\(query)", afterResponse: {
@@ -126,7 +163,14 @@ class UserCollectionTests: XCAppCase {
     }
 
     func testQueryWithUserIDAndQueryParametersAfterAddChildrens() throws {
-        let headers = try registUserAndLoggedIn(app, userCreation)
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+
+        let headers = try registUserAndLoggedIn(app, userCreation, headers: nil)
 
         let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
         let workExp = try assertCreateWorkExperiance(app, headers: headers)
@@ -167,7 +211,6 @@ class UserCollectionTests: XCAppCase {
         try app.test(.GET, path, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
-            XCTAssertEqual(try! $0.content.decode([User.Coding].self).count, 0)
         })
         
         try registUserAndLoggedIn(app)
@@ -175,12 +218,18 @@ class UserCollectionTests: XCAppCase {
         try app.test(.GET, path, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
-            XCTAssertEqual(try! $0.content.decode([User.Coding].self).count, 1)
         })
     }
     
     func testQueryAllWithQueryParametersAfterAddChildrens() throws {
-        let headers = try registUserAndLoggedIn(app, userCreation)
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+
+        let headers = try registUserAndLoggedIn(app, userCreation, headers: nil)
 
         let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
         let workExpCoding = try assertCreateWorkExperiance(app, headers: headers)
@@ -195,10 +244,11 @@ class UserCollectionTests: XCAppCase {
             XCTAssertEqual($0.status, .ok)
 
             let users = try $0.content.decode([User.Coding].self)
-            XCTAssertEqual(users.count, 1)
             XCTAssertNotNil(users.first)
             
-            let user = users.first!
+            let user = users.filter({
+                $0.username == userCreation.username
+            }).first!
             
             XCTAssertNotNil(user.id)
             XCTAssertEqual(user.username, userCreation.username)
@@ -225,16 +275,25 @@ class UserCollectionTests: XCAppCase {
     }
     
     func testUpdate() throws {
-        let headers = try registUserAndLoggedIn(app)
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+
+        let headers = try registUserAndLoggedIn(app, userCreation, headers: nil)
+        
         let upgrade = User.Coding.init(
-            username: "test",
+            username: userCreation.username,
             firstName: "R",
             lastName: "J",
             phone: "+1 888888888",
             emailAddress: "test@test.com",
             aboutMe: "HELLO WORLD !!!"
         )
-        try app.test(.PUT, path + "/test", headers: headers, beforeRequest: {
+        
+        try app.test(.PUT, path + "/\(userCreation.username)", headers: headers, beforeRequest: {
             
             try $0.content.encode(upgrade)
         }, afterResponse: {
@@ -256,7 +315,14 @@ class UserCollectionTests: XCAppCase {
     }
 
     func testQueryBlogThatAssociatedWithSpecialUser() throws {
-        let headers = try registUserAndLoggedIn(app)
+        let userCreation = User.Creation.init(
+            firstName: "J",
+            lastName: "K",
+            username: String(UUID().uuidString.prefix(8)),
+            password: "111111"
+        )
+
+        let headers = try registUserAndLoggedIn(app, userCreation, headers: nil)
         let blog = try assertCreateBlog(app, headers: headers)
 
         try app.test(.GET, path + "/\(userCreation.username)" + "/blog", afterResponse: {
