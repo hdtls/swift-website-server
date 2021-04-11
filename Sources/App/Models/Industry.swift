@@ -42,12 +42,12 @@ extension Industry: Serializing {
         var title: String?
     }
 
-    convenience init(content: SerializedObject) throws {
-        self.init(title: content.title ?? "")
-        id = content.id
+    convenience init(from dto: SerializedObject) throws {
+        self.init(title: dto.title ?? "")
+        id = dto.id
     }
 
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         try SerializedObject.init(id: requireID(), title: title)
     }
 }

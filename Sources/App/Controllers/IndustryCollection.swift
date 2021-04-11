@@ -10,7 +10,7 @@ class IndustryCollection: RestfulApiCollection {
             throw Abort.init(.unprocessableEntity, reason: "Value required for key 'industry.title'")
         }
 
-        var industry = try T.init(content: coding)
+        var industry = try T.init(from: coding)
 
         if let original = original {
             original.update(with: industry)
@@ -25,7 +25,7 @@ class IndustryCollection: RestfulApiCollection {
                 throw $0
             })
             .flatMapThrowing({
-                try industry.reverted()
+                try industry.dataTransferObject()
             })
     }
 }

@@ -84,20 +84,20 @@ extension Education: Serializing {
         var userId: User.IDValue?
     }
 
-    convenience init(content: SerializedObject) throws {
+    convenience init(from dto: SerializedObject) throws {
         self.init()
-        school = content.school
-        degree = content.degree
-        field = content.field
-        startYear = content.startYear
-        endYear = content.endYear
-        grade = content.grade
-        activities = content.activities
-        accomplishments = content.accomplishments
-        media = content.media
+        school = dto.school
+        degree = dto.degree
+        field = dto.field
+        startYear = dto.startYear
+        endYear = dto.endYear
+        grade = dto.grade
+        activities = dto.activities
+        accomplishments = dto.accomplishments
+        media = dto.media
     }
 
-    func reverted() throws -> Coding {
+    func dataTransferObject() throws -> Coding {
         try Coding.init(
             id: requireID(),
             school: school,

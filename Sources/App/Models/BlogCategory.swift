@@ -45,11 +45,11 @@ extension BlogCategory: Content, Serializing {
         case name
     }
 
-    convenience init(content: SerializedObject) throws {
-        self.init(id: content.id, name: content.name)
+    convenience init(from dto: SerializedObject) throws {
+        self.init(id: dto.id, name: dto.name)
     }
 
-    func reverted() throws -> BlogCategory {
+    func dataTransferObject() throws -> BlogCategory {
         self
     }
 }

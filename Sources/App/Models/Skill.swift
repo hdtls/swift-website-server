@@ -42,13 +42,13 @@ extension Skill: Serializing {
         var workflow: [String]?
     }
 
-    convenience init(content: SerializedObject) {
+    convenience init(from dto: SerializedObject) {
         self.init()
-        professional = content.professional
-        workflow = content.workflow
+        professional = dto.professional
+        workflow = dto.workflow
     }
 
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         try SerializedObject.init(id: requireID(), professional: professional, workflow: workflow)
     }
 }

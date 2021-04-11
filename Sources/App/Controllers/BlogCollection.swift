@@ -44,7 +44,7 @@ class BlogCollection: RestfulApiCollection {
             })
             .flatMapThrowing({
                 var byteBuffer = $0
-                var coding = try model.reverted()
+                var coding = try model.dataTransferObject()
                 coding.content = byteBuffer.readString(length: byteBuffer.readableBytes) ?? ""
                 return coding
             })
@@ -68,7 +68,7 @@ class BlogCollection: RestfulApiCollection {
         return queryBuilder
             .all()
             .flatMapEachThrowing({
-                try $0.reverted()
+                try $0.dataTransferObject()
             })
     }
 
@@ -149,7 +149,7 @@ class BlogCollection: RestfulApiCollection {
 
         let categories = serializedObject.categories
 
-        var blog = try T.init(content: serializedObject)
+        var blog = try T.init(from: serializedObject)
         blog.$user.id = try req.auth.require(User.self).requireID()
 
         var originalBlogAlias = blog.alias
@@ -194,7 +194,7 @@ class BlogCollection: RestfulApiCollection {
             })
         })
         .flatMapThrowing({ _ in
-            var result = try blog.reverted()
+            var result = try blog.dataTransferObject()
             result.content = content
             return result
         })

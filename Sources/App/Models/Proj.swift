@@ -145,27 +145,27 @@ extension Project: Serializing {
         var userId: User.IDValue?
     }
 
-    convenience init(content: SerializedObject) throws {
+    convenience init(from dto: SerializedObject) throws {
         self.init()
-        id = content.id
-        name = content.name
-        note = content.note
-        genres = content.genres
-        summary = content.summary
-        artworkUrl = content.artworkUrl?.path
-        backgroundImageUrl = content.backgroundImageUrl?.path
-        promoImageUrl = content.promoImageUrl?.path
-        screenshotUrls = content.screenshotUrls?.compactMap({ $0.path })
-        padScreenshotUrls = content.padScreenshotUrls?.compactMap({ $0.path })
-        kind = content.kind
-        visibility = content.visibility
-        trackViewUrl = content.trackViewUrl
-        trackId = content.trackId
-        startDate = content.startDate
-        endDate = content.endDate
+        id = dto.id
+        name = dto.name
+        note = dto.note
+        genres = dto.genres
+        summary = dto.summary
+        artworkUrl = dto.artworkUrl?.path
+        backgroundImageUrl = dto.backgroundImageUrl?.path
+        promoImageUrl = dto.promoImageUrl?.path
+        screenshotUrls = dto.screenshotUrls?.compactMap({ $0.path })
+        padScreenshotUrls = dto.padScreenshotUrls?.compactMap({ $0.path })
+        kind = dto.kind
+        visibility = dto.visibility
+        trackViewUrl = dto.trackViewUrl
+        trackId = dto.trackId
+        startDate = dto.startDate
+        endDate = dto.endDate
     }
 
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         try SerializedObject.init(
             id: requireID(),
             name: name,

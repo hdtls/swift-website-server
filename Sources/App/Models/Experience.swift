@@ -85,19 +85,19 @@ extension Experience: Serializing {
 
     /// Convert `Coding` to `Experience`, used for decoding request content.
     /// - note: `user` and `industries` eager loading property will set on route operation.
-    convenience init(content: Coding) {
+    convenience init(from dto: Coding) {
         self.init()
-        title = content.title
-        companyName = content.companyName
-        location = content.location
-        startDate = content.startDate
-        endDate = content.endDate
-        headline = content.headline
-        responsibilities = content.responsibilities
-        media = content.media
+        title = dto.title
+        companyName = dto.companyName
+        location = dto.location
+        startDate = dto.startDate
+        endDate = dto.endDate
+        headline = dto.headline
+        responsibilities = dto.responsibilities
+        media = dto.media
     }
 
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         try Coding.init(
             id: requireID(),
             title: title,
@@ -108,7 +108,7 @@ extension Experience: Serializing {
             headline: headline,
             responsibilities: responsibilities,
             media: media,
-            industries: industries.compactMap({ try? $0.reverted() }),
+            industries: industries.compactMap({ try? $0.dataTransferObject() }),
             userId: $user.id
         )
     }

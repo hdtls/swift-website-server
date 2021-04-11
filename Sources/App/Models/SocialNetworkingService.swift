@@ -76,12 +76,12 @@ extension SocialNetworkingService: Serializing {
         var type: SocialNetworkingService.ServiceType?
     }
 
-    convenience init(content: SerializedObject) {
+    convenience init(from dto: SerializedObject) {
         self.init()
-        type = content.type ?? .undefined
+        type = dto.type ?? .undefined
     }
 
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         try SerializedObject.init(
             id: requireID(),
             type: type

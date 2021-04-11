@@ -70,7 +70,7 @@ class UserCollection: RestfulApiCollection {
                 return token.save(on: req.db).map { token }
             })
             .flatMapThrowing({
-                try AuthorizeMsg.init(user: user.reverted(), token: $0)
+                try AuthorizeMsg.init(user: user.dataTransferObject(), token: $0)
             })
     }
     
@@ -87,7 +87,7 @@ class UserCollection: RestfulApiCollection {
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMapThrowing({
-                try $0.reverted()
+                try $0.dataTransferObject()
             })
     }
     
@@ -101,7 +101,7 @@ class UserCollection: RestfulApiCollection {
         return builder
             .all()
             .flatMapEachThrowing({
-                try $0.reverted()
+                try $0.dataTransferObject()
             })
     }
 
@@ -110,7 +110,7 @@ class UserCollection: RestfulApiCollection {
     func update(_ req: Request) throws -> EventLoopFuture<User.Coding> {
         let userId = try req.auth.require(User.self).requireID()
         let coding = try req.content.decode(User.Coding.self)
-        let upgrade = User.init(content: coding)
+        let upgrade = User.init(from: coding)
         
         return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
@@ -119,7 +119,7 @@ class UserCollection: RestfulApiCollection {
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({
-                try $0.reverted()
+                try $0.dataTransferObject()
             })
     }
     
@@ -140,7 +140,7 @@ class UserCollection: RestfulApiCollection {
                 }
             })
             .flatMapThrowing({
-                try $0.reverted()
+                try $0.dataTransferObject()
             })
     }
     
@@ -213,7 +213,7 @@ extension UserCollection {
                     .all()
             })
             .flatMapEachThrowing({
-                try $0.reverted()
+                try $0.dataTransferObject()
             })
     }
 }
@@ -234,7 +234,7 @@ extension UserCollection {
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({
-                try $0.reverted()
+                try $0.dataTransferObject()
             })
     }
 }

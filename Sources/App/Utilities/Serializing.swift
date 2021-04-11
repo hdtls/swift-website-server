@@ -8,10 +8,10 @@ protocol Serializing {
     associatedtype SerializedObject: Content
 
     /// Initalize new model from `SerializedObject`.
-    init(content: SerializedObject) throws
+    init(from dto: SerializedObject) throws
 
     /// Revert model to `SerializedObject`.
-    func reverted() throws -> SerializedObject
+    func dataTransferObject() throws -> SerializedObject
 }
 
 protocol Updatable {

@@ -13,7 +13,7 @@ class SocialNetworkingServiceCollection: RestfulApiCollection {
             throw Abort.init(.badRequest, reason: "Value required for key 'type'")
         }
 
-        var upgrade = T.init(content: coding)
+        var upgrade = T.init(from: coding)
 
         if let original = original {
             original.update(with: upgrade)
@@ -22,7 +22,7 @@ class SocialNetworkingServiceCollection: RestfulApiCollection {
 
         return upgrade.save(on: req.db)
             .flatMapThrowing({
-                try upgrade.reverted()
+                try upgrade.dataTransferObject()
             })
     }
 }

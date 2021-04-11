@@ -104,7 +104,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
         return builder
             .first()
             .unwrap(or: Abort(.notFound))
-            .flatMapThrowing({ try $0.reverted() })
+            .flatMapThrowing({ try $0.dataTransferObject() })
     }
 
     func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
@@ -114,7 +114,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
 
         return builder
             .all()
-            .flatMapEachThrowing({ try $0.reverted() })
+            .flatMapEachThrowing({ try $0.dataTransferObject() })
     }
 
     func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
@@ -167,10 +167,10 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
 
-        var upgrade = try T.init(content: coding)
+        var upgrade = try T.init(from: coding)
 
         if let original = original {
-            original.merge(upgrade)
+            original.update(with: upgrade)
             upgrade = original
         }
 
@@ -182,7 +182,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
                 throw $0
             })
             .flatMapThrowing({
-                try upgrade.reverted()
+                try upgrade.dataTransferObject()
             })
     }
 }
@@ -241,17 +241,17 @@ extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringCo
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
 
-        var upgrade = try T.init(content: coding)
+        var upgrade = try T.init(from: coding)
         upgrade._$user.id = try req.auth.require(User.self).requireID()
 
         if let original = original {
-            original.merge(upgrade)
+            original.update(with: upgrade)
             upgrade = original
         }
 
         return upgrade.save(on: req.db)
             .flatMapThrowing({
-                try upgrade.reverted()
+                try upgrade.dataTransferObject()
             })
     }
 }

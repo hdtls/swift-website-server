@@ -171,20 +171,20 @@ extension User: Serializing {
         var skill: Skill.SerializedObject?
     }
 
-    convenience init(content: SerializedObject) {
+    convenience init(from dto: SerializedObject) {
         self.init()
-        username = content.username
-        firstName = content.firstName
-        lastName = content.lastName
-        avatarUrl = content.avatarUrl?.path
-        phone = content.phone
-        emailAddress = content.emailAddress
-        aboutMe = content.aboutMe
-        location = content.location
-        interests = content.interests
+        username = dto.username
+        firstName = dto.firstName
+        lastName = dto.lastName
+        avatarUrl = dto.avatarUrl?.path
+        phone = dto.phone
+        emailAddress = dto.emailAddress
+        aboutMe = dto.aboutMe
+        location = dto.location
+        interests = dto.interests
     }
     
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         var coding = SerializedObject(
             username: username,
             firstName: firstName,
@@ -197,13 +197,13 @@ extension User: Serializing {
         coding.aboutMe = aboutMe
         coding.location = location
         coding.interests = interests
-        coding.social = $social.value?.compactMap({ try? $0.reverted() })
-        coding.projects = $projects.value?.compactMap({ try? $0.reverted() })
-        coding.eduExps = $eduExps.value?.compactMap({ try? $0.reverted() })
-        coding.workExps = $workExps.value?.compactMap({ try? $0.reverted() })
-        coding.social = $social.value?.compactMap({ try? $0.reverted() })
-        coding.blog = $blog.value?.compactMap({ try? $0.reverted() })
-        coding.skill = try $skill.value?.first?.reverted()
+        coding.social = $social.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.projects = $projects.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.eduExps = $eduExps.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.workExps = $workExps.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.social = $social.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.blog = $blog.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.skill = try $skill.value?.first?.dataTransferObject()
         return coding
     }
 }

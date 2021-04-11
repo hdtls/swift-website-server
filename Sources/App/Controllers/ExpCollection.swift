@@ -44,7 +44,7 @@ class ExpCollection: RestfulApiCollection {
 
         let industries = try _industriesMaker(coding: serializedObject)
 
-        var upgrade = T.init(content: serializedObject)
+        var upgrade = T.init(from: serializedObject)
         upgrade.$user.id = try req.auth.require(User.self).requireID()
 
         if let original = original {
@@ -71,7 +71,7 @@ class ExpCollection: RestfulApiCollection {
                 })
             })
             .flatMapThrowing({ _ in
-                try upgrade.reverted()
+                try upgrade.dataTransferObject()
             })
     }
 
@@ -83,7 +83,7 @@ class ExpCollection: RestfulApiCollection {
             guard coding.id != nil else {
                 throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
             }
-            return try Industry.init(content: coding)
+            return try Industry.init(from: coding)
         })
     }
 }

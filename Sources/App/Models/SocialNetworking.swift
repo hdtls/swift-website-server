@@ -45,22 +45,22 @@ extension SocialNetworking: Serializing {
         var service: Service.Coding?
     }
 
-    convenience init(content: SerializedObject) throws {
-        guard let serviceID = content.service?.id else {
+    convenience init(from dto: SerializedObject) throws {
+        guard let serviceID = dto.service?.id else {
             throw Abort.init(.badRequest, reason: "Value required for key 'service.id'")
         }
 
         self.init()
-        url = content.url
+        url = dto.url
         $service.id = serviceID
     }
 
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         try SerializedObject.init(
             id: requireID(),
             userId: $user.id,
             url: url,
-            service: service.reverted()
+            service: service.dataTransferObject()
         )
     }
 }

@@ -88,20 +88,20 @@ extension Blog: Serializing {
         var categories: [BlogCategory.SerializedObject]
     }
 
-    convenience init(content: SerializedObject) throws {
+    convenience init(from dto: SerializedObject) throws {
         self.init()
-        id = content.id
-        alias = content.alias
-        title = content.title
-        artworkUrl = content.artworkUrl?.path
-        excerpt = content.excerpt
-        tags = content.tags
+        id = dto.id
+        alias = dto.alias
+        title = dto.title
+        artworkUrl = dto.artworkUrl?.path
+        excerpt = dto.excerpt
+        tags = dto.tags
 
         // Set default value for `contentUrl`
         contentUrl = ""
     }
 
-    func reverted() throws -> SerializedObject {
+    func dataTransferObject() throws -> SerializedObject {
         try SerializedObject.init(
             id: requireID(),
             alias: alias,
@@ -112,7 +112,7 @@ extension Blog: Serializing {
             createdAt: $createdAt.timestamp,
             updatedAt: $updatedAt.timestamp,
             userId: $user.id,
-            categories: $categories.value?.compactMap({ try? $0.reverted() }) ?? []
+            categories: $categories.value?.compactMap({ try? $0.dataTransferObject() }) ?? []
         )
     }
 }
