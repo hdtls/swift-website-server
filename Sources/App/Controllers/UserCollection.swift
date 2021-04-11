@@ -115,7 +115,7 @@ class UserCollection: RestfulApiCollection {
         return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ saved -> EventLoopFuture<User> in
-                saved.merge(upgrade)
+                saved.update(with: upgrade)
                 return saved.update(on: req.db).map({ saved })
             })
             .flatMapThrowing({

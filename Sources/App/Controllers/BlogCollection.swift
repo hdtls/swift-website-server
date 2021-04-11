@@ -156,7 +156,7 @@ class BlogCollection: RestfulApiCollection {
 
         if let original = original {
             originalBlogAlias = original.alias
-            original.merge(blog)
+            original.update(with: blog)
             blog = original
         }
 

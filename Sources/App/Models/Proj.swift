@@ -188,9 +188,9 @@ extension Project: Serializing {
     }
 }
 
-extension Project: Mergeable {
+extension Project: Updatable {
 
-    func merge(_ other: Project) {
+    func update(with other: Project) {
         name = other.name
         note = other.note
         genres = other.genres

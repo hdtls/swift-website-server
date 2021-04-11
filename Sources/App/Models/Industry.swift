@@ -52,9 +52,9 @@ extension Industry: Serializing {
     }
 }
 
-extension Industry: Mergeable {
+extension Industry: Updatable {
 
-    func merge(_ other: Industry) {
+    func update(with other: Industry) {
         title = other.title
     }
 }

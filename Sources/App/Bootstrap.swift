@@ -7,11 +7,9 @@ public func bootstrap(_ app: Application) throws {
 
     // JSON configuration
     let encoder = JSONEncoder()
-    encoder.dateEncodingStrategy = .iso8601
 
     let decoder = JSONDecoder()
     decoder.keyDecodingStrategy = .convertFromSnakeCase
-    decoder.dateDecodingStrategy = .iso8601
 
     ContentConfiguration.global.use(encoder: encoder, for: .json)
     ContentConfiguration.global.use(decoder: decoder, for: .json)

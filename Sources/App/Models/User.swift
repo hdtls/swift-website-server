@@ -208,9 +208,9 @@ extension User: Serializing {
     }
 }
 
-extension User: Mergeable {
+extension User: Updatable {
 
-    func merge(_ other: User) {
+    func update(with other: User) {
         username = other.username
         firstName = other.firstName
         lastName = other.lastName

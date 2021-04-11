@@ -114,9 +114,9 @@ extension Education: Serializing {
     }
 }
 
-extension Education: Mergeable {
+extension Education: Updatable {
 
-    func merge(_ other: Education) {
+    func update(with other: Education) {
         school = other.school
         degree = other.degree
         field = other.field

@@ -13,7 +13,7 @@ class IndustryCollection: RestfulApiCollection {
         var industry = try T.init(content: coding)
 
         if let original = original {
-            original.merge(industry)
+            original.update(with: industry)
             industry = original
         }
 

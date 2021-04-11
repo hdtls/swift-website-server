@@ -4,7 +4,7 @@ import FluentMySQLDriver
 /// Restful style api defination.
 /// by default it provide `CRUD` method if `T.IDValue` is `LosslessStringConvertible`
 protocol RestfulApiCollection: RouteCollection {
-    associatedtype T: Model, Serializing, Mergeable
+    associatedtype T: Model, Serializing, Updatable
     var path: String { get }
 
     /// ID path for uri

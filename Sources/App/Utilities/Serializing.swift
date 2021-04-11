@@ -14,9 +14,9 @@ protocol Serializing {
     func reverted() throws -> SerializedObject
 }
 
-protocol Mergeable {
-    /// Merge value from other model. used to update exsit model.
-    func merge(_ other: Self)
+protocol Updatable {
+    /// Update value from other model. used to update exsit model.
+    func update(with other: Self)
 }
 
 protocol UserOwnable: Model {

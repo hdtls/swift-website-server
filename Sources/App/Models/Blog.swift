@@ -117,10 +117,10 @@ extension Blog: Serializing {
     }
 }
 
-// MARK: Mergeable
-extension Blog: Mergeable {
+// MARK: Updatable
+extension Blog: Updatable {
 
-    func merge(_ other: Blog) {
+    func update(with other: Blog) {
         title = other.title
         alias = other.alias
         artworkUrl = other.artworkUrl

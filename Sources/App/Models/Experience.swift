@@ -114,9 +114,9 @@ extension Experience: Serializing {
     }
 }
 
-extension Experience: Mergeable {
+extension Experience: Updatable {
 
-    func merge(_ other: Experience) {
+    func update(with other: Experience) {
         title = other.title
         companyName = other.companyName
         location = other.location

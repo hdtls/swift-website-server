@@ -53,9 +53,9 @@ extension Skill: Serializing {
     }
 }
 
-extension Skill: Mergeable {
+extension Skill: Updatable {
 
-    func merge(_ other: Skill) {
+    func update(with other: Skill) {
         professional = other.professional
         workflow = other.workflow
     }

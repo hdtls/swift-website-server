@@ -89,9 +89,9 @@ extension SocialNetworkingService: Serializing {
     }
 }
 
-extension SocialNetworkingService: Mergeable {
+extension SocialNetworkingService: Updatable {
 
-    func merge(_ other: SocialNetworking.Service) {
+    func update(with other: SocialNetworking.Service) {
         type = other.type
     }
 }

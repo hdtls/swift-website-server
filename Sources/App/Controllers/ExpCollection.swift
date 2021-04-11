@@ -48,7 +48,7 @@ class ExpCollection: RestfulApiCollection {
         upgrade.$user.id = try req.auth.require(User.self).requireID()
 
         if let original = original {
-            original.merge(upgrade)
+            original.update(with: upgrade)
             upgrade = original
         }
 

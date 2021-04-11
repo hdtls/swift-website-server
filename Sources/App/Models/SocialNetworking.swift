@@ -65,10 +65,10 @@ extension SocialNetworking: Serializing {
     }
 }
 
-extension SocialNetworking: Mergeable {
+extension SocialNetworking: Updatable {
 
     // Only `url` property can be update.
-    func merge(_ other: SocialNetworking) {
+    func update(with other: SocialNetworking) {
         url = other.url
     }
 }

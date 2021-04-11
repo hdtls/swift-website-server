@@ -54,9 +54,9 @@ extension BlogCategory: Content, Serializing {
     }
 }
 
-extension BlogCategory: Mergeable {
+extension BlogCategory: Updatable {
 
-    func merge(_ other: BlogCategory) {
+    func update(with other: BlogCategory) {
         name = other.name
     }
 }

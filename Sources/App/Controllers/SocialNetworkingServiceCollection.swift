@@ -16,7 +16,7 @@ class SocialNetworkingServiceCollection: RestfulApiCollection {
         var upgrade = T.init(content: coding)
 
         if let original = original {
-            original.merge(upgrade)
+            original.update(with: upgrade)
             upgrade = original
         }
 
