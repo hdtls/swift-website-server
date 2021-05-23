@@ -20,11 +20,12 @@ public func bootstrap(_ app: Application) throws {
 
     app.databases.use(.mysql(
         hostname: Environment.get("MYSQL_HOST") ?? "localhost",
-        username: Environment.get("MYSQL_USER") ?? "mysql.user",
-        password: Environment.get("MYSQL_PASSWORD") ?? "mysql.pwd",
-        database: Environment.get("MYSQL_DATABASE") ?? "website_testing",
+        port: Int(Environment.get("MYSQL_PORT") ?? "3306")!,
+        username: Environment.get("MYSQL_USER") ?? "swift",
+        password: Environment.get("MYSQL_PASSWORD") ?? "mysql",
+        database: Environment.get("MYSQL_DATABASE") ?? "website",
         tlsConfiguration: .forClient(certificateVerification: .none)
-        ), as: .mysql)
+    ), as: .mysql)
 
     app.migrations.add(User.migration)
     app.migrations.add(Token.migration)
