@@ -27,22 +27,21 @@ class UserCollection: RestfulApiCollection {
         
         let users = routes.grouped(.constant(path))
         
-        let path  = PathComponent.parameter(restfulIDKey)
-        
         users.on(.POST, use: create)
         users.on(.GET, use: readAll)
-        users.on(.GET, path, use: read)
-        users.on(.GET, path, "blog", use: readAllBlog)
-        users.on(.GET, path, "resume", use: readResume)
+        users.on(.GET, .parameter(restfulIDKey), use: read)
+        users.on(.GET, .parameter(restfulIDKey), "blog", use: readAllBlog)
+        users.on(.GET, .parameter(restfulIDKey), "resume", use: readResume)
         
         let trusted = users.grouped([
             User.authenticator(),
             Token.authenticator(),
             User.guardMiddleware()
         ])
-        trusted.on(.PUT, path, use: update)
-        trusted.on(.DELETE, path, use: delete)
-        trusted.on(.PATCH, path, "profile_image", body: .collect(maxSize: "100kb"), use: patch)
+        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
+        trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
+        trusted.on(.PATCH, .parameter(restfulIDKey), "profile_image", body: .collect(maxSize: "100kb"), use: patch)
+        trusted.on(.POST, .parameter(restfulIDKey), "social_networking", use: createSocialNetworking)
     }
     
     /// Register new user with `User.Creation` msg. when success a new user and token is registed.
@@ -168,13 +167,13 @@ class UserCollection: RestfulApiCollection {
         with supportedQueries: SupportedQueries
     ) -> QueryBuilder<User> {
         if supportedQueries.includeExperience ?? false {
-            builder.with(\.$workExps) {
+            builder.with(\.$experiences) {
                 $0.with(\.$industries)
             }
         }
         
         if supportedQueries.includeEducation ?? false {
-            builder.with(\.$eduExps)
+            builder.with(\.$education)
         }
         
         if supportedQueries.includeSNS ?? false {
@@ -201,8 +200,8 @@ class UserCollection: RestfulApiCollection {
     }
 }
 
+// MARK: Blog
 extension UserCollection {
-    // MARK: Blog
     func readAllBlog(_ req: Request) throws -> EventLoopFuture<[Blog.SerializedObject]> {
         try specifiedIDQueryBuilder(on: req)
             .first()
@@ -218,13 +217,13 @@ extension UserCollection {
     }
 }
 
+// MARK: CV
 extension UserCollection {
-    // MARK: CV
     func readResume(_ req: Request) throws -> EventLoopFuture<User.SerializedObject> {
         try specifiedIDQueryBuilder(on: req)
             .with(\.$projects)
-            .with(\.$eduExps)
-            .with(\.$workExps) {
+            .with(\.$education)
+            .with(\.$experiences) {
                 $0.with(\.$industries)
             }
             .with(\.$social) {
@@ -235,6 +234,25 @@ extension UserCollection {
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing({
                 try $0.dataTransferObject()
+            })
+    }
+}
+
+// MARK: Social Networking
+extension UserCollection {
+    func createSocialNetworking(_ request: Request) throws -> EventLoopFuture<SocialNetworking.Coding> {
+        let serializedObject = try request.content.decode(SocialNetworking.Coding.self)
+        
+        let model = try SocialNetworking(from: serializedObject)
+        model.$user.id = try request.auth.require(User.self).requireID()
+        
+        return model
+            .save(on: request.db)
+            .flatMap({
+                model.$service.load(on: request.db)
+            })
+            .flatMapThrowing({
+                try model.dataTransferObject()
             })
     }
 }
