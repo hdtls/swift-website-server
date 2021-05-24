@@ -3,7 +3,7 @@ import Fluent
 
 enum ProjKind: String, CaseIterable, Codable {
     static let schema: String = "project_kinds"
-
+    
     case app
     case website
     case repositry
@@ -11,7 +11,7 @@ enum ProjKind: String, CaseIterable, Codable {
 
 enum ProjVisibility: String, CaseIterable, Codable {
     static let schema: String = "project_visibility"
-
+    
     case `private`
     case `public`
 }
@@ -35,70 +35,70 @@ protocol ProjProtocol {
 }
 
 final class Project: ProjProtocol, Model {
-
+    
     typealias IDValue = UUID
-
+    
     static var schema: String = "projects"
-
+    
     // MARK: Properties
     @ID()
     var id: IDValue?
-
+    
     @Field(key: FieldKeys.name.rawValue)
     var name: String
-
+    
     @OptionalField(key: FieldKeys.note.rawValue)
     var note: String?
-
+    
     @OptionalField(key: FieldKeys.genres.rawValue)
     var genres: [String]?
-
+    
     @Field(key: FieldKeys.summary.rawValue)
     var summary: String
-
+    
     @OptionalField(key: FieldKeys.artworkUrl.rawValue)
     var artworkUrl: String?
-
+    
     @OptionalField(key: FieldKeys.backgroundImageUrl.rawValue)
     var backgroundImageUrl: String?
-
+    
     @OptionalField(key: FieldKeys.promoImageUrl.rawValue)
     var promoImageUrl: String?
-
+    
     @OptionalField(key: FieldKeys.screenshotUrls.rawValue)
     var screenshotUrls: [String]?
-
+    
     @OptionalField(key: FieldKeys.padScreenshotUrls.rawValue)
     var padScreenshotUrls: [String]?
-
+    
     @Field(key: FieldKeys.kind.rawValue)
     var kind: ProjKind
-
+    
     @Field(key: FieldKeys.visibility.rawValue)
     var visibility: ProjVisibility
-
+    
     @OptionalField(key: FieldKeys.trackViewUrl.rawValue)
     var trackViewUrl: String?
-
+    
     @OptionalField(key: FieldKeys.trackId.rawValue)
     var trackId: String?
-
+    
     @Field(key: FieldKeys.startDate.rawValue)
     var startDate: String
-
+    
     @Field(key: FieldKeys.endDate.rawValue)
     var endDate: String
-
+    
     // MARK: Relations
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
-
+    
     init() {}
 }
 
 // MARK: FieldKeys
 extension Project {
-
+    
     enum FieldKeys: FieldKey {
         case name
         case note
@@ -120,9 +120,9 @@ extension Project {
 }
 
 extension Project: Serializing {
-
+    
     typealias SerializedObject = Coding
-
+    
     struct Coding: ProjProtocol, Content, Equatable {
         var id: IDValue?
         var name: String
@@ -140,11 +140,31 @@ extension Project: Serializing {
         var trackId: String?
         var startDate: String
         var endDate: String
-
+        
         // MARK: Relations
         var userId: User.IDValue?
+        
+        init() {
+            id = nil
+            name = ""
+            note = nil
+            genres = nil
+            summary = ""
+            artworkUrl = nil
+            backgroundImageUrl = nil
+            promoImageUrl = nil
+            screenshotUrls = nil
+            padScreenshotUrls = nil
+            kind = .app
+            visibility = .public
+            trackViewUrl = nil
+            trackId = nil
+            startDate = ""
+            endDate = ""
+            userId = nil
+        }
     }
-
+    
     convenience init(from dto: SerializedObject) throws {
         self.init()
         id = dto.id
@@ -164,32 +184,32 @@ extension Project: Serializing {
         startDate = dto.startDate
         endDate = dto.endDate
     }
-
+    
     func dataTransferObject() throws -> SerializedObject {
-        try SerializedObject.init(
-            id: requireID(),
-            name: name,
-            note: note,
-            genres: genres,
-            summary: summary,
-            artworkUrl: artworkUrl?.absoluteURLString,
-            backgroundImageUrl: backgroundImageUrl?.absoluteURLString,
-            promoImageUrl: promoImageUrl?.absoluteURLString,
-            screenshotUrls: screenshotUrls?.compactMap({ $0.absoluteURLString }),
-            padScreenshotUrls: padScreenshotUrls?.compactMap({ $0.absoluteURLString }),
-            kind: kind,
-            visibility: visibility,
-            trackViewUrl: trackViewUrl,
-            trackId: trackId,
-            startDate: startDate,
-            endDate: endDate,
-            userId: $user.id
-        )
+        var dataTransferObject = SerializedObject.init()
+        dataTransferObject.id = try requireID()
+        dataTransferObject.name = name
+        dataTransferObject.note = note
+        dataTransferObject.genres = genres
+        dataTransferObject.summary = summary
+        dataTransferObject.artworkUrl = artworkUrl?.absoluteURLString
+        dataTransferObject.backgroundImageUrl = backgroundImageUrl?.absoluteURLString
+        dataTransferObject.promoImageUrl = promoImageUrl?.absoluteURLString
+        dataTransferObject.screenshotUrls = screenshotUrls?.compactMap({ $0.absoluteURLString })
+        dataTransferObject.padScreenshotUrls = padScreenshotUrls?.compactMap({ $0.absoluteURLString })
+        dataTransferObject.kind = kind
+        dataTransferObject.visibility = visibility
+        dataTransferObject.trackViewUrl = trackViewUrl
+        dataTransferObject.trackId = trackId
+        dataTransferObject.startDate = startDate
+        dataTransferObject.endDate = endDate
+        dataTransferObject.userId = $user.id
+        return dataTransferObject
     }
 }
 
 extension Project: Updatable {
-
+    
     @discardableResult
     func update(with dataTransferObject: SerializedObject) throws -> Project {
         name = dataTransferObject.name
@@ -213,7 +233,7 @@ extension Project: Updatable {
 
 extension Project: UserOwnable {
     var _$user: Parent<User> { return $user }
-
+    
     static var uidFieldKey: FieldKey {
         return FieldKeys.user.rawValue
     }

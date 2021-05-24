@@ -8,78 +8,78 @@ protocol Credentials {
 }
 
 final class User: Model {
-
+    
     static let schema: String = "users"
-
+    
     // MARK: Properties
     @ID()
     var id: UUID?
-
+    
     @Field(key: FieldKeys.username.rawValue)
     var username: String
-
+    
     @Field(key: FieldKeys.pwd.rawValue)
     var pwd: String
-
+    
     @Field(key: FieldKeys.firstName.rawValue)
     var firstName: String
-
+    
     @Field(key: FieldKeys.lastName.rawValue)
     var lastName: String
-
+    
     @OptionalField(key: FieldKeys.avatarUrl.rawValue)
     var avatarUrl: String?
-
+    
     @OptionalField(key: FieldKeys.phone.rawValue)
     var phone: String?
-
+    
     @OptionalField(key: FieldKeys.emailAddress.rawValue)
     var emailAddress: String?
-
+    
     @OptionalField(key: FieldKeys.aboutMe.rawValue)
     var aboutMe: String?
-
+    
     @OptionalField(key: FieldKeys.location.rawValue)
     var location: String?
-
+    
     @Timestamp(key: FieldKeys.createdAt.rawValue, on: .create)
     var createdAt: Date?
-
+    
     @Timestamp(key: FieldKeys.updatedAt.rawValue, on: .update)
     var updatedAt: Date?
-
+    
     // MARK: Relations
     @Children(for: \.$user)
     var tokens: [Token]
-
+    
     @Children(for: \.$user)
     var social: [SocialNetworking]
-
+    
     @Children(for: \.$user)
     var projects: [Project]
-
+    
     @Children(for: \.$user)
     var education: [Education]
-
+    
     @Children(for: \.$user)
     var experiences: [Experience]
-
+    
     @Children(for: \.$user)
     var skill: [Skill]
-
+    
     @Children(for: \.$user)
     var blog: [Blog]
-
+    
     @OptionalField(key: FieldKeys.interests.rawValue)
     var interests: [String]?
-
+    
     // MARK: Initializer
     required init() {}
 }
 
 // MARK: Field keys
 extension User {
-
+    
     enum FieldKeys: FieldKey {
         case username
         case pwd
@@ -98,10 +98,10 @@ extension User {
 
 // MARK: Authentication
 extension User: ModelAuthenticatable {
-
+    
     static var usernameKey = \User.$username
     static var passwordHashKey = \User.$pwd
-
+    
     func verify(password: String) throws -> Bool {
         try Bcrypt.verify(password, created: pwd)
     }
@@ -116,14 +116,14 @@ extension Validatable where Self: Credentials {
 
 // MARK: User creation
 extension User {
-
+    
     struct Creation: Credentials, Content, Validatable {
         var firstName: String
         var lastName: String
         var username: String
         var password: String
     }
-
+    
     convenience init(_ creation: Creation) throws {
         self.init()
         username = creation.username
@@ -136,10 +136,10 @@ extension User {
 // MARK: User coding helper.
 extension User: Serializing {
     typealias SerializedObject = Coding
-
+    
     /// `Coding` use for updata user and make response to user query.
     struct Coding: Content, Equatable {
-
+        
         // MARK: Properties
         var id: User.IDValue?
         var username: String
@@ -151,26 +151,44 @@ extension User: Serializing {
         var aboutMe: String?
         var location: String?
         var interests: [String]?
-
+        
         // MARK: Relations
         /// Links that user owned.
         /// - note: Only use for encoding user model.
         var social: [SocialNetworking.SerializedObject]?
-
+        
         /// Projects
         var projects: [Project.SerializedObject]?
-
+        
         /// Education experiances
         var education: [Education.SerializedObject]?
-
+        
         /// Experiances
         var experiences: [Experience.SerializedObject]?
-
+        
         var blog: [Blog.SerializedObject]?
-
+        
         var skill: Skill.SerializedObject?
+        
+        init() {
+            id = nil
+            username = ""
+            firstName = ""
+            lastName = ""
+            avatarUrl = nil
+            phone = nil
+            emailAddress = nil
+            aboutMe = nil
+            location = nil
+            interests = nil
+            social = nil
+            projects = nil
+            education = nil
+            blog = nil
+            skill = nil
+        }
     }
-
+    
     convenience init(from dto: SerializedObject) {
         self.init()
         username = dto.username
@@ -185,11 +203,10 @@ extension User: Serializing {
     }
     
     func dataTransferObject() throws -> SerializedObject {
-        var coding = SerializedObject(
-            username: username,
-            firstName: firstName,
-            lastName: lastName
-        )
+        var coding = SerializedObject()
+        coding.username = username
+        coding.firstName = firstName
+        coding.lastName = lastName
         coding.id = try requireID()
         coding.avatarUrl = avatarUrl?.absoluteURLString
         coding.phone = phone
@@ -209,7 +226,7 @@ extension User: Serializing {
 }
 
 extension User: Updatable {
-
+    
     @discardableResult
     func update(with dataTrasferObject: SerializedObject) throws -> User {
         username = dataTrasferObject.username
