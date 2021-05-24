@@ -1,11 +1,8 @@
 import App
 import Vapor
 
-var env = try Environment.detect()
-
-try LoggingSystem.bootstrap(from: &env)
-
-let app = Application(env)
+let app = try Application(.detect())
+try LoggingSystem.bootstrap(from: &app.environment)
 defer { app.shutdown() }
 try bootstrap(app)
 try app.run()
