@@ -59,10 +59,10 @@ final class User: Model {
     var projects: [Project]
 
     @Children(for: \.$user)
-    var eduExps: [Education]
+    var education: [Education]
 
     @Children(for: \.$user)
-    var workExps: [Experience]
+    var experiences: [Experience]
 
     @Children(for: \.$user)
     var skill: [Skill]
@@ -161,10 +161,10 @@ extension User: Serializing {
         var projects: [Project.SerializedObject]?
 
         /// Education experiances
-        var eduExps: [Education.SerializedObject]?
+        var education: [Education.SerializedObject]?
 
         /// Experiances
-        var workExps: [Experience.SerializedObject]?
+        var experiences: [Experience.SerializedObject]?
 
         var blog: [Blog.SerializedObject]?
 
@@ -199,8 +199,8 @@ extension User: Serializing {
         coding.interests = interests
         coding.social = $social.value?.compactMap({ try? $0.dataTransferObject() })
         coding.projects = $projects.value?.compactMap({ try? $0.dataTransferObject() })
-        coding.eduExps = $eduExps.value?.compactMap({ try? $0.dataTransferObject() })
-        coding.workExps = $workExps.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.education = $education.value?.compactMap({ try? $0.dataTransferObject() })
+        coding.experiences = $experiences.value?.compactMap({ try? $0.dataTransferObject() })
         coding.social = $social.value?.compactMap({ try? $0.dataTransferObject() })
         coding.blog = $blog.value?.compactMap({ try? $0.dataTransferObject() })
         coding.skill = try $skill.value?.first?.dataTransferObject()
