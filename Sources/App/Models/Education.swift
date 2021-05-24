@@ -116,16 +116,18 @@ extension Education: Serializing {
 
 extension Education: Updatable {
 
-    func update(with other: Education) {
-        school = other.school
-        degree = other.degree
-        field = other.field
-        startYear = other.startYear
-        endYear = other.endYear
-        grade = other.grade
-        activities = other.activities
-        accomplishments = other.accomplishments
-        media = other.media
+    @discardableResult
+    func update(with dataTrasferObject: SerializedObject) throws -> Education {
+        school = dataTrasferObject.school
+        degree = dataTrasferObject.degree
+        field = dataTrasferObject.field
+        startYear = dataTrasferObject.startYear
+        endYear = dataTrasferObject.endYear
+        grade = dataTrasferObject.grade
+        activities = dataTrasferObject.activities
+        accomplishments = dataTrasferObject.accomplishments
+        media = dataTrasferObject.media
+        return self
     }
 }
 

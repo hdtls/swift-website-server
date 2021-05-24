@@ -190,22 +190,24 @@ extension Project: Serializing {
 
 extension Project: Updatable {
 
-    func update(with other: Project) {
-        name = other.name
-        note = other.note
-        genres = other.genres
-        summary = other.summary
-        artworkUrl = other.artworkUrl
-        backgroundImageUrl = other.backgroundImageUrl
-        promoImageUrl = other.promoImageUrl
-        screenshotUrls = other.screenshotUrls
-        padScreenshotUrls = other.padScreenshotUrls
-        kind = other.kind
-        visibility = other.visibility
-        trackViewUrl = other.trackViewUrl
-        trackId = other.trackId
-        startDate = other.startDate
-        endDate = other.endDate
+    @discardableResult
+    func update(with dataTransferObject: SerializedObject) throws -> Project {
+        name = dataTransferObject.name
+        note = dataTransferObject.note
+        genres = dataTransferObject.genres
+        summary = dataTransferObject.summary
+        artworkUrl = dataTransferObject.artworkUrl?.path
+        backgroundImageUrl = dataTransferObject.backgroundImageUrl?.path
+        promoImageUrl = dataTransferObject.promoImageUrl?.path
+        screenshotUrls = dataTransferObject.screenshotUrls?.compactMap({ $0.path })
+        padScreenshotUrls = dataTransferObject.padScreenshotUrls?.compactMap({ $0.path })
+        kind = dataTransferObject.kind
+        visibility = dataTransferObject.visibility
+        trackViewUrl = dataTransferObject.trackViewUrl
+        trackId = dataTransferObject.trackId
+        startDate = dataTransferObject.startDate
+        endDate = dataTransferObject.endDate
+        return self
     }
 }
 

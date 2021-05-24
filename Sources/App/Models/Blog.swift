@@ -111,7 +111,7 @@ extension Blog: Serializing {
             tags: tags,
             createdAt: $createdAt.timestamp,
             updatedAt: $updatedAt.timestamp,
-            userId: $user.id,
+            userId: $user.$id.value,
             categories: $categories.value?.compactMap({ try? $0.dataTransferObject() }) ?? []
         )
     }
@@ -120,13 +120,16 @@ extension Blog: Serializing {
 // MARK: Updatable
 extension Blog: Updatable {
 
-    func update(with other: Blog) {
-        title = other.title
-        alias = other.alias
-        artworkUrl = other.artworkUrl
-        excerpt = other.excerpt
-        tags = other.tags
-        contentUrl = other.contentUrl
+    @discardableResult
+    func update(with dataTrasferObject: SerializedObject) throws -> Blog {
+        title = dataTrasferObject.title
+        alias = dataTrasferObject.alias
+        artworkUrl = dataTrasferObject.artworkUrl?.path
+        excerpt = dataTrasferObject.excerpt
+        tags = dataTrasferObject.tags
+        // TODO: -- content url
+        contentUrl = ""
+        return self
     }
 }
 

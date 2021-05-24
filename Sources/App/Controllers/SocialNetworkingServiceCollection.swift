@@ -12,12 +12,13 @@ class SocialNetworkingServiceCollection: RestfulApiCollection {
         guard coding.type != nil else {
             throw Abort.init(.badRequest, reason: "Value required for key 'type'")
         }
-
-        var upgrade = T.init(from: coding)
+        
+        var upgrade = T.init()
 
         if let original = original {
-            original.update(with: upgrade)
-            upgrade = original
+            upgrade = try original.update(with: coding)
+        } else {
+            upgrade = try T.init(from: coding)
         }
 
         return upgrade.save(on: req.db)

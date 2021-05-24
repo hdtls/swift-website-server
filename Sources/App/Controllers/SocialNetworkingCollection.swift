@@ -12,13 +12,14 @@ class SocialNetworkingCollection: RestfulApiCollection {
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<SocialNetworking.Coding> {
         let serializedObject = try req.content.decode(T.SerializedObject.self)
 
-        var upgrade = try T.init(from: serializedObject)
-        upgrade.$user.id = try req.auth.require(User.self).requireID()
-
+        var upgrade = T.init()
+ 
         if let original = original {
-            original.update(with: upgrade)
-            upgrade = original
+            upgrade = try original.update(with: serializedObject)
+        } else {
+            upgrade = try T.init(from: serializedObject)
         }
+        upgrade.$user.id = try req.auth.require(User.self).requireID()
 
         return upgrade.save(on: req.db)
             .flatMap({

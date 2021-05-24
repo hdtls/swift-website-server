@@ -55,9 +55,11 @@ extension Skill: Serializing {
 
 extension Skill: Updatable {
 
-    func update(with other: Skill) {
-        professional = other.professional
-        workflow = other.workflow
+    @discardableResult
+    func update(with dataTrasferObject: SerializedObject) throws -> Skill {
+        professional = dataTrasferObject.professional
+        workflow = dataTrasferObject.workflow
+        return self
     }
 }
 

@@ -109,13 +109,17 @@ class UserCollection: RestfulApiCollection {
     func update(_ req: Request) throws -> EventLoopFuture<User.Coding> {
         let userId = try req.auth.require(User.self).requireID()
         let coding = try req.content.decode(User.Coding.self)
-        let upgrade = User.init(from: coding)
         
         return User.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ saved -> EventLoopFuture<User> in
-                saved.update(with: upgrade)
-                return saved.update(on: req.db).map({ saved })
+                do {
+                return try saved.update(with: coding)
+                    .update(on: req.db)
+                    .map({ saved })
+                } catch {
+                    return req.eventLoop.makeFailedFuture(error)
+                }
             })
             .flatMapThrowing({
                 try $0.dataTransferObject()

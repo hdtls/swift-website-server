@@ -68,8 +68,10 @@ extension SocialNetworking: Serializing {
 extension SocialNetworking: Updatable {
 
     // Only `url` property can be update.
-    func update(with other: SocialNetworking) {
-        url = other.url
+    @discardableResult
+    func update(with dataTransferObject: SerializedObject) throws -> SocialNetworking {
+        url = dataTransferObject.url
+        return self
     }
 }
 

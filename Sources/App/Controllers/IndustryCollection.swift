@@ -10,14 +10,15 @@ class IndustryCollection: RestfulApiCollection {
             throw Abort.init(.unprocessableEntity, reason: "Value required for key 'industry.title'")
         }
 
-        var industry = try T.init(from: coding)
-
+        var upgrade = T.init()
+        
         if let original = original {
-            original.update(with: industry)
-            industry = original
+            upgrade = try original.update(with: coding)
+        } else {
+            upgrade = try T.init(from: coding)
         }
 
-        return industry.save(on: req.db)
+        return upgrade.save(on: req.db)
             .flatMapErrorThrowing({
                 if case MySQLError.duplicateEntry(let localizedErrorDescription) = $0 {
                     throw Abort.init(.unprocessableEntity, reason: localizedErrorDescription)
@@ -25,7 +26,7 @@ class IndustryCollection: RestfulApiCollection {
                 throw $0
             })
             .flatMapThrowing({
-                try industry.dataTransferObject()
+                try upgrade.dataTransferObject()
             })
     }
 }

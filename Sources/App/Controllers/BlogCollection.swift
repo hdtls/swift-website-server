@@ -149,16 +149,18 @@ class BlogCollection: RestfulApiCollection {
 
         let categories = serializedObject.categories
 
-        var blog = try T.init(from: serializedObject)
-        blog.$user.id = try req.auth.require(User.self).requireID()
+        var blog: T
 
-        var originalBlogAlias = blog.alias
-
+        var originalBlogAlias: String
+        
         if let original = original {
             originalBlogAlias = original.alias
-            original.update(with: blog)
-            blog = original
+            blog = try original.update(with: serializedObject)
+        } else {
+            blog = try T.init(from: serializedObject)
+            originalBlogAlias = blog.alias
         }
+        blog.$user.id = try req.auth.require(User.self).requireID()
 
         return blog.save(on: req.db)
         .flatMapErrorThrowing({

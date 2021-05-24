@@ -8,15 +8,17 @@ protocol Serializing {
     associatedtype SerializedObject: Content
 
     /// Initalize new model from `SerializedObject`.
-    init(from dto: SerializedObject) throws
+    init(from dataTrasferObject: SerializedObject) throws
 
     /// Revert model to `SerializedObject`.
     func dataTransferObject() throws -> SerializedObject
 }
 
 protocol Updatable {
-    /// Update value from other model. used to update exsit model.
-    func update(with other: Self)
+    
+    associatedtype SerializedObject: Content
+    /// Update value from data transfer objectl. used to update exsit model.
+    func update(with dataTrasferObject: SerializedObject) throws -> Self
 }
 
 protocol UserOwnable: Model {

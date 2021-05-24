@@ -76,7 +76,7 @@ extension SocialNetworkingService: Serializing {
         var type: SocialNetworkingService.ServiceType?
     }
 
-    convenience init(from dto: SerializedObject) {
+    convenience init(from dto: SerializedObject) throws {
         self.init()
         type = dto.type ?? .undefined
     }
@@ -90,8 +90,10 @@ extension SocialNetworkingService: Serializing {
 }
 
 extension SocialNetworkingService: Updatable {
-
-    func update(with other: SocialNetworking.Service) {
-        type = other.type
+    
+    @discardableResult
+    func update(with dataTransferObject: SocialNetworking.Service.SerializedObject) throws -> SocialNetworkingService {
+        type = dataTransferObject.type ?? .undefined
+        return self
     }
 }

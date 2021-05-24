@@ -85,7 +85,7 @@ extension Experience: Serializing {
 
     /// Convert `Coding` to `Experience`, used for decoding request content.
     /// - note: `user` and `industries` eager loading property will set on route operation.
-    convenience init(from dto: Coding) {
+    convenience init(from dto: Coding) throws {
         self.init()
         title = dto.title
         companyName = dto.companyName
@@ -116,15 +116,17 @@ extension Experience: Serializing {
 
 extension Experience: Updatable {
 
-    func update(with other: Experience) {
-        title = other.title
-        companyName = other.companyName
-        location = other.location
-        startDate = other.startDate
-        endDate = other.endDate
-        headline = other.headline
-        responsibilities = other.responsibilities
-        media = other.media
+    @discardableResult
+    func update(with dataTrasferObject: SerializedObject) throws -> Experience {
+        title = dataTrasferObject.title
+        companyName = dataTrasferObject.companyName
+        location = dataTrasferObject.location
+        startDate = dataTrasferObject.startDate
+        endDate = dataTrasferObject.endDate
+        headline = dataTrasferObject.headline
+        responsibilities = dataTrasferObject.responsibilities
+        media = dataTrasferObject.media
+        return self
     }
 }
 

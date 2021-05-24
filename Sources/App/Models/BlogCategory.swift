@@ -55,8 +55,10 @@ extension BlogCategory: Content, Serializing {
 }
 
 extension BlogCategory: Updatable {
-
-    func update(with other: BlogCategory) {
-        name = other.name
+    
+    @discardableResult
+    func update(with dataTrasferObject: SerializedObject) throws -> BlogCategory {
+        name = dataTrasferObject.name
+        return self
     }
 }

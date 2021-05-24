@@ -44,13 +44,14 @@ class ExpCollection: RestfulApiCollection {
 
         let industries = try _industriesMaker(coding: serializedObject)
 
-        var upgrade = T.init(from: serializedObject)
-        upgrade.$user.id = try req.auth.require(User.self).requireID()
+        var upgrade = T.init()
 
         if let original = original {
-            original.update(with: upgrade)
-            upgrade = original
+            upgrade = try original.update(with: serializedObject)
+        } else {
+            upgrade = try T.init(from: serializedObject)
         }
+        upgrade.$user.id = try req.auth.require(User.self).requireID()
 
         return upgrade.save(on: req.db)
             .flatMap({ () -> EventLoopFuture<[Industry]> in

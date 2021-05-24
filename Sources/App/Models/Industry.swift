@@ -54,7 +54,8 @@ extension Industry: Serializing {
 
 extension Industry: Updatable {
 
-    func update(with other: Industry) {
-        title = other.title
+    func update(with dataTransferObject: SerializedObject) throws -> Industry {
+        title = dataTransferObject.title ?? ""
+        return self
     }
 }

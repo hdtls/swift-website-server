@@ -210,15 +210,17 @@ extension User: Serializing {
 
 extension User: Updatable {
 
-    func update(with other: User) {
-        username = other.username
-        firstName = other.firstName
-        lastName = other.lastName
-        avatarUrl = other.avatarUrl
-        phone = other.phone
-        emailAddress = other.emailAddress
-        aboutMe = other.aboutMe
-        location = other.location
-        interests = other.interests
+    @discardableResult
+    func update(with dataTrasferObject: SerializedObject) throws -> User {
+        username = dataTrasferObject.username
+        firstName = dataTrasferObject.firstName
+        lastName = dataTrasferObject.lastName
+        avatarUrl = dataTrasferObject.avatarUrl?.path
+        phone = dataTrasferObject.phone
+        emailAddress = dataTrasferObject.emailAddress
+        aboutMe = dataTrasferObject.aboutMe
+        location = dataTrasferObject.location
+        interests = dataTrasferObject.interests
+        return self
     }
 }

@@ -167,11 +167,12 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
 
-        var upgrade = try T.init(from: coding)
+        var upgrade = T.init()
 
         if let original = original {
-            original.update(with: upgrade)
-            upgrade = original
+            upgrade = try original.update(with: coding)
+        } else {
+            upgrade = try T.init(from: coding)
         }
 
         return upgrade.save(on: req.db)
@@ -241,13 +242,14 @@ extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringCo
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
         let coding = try req.content.decode(T.SerializedObject.self)
 
-        var upgrade = try T.init(from: coding)
-        upgrade._$user.id = try req.auth.require(User.self).requireID()
+        var upgrade = T.init()
 
         if let original = original {
-            original.update(with: upgrade)
-            upgrade = original
+            upgrade = try original.update(with: coding)
+        } else {
+            upgrade = try T.init(from: coding)
         }
+        upgrade._$user.id = try req.auth.require(User.self).requireID()
 
         return upgrade.save(on: req.db)
             .flatMapThrowing({
