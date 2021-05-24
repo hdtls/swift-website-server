@@ -48,32 +48,29 @@ class ProjCollectionTests: XCTestCase {
     }
 
     func testInvalidCreate() throws {
-        let headers = try registUserAndLoggedIn(app)
+        try _testProjCreation(with: app.login().headers, without: "name")
 
-        try _testProjCreation(with: headers, without: "name")
+        try _testProjCreation(with: app.login().headers, without: "summary")
 
-        try _testProjCreation(with: headers, without: "summary")
+        try _testProjCreation(with: app.login().headers, without: "kind")
 
-        try _testProjCreation(with: headers, without: "kind")
+        try _testProjCreation(with: app.login().headers, without: "visibility")
 
-        try _testProjCreation(with: headers, without: "visibility")
+        try _testProjCreation(with: app.login().headers, without: "startDate")
 
-        try _testProjCreation(with: headers, without: "startDate")
-
-        try _testProjCreation(with: headers, without: "endDate")
+        try _testProjCreation(with: app.login().headers, without: "endDate")
     }
 
     func testCreate() throws {
-        try assertCreateProj(app)
+        app.requestProject(.generate())
     }
 
     func testQueryWithInvalidWorkID() throws {
-        try assertCreateProj(app)
         try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
     }
 
     func testQueryWithWorkID() throws {
-        let proj = try assertCreateProj(app)
+        let proj = app.requestProject()
 
         try app.test(.GET, path + "/\(proj.id!.uuidString)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -100,56 +97,40 @@ class ProjCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        let proj = try assertCreateProj(app, headers: headers)
-
-        try app.test(.PUT, path + "/" + proj.id!.uuidString, headers: headers, beforeRequest: {
-            try $0.content.encode(
-                Project.Coding.init(
-                    name: proj.name,
-                    genres: proj.genres,
-                    summary: proj.summary,
-                    kind: .app,
-                    visibility: .public,
-                    startDate: proj.startDate,
-                    endDate: "2020-06-29"
-                )
-            )
+        let proj = app.requestProject()
+        let expected = Project.SerializedObject.generate()
+        
+        try app.test(.PUT, path + "/" + proj.id!.uuidString, headers: app.login().headers, beforeRequest: {
+            try $0.content.encode(expected)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(Project.Coding.self)
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
-            XCTAssertEqual(coding.name, proj.name)
-            XCTAssertEqual(coding.note, proj.note)
-            XCTAssertEqual(coding.genres, proj.genres)
-            XCTAssertEqual(coding.summary, proj.summary)
-            XCTAssertEqual(coding.artworkUrl, proj.artworkUrl)
-            XCTAssertEqual(coding.backgroundImageUrl, proj.backgroundImageUrl)
-            XCTAssertEqual(coding.promoImageUrl, proj.promoImageUrl)
-            XCTAssertEqual(coding.screenshotUrls, proj.screenshotUrls)
-            XCTAssertEqual(coding.padScreenshotUrls, proj.padScreenshotUrls)
-            XCTAssertEqual(coding.kind, proj.kind)
-            XCTAssertEqual(coding.visibility, proj.visibility)
-            XCTAssertEqual(coding.trackViewUrl, proj.trackViewUrl)
-            XCTAssertEqual(coding.trackId, proj.trackId)
-            XCTAssertEqual(coding.startDate, proj.startDate)
-            XCTAssertEqual(coding.endDate, "2020-06-29")
+            XCTAssertEqual(coding.name, expected.name)
+            XCTAssertEqual(coding.note, expected.note)
+            XCTAssertEqual(coding.genres, expected.genres)
+            XCTAssertEqual(coding.summary, expected.summary)
+            XCTAssertEqual(coding.artworkUrl, expected.artworkUrl)
+            XCTAssertEqual(coding.backgroundImageUrl, expected.backgroundImageUrl)
+            XCTAssertEqual(coding.promoImageUrl, expected.promoImageUrl)
+            XCTAssertEqual(coding.screenshotUrls, expected.screenshotUrls)
+            XCTAssertEqual(coding.padScreenshotUrls, expected.padScreenshotUrls)
+            XCTAssertEqual(coding.kind, expected.kind)
+            XCTAssertEqual(coding.visibility, expected.visibility)
+            XCTAssertEqual(coding.trackViewUrl, expected.trackViewUrl)
+            XCTAssertEqual(coding.trackId, expected.trackId)
+            XCTAssertEqual(coding.startDate, expected.startDate)
+            XCTAssertEqual(coding.endDate, expected.endDate)
         })
     }
 
     func testDeleteWithInvalidWorkID() throws {
-        let headers = try registUserAndLoggedIn(app)
-        try assertCreateProj(app, headers: headers)
-
-        try app.test(.DELETE, path + "/" + "1", headers: headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/" + "1", headers: app.login().headers, afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
-        let headers = try registUserAndLoggedIn(app)
-        let proj = try assertCreateProj(app, headers: headers)
-        try app.test(.DELETE, path + "/" + proj.id!.uuidString, headers: headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/" + app.requestProject(.generate()).id!.uuidString, headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

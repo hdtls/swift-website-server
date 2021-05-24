@@ -30,16 +30,15 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testCreate() {
-        XCTAssertNoThrow(try assertCreateEduExperiance(app))
+        app.requestEducation(.generate())
     }
 
     func testQueryWithInvalidEduID() {
-        XCTAssertNoThrow(try assertCreateEduExperiance(app))
         XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithEduID() throws {
-        let exp = try assertCreateEduExperiance(app)
+        let exp = app.requestEducation()
 
         try app.test(.GET, path + "/" + exp.id!.uuidString, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -58,21 +57,14 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        let headers = try registUserAndLoggedIn(app)
-        let exp = try assertCreateEduExperiance(app, headers: headers)
-        let upgrade = Education.Coding.init(
-            school: "ABC",
-            degree: "PhD",
-            field: "xxx",
-            startYear: "2010",
-            activities: ["xxxxx"],
-            accomplishments: ["xxxxxxx"]
-        )
-        try app.test(.PUT, path + "/" + exp.id!.uuidString, headers: headers, beforeRequest: {
+        let exp = app.requestEducation()
+        let upgrade = Education.SerializedObject.generate()
+        
+        try app.test(.PUT, path + "/" + exp.id!.uuidString, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Education.Coding.self)
+            let coding = try $0.content.decode(Education.SerializedObject.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
@@ -87,16 +79,10 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalideduID() throws {
-        let headers = try registUserAndLoggedIn(app)
-        try assertCreateEduExperiance(app, headers: headers)
-        try app.test(.DELETE, path + "/1", headers: headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        let exp = try assertCreateEduExperiance(app, headers: headers)
-
-        try app.test(.DELETE, path + "/" + exp.id!.uuidString, headers: headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/" + app.requestEducation(.generate()).id!.uuidString, headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

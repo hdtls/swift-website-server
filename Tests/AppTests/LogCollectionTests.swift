@@ -14,8 +14,8 @@ class LogCollectionTests: XCTestCase {
     }
 
     func testLoginWithWrongMsg() throws {
-        try registUserAndLoggedIn(app)
-
+        app.registerUserWithLegacy(.generate())
+        
         let wrongPasswordHeader = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDoxMTExMTEx"))
         let wrongUsernameHeader = HTTPHeaders.init(dictionaryLiteral: ("Authorization", "Basic dGVzdDE6MTExMTEx"))
 
@@ -27,14 +27,8 @@ class LogCollectionTests: XCTestCase {
     }
 
     func testLogin() throws {
-        let userCreation = User.Creation.init(
-            firstName: "J",
-            lastName: "K",
-            username: String(UUID().uuidString.prefix(8)),
-            password: "111111"
-        )
-        
-        try registUserAndLoggedIn(app, userCreation, headers: nil)
+        let userCreation = User.Creation.generate()
+        app.registerUserWithLegacy(userCreation)
         
         let credentials = "\(userCreation.username):\(userCreation.password)".data(using: .utf8)!.base64EncodedString()
         

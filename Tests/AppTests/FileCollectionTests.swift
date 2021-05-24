@@ -28,10 +28,7 @@ class FileCollectionTests: XCTestCase {
     }
 
     func testCreate() throws {
-
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.POST, path, headers: headers, beforeRequest: {
+        try app.test(.POST, path, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(["file" : file], as: .formData)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -41,10 +38,9 @@ class FileCollectionTests: XCTestCase {
     }
 
     func testQuery() throws {
-        let headers = try registUserAndLoggedIn(app)
         var url: String!
 
-        try app.test(.POST, path, headers: headers, beforeRequest: {
+        try app.test(.POST, path, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(["file" : file], as: .formData)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)

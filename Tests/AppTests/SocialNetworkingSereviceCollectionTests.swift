@@ -19,16 +19,15 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testCreate() throws {
-        try assertCreateSocialNetworkingService(app)
+        app.requestSocialNetworkingService(.generate())
     }
 
     func testQueryWithInvalidID() throws {
-        try assertCreateSocialNetworkingService(app)
         try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
     }
 
     func testQueryWithServiceID() throws {
-        let service = try assertCreateSocialNetworkingService(app)
+        let service = app.requestSocialNetworkingService()
 
         try app.test(.GET, path + "/" + service.id!.uuidString, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -39,7 +38,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        let service = try assertCreateSocialNetworkingService(app)
+        let service = app.requestSocialNetworkingService(.generate())
 
         let copy = SocialNetworkingService.Coding.init(type: .facebook)
 
@@ -55,14 +54,10 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidServiceID() throws {
-        try assertCreateSocialNetworkingService(app)
-
         try app.test(.DELETE, path + "/1", afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
-        let service = try assertCreateSocialNetworkingService(app)
-
-        try app.test(.DELETE, path + "/" + service.id!.uuidString, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/" + app.requestSocialNetworkingService(.generate()).id!.uuidString, afterResponse: assertHttpOk)
     }
 }

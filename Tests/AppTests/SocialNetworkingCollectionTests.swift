@@ -19,7 +19,9 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testCreate() {
-        XCTAssertNoThrow(try assertCreateSocialNetworking(app))
+        var expected = SocialNetworking.SerializedObject.generate()
+        expected.service = app.requestSocialNetworkingService(.generate())
+        app.requestSocialNetworking(expected)
     }
 
     func testAuthorizeRequire() {
@@ -33,12 +35,11 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidID() {
-        XCTAssertNoThrow(try assertCreateSocialNetworking(app))
         XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
     }
 
     func testQueryWithSocialID() throws {
-        let socialNetworking = try assertCreateSocialNetworking(app)
+        let socialNetworking = app.requestSocialNetworking()
 
         try app.test(.GET, path + "/\(socialNetworking.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -49,33 +50,31 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        let headers = try registUserAndLoggedIn(app)
-        let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
-        let upgrade = SocialNetworking.Coding.init(
-            url: "https://facebook.com",
-            service: socialNetworking.service
-        )
-        try app.test(.PUT, path + "/\(socialNetworking.id!)", headers: headers, beforeRequest: {
-            try $0.content.encode(upgrade)
+        var socialNetworking = app.requestSocialNetworking()
+        socialNetworking.url = .random(length: 16)
+        
+        try app.test(.PUT, path + "/\(socialNetworking.id!)", headers: app.login().headers, beforeRequest: {
+            try $0.content.encode(socialNetworking)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(SocialNetworking.Coding.self)
             XCTAssertEqual(coding.id, socialNetworking.id)
-            XCTAssertEqual(coding.url, upgrade.url)
-            XCTAssertEqual(coding.service, upgrade.service)
+            XCTAssertEqual(coding.url, socialNetworking.url)
+            XCTAssertEqual(coding.service, socialNetworking.service)
         })
     }
 
     func testDelete() throws {
-        let headers = try registUserAndLoggedIn(app)
-        let socialNetworking = try assertCreateSocialNetworking(app, headers: headers)
+        var expected = SocialNetworking.SerializedObject.generate()
+        expected.service = app.requestSocialNetworkingService(.generate())
+        let socialNetworking = app.requestSocialNetworking(expected)
 
-        try app.test(.DELETE, path + "/\(socialNetworking.id!)", headers: headers, afterResponse: {
+        try app.test(.DELETE, path + "/\(socialNetworking.id!)", headers: app.login().headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-        }).test(.DELETE, path + "/\(socialNetworking.id!)", headers: headers, afterResponse: {
+        }).test(.DELETE, path + "/\(socialNetworking.id!)", headers: app.login().headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
-        }).test(.DELETE, path + "/1", headers: headers, afterResponse: {
+        }).test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
         })
     }

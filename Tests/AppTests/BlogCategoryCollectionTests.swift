@@ -1,29 +1,6 @@
 import XCTVapor
 @testable import App
 
-@discardableResult
-func assertCreateBlogCategory(
-    _ app: Application,
-    category: BlogCategory.SerializedObject = .init(id: nil, name: String(UUID().uuidString.prefix(4))),
-    headers: HTTPHeaders? = nil) throws -> BlogCategory.SerializedObject {
-
-    let headers = try registUserAndLoggedIn(app, headers: headers)
-
-    var coding: BlogCategory.SerializedObject!
-
-    try app.test(.POST, BlogCategory.schema, headers: headers, beforeRequest: {
-        try $0.content.encode(category)
-    }, afterResponse: {
-        XCTAssertEqual($0.status, .ok)
-
-        coding = try $0.content.decode(BlogCategory.SerializedObject.self)
-        XCTAssertNotNil(coding.id)
-        XCTAssertEqual(coding.name, category.name)
-    })
-
-    return coding
-}
-
 class BlogCategoryCollectionTests: XCTestCase {
 
     typealias T = BlogCategory
@@ -42,25 +19,16 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testCreate() throws {
-        let json = ["name" : UUID().uuidString]
-        let headers = try registUserAndLoggedIn(app)
-        try app.test(.POST, T.schema, headers: headers, beforeRequest: {
-            try $0.content.encode(json)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(T.SerializedObject.self)
-            XCTAssertNotNil(coding.id)
-            XCTAssertEqual(coding.name, json["name"])
-        })
+        app.requestBlogCategory(.generate())
     }
 
     func testCreateWithDuplicateName() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        let category = try assertCreateBlogCategory(app, headers: headers)
-
-        try app.test(.POST, T.schema, headers: headers, beforeRequest: {
-            try $0.content.encode(category)
+        let expected = app.requestBlogCategory()
+        let blogCategory = BlogCategory.SerializedObject.generate()
+        blogCategory.name = expected.name
+        
+        try app.test(.POST, T.schema, headers: app.login().headers, beforeRequest: {
+            try $0.content.encode(blogCategory)
         }, afterResponse: {
             XCTAssertEqual($0.status, .unprocessableEntity)
             XCTAssertContains($0.body.string, "Duplicate entry")
@@ -69,8 +37,7 @@ class BlogCategoryCollectionTests: XCTestCase {
 
     func testCreateWithoutName() throws {
         let json: [String : String] = [:]
-        let headers = try registUserAndLoggedIn(app)
-        try app.test(.POST, T.schema, headers: headers, beforeRequest: {
+        try app.test(.POST, T.schema, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(json)
         }, afterResponse: assertHttpBadRequest)
     }
@@ -80,7 +47,7 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testQueryWithID() throws {
-        let serialized = try assertCreateBlogCategory(app)
+        let serialized = app.requestBlogCategory()
 
         try app.test(.GET, T.schema + "/\(serialized.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -90,40 +57,35 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testQueryAll() throws {
-        try assertCreateBlogCategory(app)
-
+        app.requestBlogCategory()
+        
         try app.test(.GET, T.schema, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode([T.SerializedObject].self)
             XCTAssertNotNil(coding)
+            XCTAssertGreaterThanOrEqual(coding.count, 1)
         })
     }
 
     func testUpdate() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        let serialized = try assertCreateBlogCategory(app, headers: headers)
-        let upgrade = serialized
-        upgrade.name = String(UUID().uuidString.prefix(4))
-
-        try app.test(.PUT, T.schema + "/\(serialized.id!)", headers: headers, beforeRequest: {
-            try $0.content.encode(upgrade)
+        let expected = T.SerializedObject.generate()
+        
+        try app.test(.PUT, T.schema + "/\(app.requestBlogCategory().id!)", headers: app.login().headers, beforeRequest: {
+            try $0.content.encode(expected)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(T.SerializedObject.self)
-            XCTAssertEqual(upgrade, coding)
+            expected.id = coding.id
+            XCTAssertEqual(expected, coding)
         })
     }
 
     func testDeleteWithIDThatDoesNotExsit() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.DELETE, BlogCategory.schema + "/\(UUID())", headers: headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, BlogCategory.schema + "/\(UUID())", headers: app.login().headers, afterResponse: assertHttpNotFound)
     }
 
     func testDeleteWithID() throws {
-        let headers = try registUserAndLoggedIn(app)
-        let serialized = try assertCreateBlogCategory(app, headers: headers)
-        try app.test(.DELETE, BlogCategory.schema + "/\(serialized.id!)", headers: headers, afterResponse: assertHttpOk)
+        let serialized = app.requestBlogCategory(.generate())
+        try app.test(.DELETE, BlogCategory.schema + "/\(serialized.id!)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

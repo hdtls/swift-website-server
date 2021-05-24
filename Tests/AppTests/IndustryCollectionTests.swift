@@ -19,12 +19,13 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testCreate() {
-        XCTAssertNoThrow(try assertCreateIndustry(app))
+        app.requestIndustry(.generate())
     }
 
     func testCreateWithConflictIndustry() throws {
-        let industry = try assertCreateIndustry(app)
-
+        var industry = app.requestIndustry()
+        industry.id = nil
+        
         try app.test(.POST, path, beforeRequest: {
             try $0.content.encode(industry)
         }, afterResponse: {
@@ -34,13 +35,11 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testQueryWithInvalidID() throws {
-        try assertCreateIndustry(app)
-        
         try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
     }
     
     func testQueryWithID() throws {
-        let industry = try assertCreateIndustry(app)
+        let industry = app.requestIndustry()
         
         try app.test(.GET, path + "/\(industry.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -61,22 +60,21 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testUpdate() throws {
-        let industry = try assertCreateIndustry(app)
+        var expected = app.requestIndustry(.generate())
+        expected.title = .random(length: 7)
         
-        let title = String(UUID().uuidString.prefix(6))
-        
-        try app.test(.PUT, path + "/\(industry.id!)", beforeRequest: {
-            try $0.content.encode(Industry.Coding.init(title: title))
+        try app.test(.PUT, path + "/\(expected.id!)", beforeRequest: {
+            try $0.content.encode(expected)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Industry.Coding.self)
+            let coding = try $0.content.decode(Industry.SerializedObject.self)
             XCTAssertNotNil(coding.id)
-            XCTAssertEqual(coding.title, title)
+            XCTAssertEqual(coding.title, expected.title)
         })
     }
     
     func testDelete() throws {
-        let industry = try assertCreateIndustry(app)
+        let industry = app.requestIndustry(.generate())
         
         try app.test(.DELETE, path + "/\(industry.id!)", afterResponse: assertHttpOk)
             .test(.DELETE, path + "/1", afterResponse: assertHttpNotFound)

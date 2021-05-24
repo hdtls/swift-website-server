@@ -1,32 +1,6 @@
 import XCTVapor
 @testable import App
 
-@discardableResult
-func assertCreateSkill(
-    _ app: Application,
-    headers: HTTPHeaders? = authorized
-) throws -> Skill.SerializedObject {
-    let skill = ["professional": ["xxx"], "workflow": ["xxx"]]
-
-    let httpHeaders = try registUserAndLoggedIn(app, headers: headers)
-
-    var coding: Skill.SerializedObject!
-
-    try app.test(.POST, "skills", headers: httpHeaders, beforeRequest: {
-        try $0.content.encode(skill)
-    }, afterResponse: {
-        XCTAssertEqual($0.status, .ok)
-
-        coding = try $0.content.decode(Skill.SerializedObject.self)
-        XCTAssertNotNil(coding.id)
-        XCTAssertEqual(coding.professional, skill["professional"])
-        XCTAssertEqual(coding.workflow, skill["workflow"])
-    })
-
-    return coding
-}
-
-
 class SkillCollectionTests: XCTestCase {
 
     let path = Skill.schema
@@ -54,14 +28,12 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testCreate() throws {
-        try assertCreateSkill(app)
+        app.requestSkill(.generate())
     }
 
     func testCreateWithoutProfessional() throws {
         let json = ["workflow": ["xxx"]]
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.POST, path, headers: headers, beforeRequest: {
+        try app.test(.POST, path, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(json)
         }, afterResponse: {
             XCTAssertEqual($0.status, .badRequest)
@@ -70,27 +42,14 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testCreateWithoutWorkflow() throws {
-        let skill = ["professional": ["xxx"]]
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.POST, path, headers: headers, beforeRequest: {
-            try $0.content.encode(skill)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .ok)
-
-            let coding = try $0.content.decode(Skill.SerializedObject.self)
-
-            XCTAssertNotNil(coding.id)
-            XCTAssertEqual(coding.professional, skill["professional"])
-            XCTAssertEqual(coding.workflow, skill["workflow"])
-        })
+        var expected = Skill.SerializedObject.generate()
+        expected.workflow = nil
+        app.requestSkill(expected)
     }
 
     func testCreateWithInvalidDataType() throws {
         let json = ["professional" : ""]
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.POST, path, headers: headers, beforeRequest: {
+        try app.test(.POST, path, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(json)
         }, afterResponse: {
             XCTAssertEqual($0.status, .badRequest)
@@ -99,7 +58,7 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testQuery() throws {
-        let saved = try assertCreateSkill(app)
+        let saved = app.requestSkill()
 
         try app.test(.GET, path + "/\(saved.id!)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -116,44 +75,32 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testUpdate() throws {
-        let headers = try registUserAndLoggedIn(app)
-        let upgrade = ["professional": [], "workflow": ["xxx", "xxxx"]]
-
-        let saved = try assertCreateSkill(app, headers: headers)
+        var saved = app.requestSkill()
+        saved.professional.append(.random(length: 12))
         
-        try app.test(.PUT, path + "/\(saved.id!)", headers: headers, beforeRequest: {
-            try $0.content.encode(upgrade)
+        try app.test(.PUT, path + "/\(saved.id!)", headers: app.login().headers, beforeRequest: {
+            try $0.content.encode(saved)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(Skill.SerializedObject.self)
 
             XCTAssertEqual(coding.id, saved.id)
-            XCTAssertEqual(coding.professional, [])
-            XCTAssertEqual(coding.workflow, upgrade["workflow"])
+            XCTAssertEqual(coding.professional, saved.professional)
+            XCTAssertEqual(coding.workflow, saved.workflow)
         })
     }
 
     func testUpdateWithNoExistentID() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        let upgrade: [String : [String]] = ["professional" : []]
-
-        try app.test(.PUT, path + "/1", headers: headers, beforeRequest: {
-            try $0.content.encode(upgrade)
+        try app.test(.PUT, path + "/1", headers: app.login().headers, beforeRequest: {
+            try $0.content.encode(Skill.SerializedObject.generate())
         }, afterResponse: assertHttpNotFound)
     }
 
     func testDelete() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        let saved = try assertCreateSkill(app, headers: headers)
-
-        try app.test(.DELETE, path + "/\(saved.id!)", headers: headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(app.requestSkill(.generate()).id!)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 
     func testDeleteWithNonExistentID() throws {
-        let headers = try registUserAndLoggedIn(app)
-
-        try app.test(.DELETE, path + "/1", headers: headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpNotFound)
     }
 }
