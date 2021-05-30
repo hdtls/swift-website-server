@@ -3,12 +3,10 @@ import Fluent
 
 final class Skill: Model {
     
-    typealias IDValue = UUID
-    
     static var schema: String = "skills"
     
     @ID()
-    var id: IDValue?
+    var id: UUID?
     
     @Field(key: FieldKeys.professional.rawValue)
     var professional: [String]

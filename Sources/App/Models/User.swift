@@ -64,8 +64,8 @@ final class User: Model {
     @Children(for: \.$user)
     var experiences: [Experience]
     
-    @Children(for: \.$user)
-    var skill: [Skill]
+    @OptionalChild(for: \.$user)
+    var skill: Skill?
     
     @Children(for: \.$user)
     var blog: [Blog]
@@ -208,7 +208,7 @@ extension User: Serializing {
         coding.experiences = $experiences.value?.compactMap({ try? $0.dataTransferObject() })
         coding.social = $social.value?.compactMap({ try? $0.dataTransferObject() })
         coding.blog = $blog.value?.compactMap({ try? $0.dataTransferObject() })
-        coding.skill = try $skill.value?.first?.dataTransferObject()
+        coding.skill = try $skill.value??.dataTransferObject()
         return coding
     }
 }
