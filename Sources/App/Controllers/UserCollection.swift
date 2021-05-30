@@ -44,11 +44,11 @@ class UserCollection: RestfulApiCollection {
         trusted.on(.POST, .parameter(restfulIDKey), "social_networking", use: createSocialNetworking)
     }
     
-    /// Register new user with `User.Creation` msg. when success a new user and token is registed.
+    /// Register new user with `User.Creation` msg.
     /// - seealso: `User.Creation` for more creation content info.
     /// - note: We make `username` unique so if the `username` already taken an `conflic` statu will be
     /// send to custom.
-    func create(_ req: Request) throws -> EventLoopFuture<AuthorizeMsg> {
+    func create(_ req: Request) throws -> EventLoopFuture<User.SerializedObject> {
         try User.Creation.validate(content: req)
         
         let user = try User.init(req.content.decode(User.Creation.self))
@@ -60,16 +60,8 @@ class UserCollection: RestfulApiCollection {
                 }
                 throw $0
             })
-            .flatMap({
-                guard let token = try? Token.init(user) else {
-                    return user.delete(on: req.db).flatMap({
-                        req.eventLoop.makeFailedFuture(Abort(.internalServerError))
-                    })
-                }
-                return token.save(on: req.db).map { token }
-            })
             .flatMapThrowing({
-                try AuthorizeMsg.init(user: user.dataTransferObject(), token: $0)
+                try user.dataTransferObject()
             })
     }
     

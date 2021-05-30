@@ -148,7 +148,6 @@ extension Application {
     }
         
     struct Storage {
-        var user: User.SerializedObject?
         var blogCategory: BlogCategory.SerializedObject?
         var blog: Blog.SerializedObject?
         var experience: Experience.SerializedObject?
@@ -158,6 +157,7 @@ extension Application {
         var socialNetworkingService: SocialNetworkingService.SerializedObject?
         var project: Project.SerializedObject?
         var skill: Skill.SerializedObject?
+        var user: User.SerializedObject?
         var loggedInMsg: LoggedInMsg?
     }
     
@@ -177,25 +177,22 @@ extension Application {
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 
-                let authorizeMsg = try $0.content.decode(AuthorizeMsg.self)
-                XCTAssertNotNil(authorizeMsg.accessToken)
-                XCTAssertNotNil(authorizeMsg.user)
-                XCTAssertNotNil(authorizeMsg.user.id)
-                XCTAssertEqual(authorizeMsg.user.username, registration?.username)
-                XCTAssertEqual(authorizeMsg.user.firstName, registration?.firstName)
-                XCTAssertEqual(authorizeMsg.user.lastName, registration?.lastName)
-                XCTAssertNil(authorizeMsg.user.phone)
-                XCTAssertNil(authorizeMsg.user.emailAddress)
-                XCTAssertNil(authorizeMsg.user.aboutMe)
-                XCTAssertNil(authorizeMsg.user.location)
-                XCTAssertNil(authorizeMsg.user.education)
-                XCTAssertNil(authorizeMsg.user.experiences)
-                XCTAssertNil(authorizeMsg.user.interests)
-                
-                user = authorizeMsg.user
-                
+                user = try $0.content.decode(User.SerializedObject.self)
+                XCTAssertNotNil(user)
+                XCTAssertNotNil(user.id)
+                XCTAssertEqual(user.username, registration?.username)
+                XCTAssertEqual(user.firstName, registration?.firstName)
+                XCTAssertEqual(user.lastName, registration?.lastName)
+                XCTAssertNil(user.phone)
+                XCTAssertNil(user.emailAddress)
+                XCTAssertNil(user.aboutMe)
+                XCTAssertNil(user.location)
+                XCTAssertNil(user.education)
+                XCTAssertNil(user.experiences)
+                XCTAssertNil(user.interests)
+                                
                 if Self.meta.user == nil {
-                    Self.meta.user = authorizeMsg.user
+                    Self.meta.user = user
                 }
             })
         )
