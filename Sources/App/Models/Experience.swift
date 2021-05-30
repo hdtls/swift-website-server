@@ -83,17 +83,12 @@ extension Experience: Serializing {
         var userId: User.IDValue?
         
         init() {
-            id = nil
             title = ""
             companyName = ""
             location = ""
             startDate = ""
             endDate = ""
-            headline = nil
-            responsibilities = nil
-            media = nil
             industries = []
-            userId = nil
         }
     }
     

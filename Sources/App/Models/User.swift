@@ -171,21 +171,9 @@ extension User: Serializing {
         var skill: Skill.SerializedObject?
         
         init() {
-            id = nil
             username = ""
             firstName = ""
             lastName = ""
-            avatarUrl = nil
-            phone = nil
-            emailAddress = nil
-            aboutMe = nil
-            location = nil
-            interests = nil
-            social = nil
-            projects = nil
-            education = nil
-            blog = nil
-            skill = nil
         }
     }
     

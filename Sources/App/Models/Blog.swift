@@ -88,16 +88,9 @@ extension Blog: Serializing {
         var categories: [BlogCategory.SerializedObject]
         
         init() {
-            id = nil
             alias = ""
             title = ""
-            artworkUrl = nil
             excerpt = ""
-            tags = nil
-            content = nil
-            createdAt = nil
-            updatedAt = nil
-            userId = nil
             categories = []
         }
     }

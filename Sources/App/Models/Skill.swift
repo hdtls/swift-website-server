@@ -42,9 +42,7 @@ extension Skill: Serializing {
         var workflow: [String]?
         
         init() {
-            id = nil
             professional = []
-            workflow = nil
         }
     }
     

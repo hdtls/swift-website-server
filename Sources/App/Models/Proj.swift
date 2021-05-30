@@ -145,23 +145,12 @@ extension Project: Serializing {
         var userId: User.IDValue?
         
         init() {
-            id = nil
             name = ""
-            note = nil
-            genres = nil
             summary = ""
-            artworkUrl = nil
-            backgroundImageUrl = nil
-            promoImageUrl = nil
-            screenshotUrls = nil
-            padScreenshotUrls = nil
             kind = .app
             visibility = .public
-            trackViewUrl = nil
-            trackId = nil
             startDate = ""
             endDate = ""
-            userId = nil
         }
     }
     

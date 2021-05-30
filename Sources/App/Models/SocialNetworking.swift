@@ -45,10 +45,7 @@ extension SocialNetworking: Serializing {
         var service: Service.Coding?
         
         init() {
-            id = nil
-            userId = nil
             url = ""
-            service = nil
         }
     }
     

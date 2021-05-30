@@ -41,10 +41,7 @@ extension Industry: Serializing {
         // `title` can be nil except create & update new industry.
         var title: String?
         
-        init() {
-            id = nil
-            title = nil
-        }
+        init() {}
     }
     
     convenience init(from dto: SerializedObject) throws {

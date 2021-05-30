@@ -84,17 +84,9 @@ extension Education: Serializing {
         var userId: User.IDValue?
         
         init() {
-            id = nil
             school = ""
             degree = ""
             field = ""
-            startYear = nil
-            endYear = nil
-            grade = nil
-            activities = nil
-            accomplishments = nil
-            media = nil
-            userId = nil
         }
     }
     
