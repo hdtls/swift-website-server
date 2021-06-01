@@ -7,7 +7,7 @@ class IndustryCollection: RestfulApiCollection {
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.Coding> {
         let coding = try req.content.decode(T.SerializedObject.self)
         guard coding.title != nil else {
-            throw Abort.init(.unprocessableEntity, reason: "Value required for key 'industry.title'")
+            throw Abort.init(.unprocessableEntity, reason: "Value required for key 'title'")
         }
 
         var upgrade = T.init()

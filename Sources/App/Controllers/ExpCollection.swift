@@ -42,7 +42,15 @@ class ExpCollection: RestfulApiCollection {
 
         let serializedObject = try req.content.decode(T.SerializedObject.self)
 
-        let industries = try _industriesMaker(coding: serializedObject)
+        let industries: [Industry] = try serializedObject.industries.map({
+            // Model's `id` field is optional by default, but
+            // required by create relation of `experience` and `industry`, so we will
+            // add additional check to make sure it have `id` to attach with.
+            guard $0.id != nil else {
+                throw Abort(.badRequest, reason: "Value required for key: 'industries.id'")
+            }
+            return try .init(from: $0)
+        })
 
         var upgrade = T.init()
 
@@ -54,7 +62,7 @@ class ExpCollection: RestfulApiCollection {
         upgrade.$user.id = try req.auth.require(User.self).requireID()
 
         return upgrade.save(on: req.db)
-            .flatMap({ () -> EventLoopFuture<[Industry]> in
+            .flatMap({
                 let difference = industries.difference(from: upgrade.$industries.value ?? []) {
                     $0.id == $1.id
                 }
@@ -68,23 +76,11 @@ class ExpCollection: RestfulApiCollection {
                     }
                 }), on: req.eventLoop)
                 .flatMap({
-                    upgrade.$industries.get(reload: true, on: req.db)
+                    upgrade.$industries.load(on: req.db)
                 })
             })
-            .flatMapThrowing({ _ in
+            .flatMapThrowing({ () in
                 try upgrade.dataTransferObject()
             })
-    }
-
-    private func _industriesMaker(coding: T.SerializedObject) throws -> [Industry] {
-        try coding.industries.map({ coding -> Industry in
-            // `Industry.id` is not required by `Industry.__converted(_:)`, but
-            // required by create relation of `experience` and `industry`, so we will
-            // add additional check to make sure it have `id` to attach with.
-            guard coding.id != nil else {
-                throw Abort.init(.badRequest, reason: "Value required for key 'Industry.id'")
-            }
-            return try Industry.init(from: coding)
-        })
     }
 }
