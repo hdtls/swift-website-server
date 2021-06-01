@@ -39,7 +39,7 @@ final class Experience: Model {
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
     
-    @Siblings(through: ExpIndustrySiblings.self, from: \.$experience, to: \.$industry)
+    @Siblings(through: Linker<Industry, Experience>.self, from: \.$to, to: \.$from)
     var industries: [Industry]
     
     // MARK: Initializer

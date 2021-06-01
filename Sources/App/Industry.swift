@@ -13,7 +13,7 @@ final class Industry: Model {
     @Field(key: FieldKeys.title.rawValue)
     var title: String
     
-    @Siblings(through: ExpIndustrySiblings.self, from: \.$industry, to: \.$experience)
+    @Siblings(through: Linker<Industry, Experience>.self, from: \.$from, to: \.$to)
     var experience: [Experience]
     
     init() {}

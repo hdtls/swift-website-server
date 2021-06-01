@@ -39,7 +39,7 @@ final class Blog: Model {
     @Parent(key: FieldKeys.user.rawValue)
     var user: User
     
-    @Siblings(through: BlogCategorySiblings.self, from: \.$blog, to: \.$category)
+    @Siblings(through: Linker<BlogCategory, Blog>.self, from: \.$to, to: \.$from)
     var categories: [BlogCategory]
     
     // MARK: Initializer

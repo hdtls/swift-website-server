@@ -3,17 +3,15 @@ import FluentMySQLDriver
 
 final class BlogCategory: Model {
 
-    typealias IDValue = UUID
-
     static var schema: String = "blog_categories"
 
     @ID()
-    var id: IDValue?
+    var id: UUID?
 
     @Field(key: FieldKeys.name.rawValue)
     var name: String
 
-    @Siblings(through: BlogCategorySiblings.self, from: \.$category, to: \.$blog)
+    @Siblings(through: Linker<BlogCategory, Blog>.self, from: \.$from, to: \.$to)
     var blog: [Blog]
 
     init() {}

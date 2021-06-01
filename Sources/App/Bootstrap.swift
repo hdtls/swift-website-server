@@ -33,13 +33,13 @@ public func bootstrap(_ app: Application) throws {
     app.migrations.add(SocialNetworking.migration)
     app.migrations.add(Industry.migration)
     app.migrations.add(Education.migration)
-    app.migrations.add(ExpIndustrySiblings.migration)
+    app.migrations.add(Linker<BlogCategory, Blog>.migration)
     app.migrations.add(SocialNetworkingService.migration)
     app.migrations.add(Skill.migration)
     app.migrations.add(Project.migration)
     app.migrations.add(Blog.migration)
     app.migrations.add(BlogCategory.migration)
-    app.migrations.add(BlogCategorySiblings.migration)
+    app.migrations.add(Linker<Industry, Experience>.migration)
 
     try app.autoMigrate().wait()
 
