@@ -35,14 +35,12 @@ protocol ProjProtocol {
 }
 
 final class Project: ProjProtocol, Model {
-    
-    typealias IDValue = UUID
-    
+        
     static var schema: String = "projects"
     
     // MARK: Properties
     @ID()
-    var id: IDValue?
+    var id: UUID?
     
     @Field(key: FieldKeys.name.rawValue)
     var name: String

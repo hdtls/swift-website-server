@@ -2,14 +2,12 @@ import Vapor
 import Fluent
 
 final class Blog: Model {
-    
-    typealias IDValue = UUID
-    
+        
     static var schema: String = "blog"
     
     // MARK: Properties
     @ID()
-    var id: IDValue?
+    var id: UUID?
     
     @Field(key: FieldKeys.alias.rawValue)
     var alias: String
