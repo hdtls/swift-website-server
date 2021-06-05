@@ -4,4 +4,7 @@
 /*.xcodeproj
 xcuserdata/
 .swiftpm
+DerivedData
+.*.sw?
+*.pyc
 Package.resolved
