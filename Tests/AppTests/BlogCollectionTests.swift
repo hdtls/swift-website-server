@@ -53,9 +53,9 @@ class BlogCollectionTests: XCTestCase {
     func testQueryWithID() throws {
         let blog = app.requestBlog()
         
-        try app.test(.GET, path + "/\(blog.id!)", afterResponse: {
+        try app.test(.GET, path + "/\(blog.id)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
+            let coding = try $0.content.decode(Blog.DTO.self)
             XCTAssertEqual(coding, blog)
         })
     }
@@ -67,16 +67,15 @@ class BlogCollectionTests: XCTestCase {
         blog.tags = [.random(length: 4)]
         blog.content = .random(length: 23)
         
-        try app.test(.PUT, path + "/" + blog.id!.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
+            let coding = try $0.content.decode(Blog.DTO.self)
             XCTAssertEqual(coding.id, blog.id)
             XCTAssertEqual(coding.alias, blog.alias)
             XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
             XCTAssertEqual(coding.excerpt, blog.excerpt)
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertEqual(coding.title, blog.title)
@@ -90,16 +89,15 @@ class BlogCollectionTests: XCTestCase {
         let category = app.requestBlogCategory(.generate())
         blog.categories.append(category)
         
-        try app.test(.PUT, path + "/" + blog.id!.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
+            let coding = try $0.content.decode(Blog.DTO.self)
             XCTAssertEqual(coding.id, blog.id)
             XCTAssertEqual(coding.alias, blog.alias)
             XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
             XCTAssertEqual(coding.excerpt, blog.excerpt)
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertEqual(coding.title, blog.title)
@@ -115,22 +113,21 @@ class BlogCollectionTests: XCTestCase {
             app.requestBlogCategory(.generate())
         ]
         
-        var blog: Blog.SerializedObject = .generate()
+        var blog: Blog.DTO = .generate()
         blog.categories += categories
         
         blog = app.requestBlog(blog)
         
-        try app.test(.PUT, path + "/" + blog.id!.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
             _ = blog.categories.removeLast()
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
+            let coding = try $0.content.decode(Blog.DTO.self)
             XCTAssertEqual(coding.id, blog.id)
             XCTAssertEqual(coding.alias, blog.alias)
             XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
             XCTAssertEqual(coding.excerpt, blog.excerpt)
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertEqual(coding.title, blog.title)
@@ -142,12 +139,11 @@ class BlogCollectionTests: XCTestCase {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
+            let coding = try $0.content.decode(Blog.DTO.self)
             XCTAssertEqual(coding.id, blog.id)
             XCTAssertEqual(coding.alias, blog.alias)
             XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
             XCTAssertEqual(coding.excerpt, blog.excerpt)
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertEqual(coding.title, blog.title)
@@ -160,17 +156,16 @@ class BlogCollectionTests: XCTestCase {
         var blog = app.requestBlog()
         blog.alias = .random(length: 14)
         
-        try app.test(.PUT, path + "/" + blog.id!.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
+            let coding = try $0.content.decode(Blog.DTO.self)
             XCTAssertEqual(coding.id, blog.id)
             XCTAssertEqual(coding.alias, blog.alias)
             XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
             XCTAssertEqual(coding.excerpt, blog.excerpt)
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertEqual(coding.title, blog.title)
@@ -182,12 +177,11 @@ class BlogCollectionTests: XCTestCase {
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             
-            let coding = try $0.content.decode(Blog.SerializedObject.self)
+            let coding = try $0.content.decode(Blog.DTO.self)
             XCTAssertEqual(coding.id, blog.id)
             XCTAssertEqual(coding.alias, blog.alias)
             XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
             XCTAssertEqual(coding.content, blog.content)
-            XCTAssertEqual(coding.createdAt, blog.createdAt)
             XCTAssertEqual(coding.excerpt, blog.excerpt)
             XCTAssertEqual(coding.tags, blog.tags)
             XCTAssertEqual(coding.title, blog.title)
@@ -201,6 +195,6 @@ class BlogCollectionTests: XCTestCase {
     }
     
     func testDelete() throws {
-        try app.test(.DELETE, path + "/\(app.requestBlog(.generate()).id!)", headers: app.login().headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(app.requestBlog(.generate()).id)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

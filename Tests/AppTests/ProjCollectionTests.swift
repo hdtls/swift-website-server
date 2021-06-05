@@ -29,6 +29,7 @@ class ProjCollectionTests: XCTestCase {
     func _testProjCreation(with headers: HTTPHeaders, without key: String) throws {
 
         var json = [
+            "id": "\(UUID())",
             "name": "",
             "summary" : "",
             "kind" : "app",
@@ -72,7 +73,7 @@ class ProjCollectionTests: XCTestCase {
     func testQueryWithWorkID() throws {
         let proj = app.requestProject()
 
-        try app.test(.GET, path + "/\(proj.id!.uuidString)", afterResponse: {
+        try app.test(.GET, path + "/\(proj.id.uuidString)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(Project.Coding.self)
@@ -98,9 +99,9 @@ class ProjCollectionTests: XCTestCase {
 
     func testUpdate() throws {
         let proj = app.requestProject()
-        let expected = Project.SerializedObject.generate()
+        let expected = Project.DTO.generate()
         
-        try app.test(.PUT, path + "/" + proj.id!.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/" + proj.id.uuidString, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(expected)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -127,10 +128,10 @@ class ProjCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidWorkID() throws {
-        try app.test(.DELETE, path + "/" + "1", headers: app.login().headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/" + "1", headers: app.login().headers, afterResponse: assertHttpBadRequest)
     }
 
     func testDelete() throws {
-        try app.test(.DELETE, path + "/" + app.requestProject(.generate()).id!.uuidString, headers: app.login().headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/" + app.requestProject(.generate()).id.uuidString, headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

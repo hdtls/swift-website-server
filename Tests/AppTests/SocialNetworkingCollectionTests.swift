@@ -19,8 +19,8 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testCreate() {
-        var expected = SocialNetworking.SerializedObject.generate()
-        expected.service = app.requestSocialNetworkingService(.generate())
+        var expected = SocialNetworking.DTO.generate()
+        expected.serviceId = app.requestSocialNetworkingService(.generate()).id
         app.requestSocialNetworking(expected)
     }
 
@@ -41,7 +41,7 @@ class SocialNetworkingCollectionTests: XCTestCase {
     func testQueryWithSocialID() throws {
         let socialNetworking = app.requestSocialNetworking()
 
-        try app.test(.GET, path + "/\(socialNetworking.id!)", afterResponse: {
+        try app.test(.GET, path + "/\(socialNetworking.id)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(SocialNetworking.Coding.self)
@@ -53,7 +53,7 @@ class SocialNetworkingCollectionTests: XCTestCase {
         var socialNetworking = app.requestSocialNetworking()
         socialNetworking.url = .random(length: 16)
         
-        try app.test(.PUT, path + "/\(socialNetworking.id!)", headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(socialNetworking.id)", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(socialNetworking)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -66,16 +66,14 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testDelete() throws {
-        var expected = SocialNetworking.SerializedObject.generate()
-        expected.service = app.requestSocialNetworkingService(.generate())
+        var expected = SocialNetworking.DTO.generate()
+        expected.serviceId = app.requestSocialNetworkingService(.generate()).id
         let socialNetworking = app.requestSocialNetworking(expected)
 
-        try app.test(.DELETE, path + "/\(socialNetworking.id!)", headers: app.login().headers, afterResponse: {
+        try app.test(.DELETE, path + "/\(socialNetworking.id)", headers: app.login().headers, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-        }).test(.DELETE, path + "/\(socialNetworking.id!)", headers: app.login().headers, afterResponse: {
+        }).test(.DELETE, path + "/\(socialNetworking.id)", headers: app.login().headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
-        }).test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: {
-            XCTAssertEqual($0.status, .notFound)
-        })
+        }).test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpBadRequest)
     }
 }

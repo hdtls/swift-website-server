@@ -14,9 +14,10 @@ extension User.Creation {
     }
 }
 
-extension Experience.SerializedObject {
-    static func generate() -> Experience.SerializedObject {
-        var expected = Experience.SerializedObject.init()
+extension Experience.DTO {
+    static func generate() -> Experience.DTO {
+        var expected = Experience.DTO.init()
+        expected.id = .init()
         expected.title = .random(length: 4)
         expected.companyName = .random(length: 6)
         expected.location = .random(length: 5)
@@ -31,18 +32,19 @@ extension Experience.SerializedObject {
     }
 }
 
-extension Industry.SerializedObject {
-    static func generate() -> Industry.SerializedObject {
-        var expected = Industry.SerializedObject.init()
+extension Industry.DTO {
+    static func generate() -> Industry.DTO {
+        var expected = Industry.DTO.init()
+        expected.id = .init()
         expected.title = .random(length: 6)
         return expected
     }
 }
 
-extension Education.SerializedObject {
-    static func generate() -> Education.SerializedObject {
-        var expected = Education.SerializedObject.init()
-        expected.id = nil
+extension Education.DTO {
+    static func generate() -> Education.DTO {
+        var expected = Education.DTO.init()
+        expected.id = .init()
         expected.school = .random(length: 12)
         expected.degree = .random(length: 4)
         expected.field = .random(length: 7)
@@ -57,25 +59,28 @@ extension Education.SerializedObject {
     }
 }
 
-extension SocialNetworkingService.SerializedObject {
-    static func generate() -> SocialNetworkingService.SerializedObject {
-        var expected = SocialNetworkingService.SerializedObject.init()
+extension SocialNetworkingService.DTO {
+    static func generate() -> SocialNetworkingService.DTO {
+        var expected = SocialNetworkingService.DTO.init()
+        expected.id = .init()
         expected.type = SocialNetworkingService.ServiceType.allCases.randomElement()
         return expected
     }
 }
 
-extension SocialNetworking.SerializedObject {
-    static func generate() -> SocialNetworking.SerializedObject {
-        var expected = SocialNetworking.SerializedObject.init()
+extension SocialNetworking.DTO {
+    static func generate() -> SocialNetworking.DTO {
+        var expected = SocialNetworking.DTO.init()
+        expected.id = .init()
         expected.url = .random(length: 12)
         return expected
     }
 }
 
-extension Project.SerializedObject {
-    static func generate() -> Project.SerializedObject {
-        var expected = Project.SerializedObject.init()
+extension Project.DTO {
+    static func generate() -> Project.DTO {
+        var expected = Project.DTO.init()
+        expected.id = .init()
         expected.artworkUrl = "http://localhost:8080/" + .random(length: 12)
         expected.endDate = .random(length: 7)
         expected.startDate = .random(length: 7)
@@ -88,17 +93,19 @@ extension Project.SerializedObject {
     }
 }
 
-extension BlogCategory {
-    static func generate() -> BlogCategory {
-        let blogCategory = BlogCategory.init()
-        blogCategory.name = .random(length: 6)
-        return blogCategory
+extension BlogCategory.DTO {
+    static func generate() -> BlogCategory.DTO {
+        var expected = BlogCategory.DTO.init()
+        expected.id = .init()
+        expected.name = .random(length: 6)
+        return expected
     }
 }
 
-extension Blog.SerializedObject {
-    static func generate() -> Blog.SerializedObject {
-        var expected = Blog.SerializedObject.init()
+extension Blog.DTO {
+    static func generate() -> Blog.DTO {
+        var expected = Blog.DTO.init()
+        expected.id = .init()
         expected.alias = .random(length: 12)
         expected.title = .random(length: 12)
         expected.excerpt = .random(length: 23)
@@ -108,9 +115,10 @@ extension Blog.SerializedObject {
     }
 }
 
-extension Skill.SerializedObject {
-    static func generate() -> Skill.SerializedObject {
-        var expected = Skill.SerializedObject.init()
+extension Skill.DTO {
+    static func generate() -> Skill.DTO {
+        var expected = Skill.DTO.init()
+        expected.id = .init()
         expected.professional = [.random(length: 14)]
         expected.workflow = [.random(length: 24)]
         return expected
@@ -143,46 +151,46 @@ extension Application {
     
     struct LoggedInMsg {
         let registration: User.Creation
-        let user: User.SerializedObject
+        let user: User.DTO
         let headers: HTTPHeaders
     }
         
     struct Storage {
-        var blogCategory: BlogCategory.SerializedObject?
-        var blog: Blog.SerializedObject?
-        var experience: Experience.SerializedObject?
-        var education: Education.SerializedObject?
-        var industry: Industry.SerializedObject?
-        var socialNetworking: SocialNetworking.SerializedObject?
-        var socialNetworkingService: SocialNetworkingService.SerializedObject?
-        var project: Project.SerializedObject?
-        var skill: Skill.SerializedObject?
-        var user: User.SerializedObject?
+        var blogCategory: BlogCategory.DTO?
+        var blog: Blog.DTO?
+        var experience: Experience.DTO?
+        var education: Education.DTO?
+        var industry: Industry.DTO?
+        var socialNetworking: SocialNetworking.DTO?
+        var socialNetworkingService: SocialNetworkingService.DTO?
+        var project: Project.DTO?
+        var skill: Skill.DTO?
+        var user: User.DTO?
         var loggedInMsg: LoggedInMsg?
     }
     
     static var meta: Storage = .init()
     
     @discardableResult
-    func registerUserWithLegacy(_ registration: User.Creation? = nil) -> User.SerializedObject {
+    func registerUserWithLegacy(_ registration: User.Creation? = nil) -> User.DTO {
         guard registration != nil || Self.meta.user == nil else {
             return Self.meta.user!
         }
         
         let codable = registration ?? .generate()
-        var user = User.SerializedObject.init()
+        var user = User.DTO.init()
         XCTAssertNoThrow(
             try test(.POST, User.schema, beforeRequest: {
                 try $0.content.encode(codable)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 
-                user = try $0.content.decode(User.SerializedObject.self)
+                user = try $0.content.decode(User.DTO.self)
                 XCTAssertNotNil(user)
                 XCTAssertNotNil(user.id)
-                XCTAssertEqual(user.username, registration?.username)
-                XCTAssertEqual(user.firstName, registration?.firstName)
-                XCTAssertEqual(user.lastName, registration?.lastName)
+                XCTAssertEqual(user.username, codable.username)
+                XCTAssertEqual(user.firstName, codable.firstName)
+                XCTAssertEqual(user.lastName, codable.lastName)
                 XCTAssertNil(user.phone)
                 XCTAssertNil(user.emailAddress)
                 XCTAssertNil(user.aboutMe)
@@ -243,20 +251,20 @@ extension Application {
     }
     
     @discardableResult
-    func requestBlogCategory(_ data: BlogCategory.SerializedObject? = nil) -> BlogCategory.SerializedObject {
+    func requestBlogCategory(_ data: BlogCategory.DTO? = nil) -> BlogCategory.DTO {
         
         guard data != nil || Self.meta.blogCategory == nil else {
             return Self.meta.blogCategory!
         }
-        let encodable = data ?? BlogCategory.SerializedObject.generate()
-        var model: BlogCategory.SerializedObject = .init()
+        let encodable = data ?? BlogCategory.DTO.generate()
+        var model: BlogCategory.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, BlogCategory.schema, headers: login().headers, beforeRequest: {
                 try $0.content.encode(encodable)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                model = try $0.content.decode(BlogCategory.SerializedObject.self)
+                model = try $0.content.decode(BlogCategory.DTO.self)
                 XCTAssertEqual(model.name, encodable.name)
                 if Self.meta.blogCategory == nil {
                     Self.meta.blogCategory = model
@@ -268,22 +276,22 @@ extension Application {
     }
     
     @discardableResult
-    func requestBlog(_ data: Blog.SerializedObject? = nil) -> Blog.SerializedObject {
+    func requestBlog(_ data: Blog.DTO? = nil) -> Blog.DTO {
         guard data != nil || Self.meta.blog == nil else {
             return Self.meta.blog!
         }
-        var encodable = data ?? Blog.SerializedObject.generate()
+        var encodable = data ?? Blog.DTO.generate()
         if data == nil {
             encodable.categories = [requestBlogCategory()]
         }
-        var model: Blog.SerializedObject = .init()
+        var model: Blog.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, Blog.schema, headers: login().headers, beforeRequest: {
                 try $0.content.encode(encodable)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                model = try $0.content.decode(Blog.SerializedObject.self)
+                model = try $0.content.decode(Blog.DTO.self)
                 
                 XCTAssertNotNil(model.id)
                 XCTAssertNotNil(model.userId)
@@ -294,8 +302,6 @@ extension Application {
                 XCTAssertEqual(model.tags, encodable.tags)
                 XCTAssertEqual(model.content, encodable.content)
                 XCTAssertEqual(model.categories.count, encodable.categories.count)
-                XCTAssertNotNil(model.createdAt)
-                XCTAssertNotNil(model.updatedAt)
                 if Self.meta.blog == nil {
                     Self.meta.blog = model
                 }
@@ -306,19 +312,19 @@ extension Application {
     }
     
     @discardableResult
-    func requestIndustry(_ data: Industry.SerializedObject? = nil) -> Industry.SerializedObject {
+    func requestIndustry(_ data: Industry.DTO? = nil) -> Industry.DTO {
         guard data != nil || Self.meta.industry == nil else {
             return Self.meta.industry!
         }
-        let expected = data ?? Industry.SerializedObject.generate()
-        var model: Industry.SerializedObject = .init()
+        let expected = data ?? Industry.DTO.generate()
+        var model: Industry.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, Industry.schema, headers: login().headers, beforeRequest: {
                 try $0.content.encode(expected)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                model = try $0.content.decode(Industry.SerializedObject.self)
+                model = try $0.content.decode(Industry.DTO.self)
                 XCTAssertNotNil(model.id)
                 XCTAssertEqual(model.title, expected.title)
                 
@@ -331,23 +337,23 @@ extension Application {
     }
     
     @discardableResult
-    func requestJobExperience(_ data: Experience.SerializedObject? = nil) -> Experience.SerializedObject {
+    func requestJobExperience(_ data: Experience.DTO? = nil) -> Experience.DTO {
         
         guard data != nil || Self.meta.experience == nil else {
             return Self.meta.experience!
         }
-        var expected = data ?? Experience.SerializedObject.generate()
+        var expected = data ?? Experience.DTO.generate()
         if data == nil {
             expected.industries = [requestIndustry()]
         }
-        var model: Experience.SerializedObject = .init()
+        var model: Experience.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, Experience.schema, headers: login().headers, beforeRequest: {
                 try $0.content.encode(expected)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                model = try $0.content.decode(Experience.SerializedObject.self)
+                model = try $0.content.decode(Experience.DTO.self)
                 XCTAssertNotNil(model.id)
                 XCTAssertNotNil(model.userId)
                 XCTAssertEqual(model.title, expected.title)
@@ -369,19 +375,20 @@ extension Application {
     }
     
     @discardableResult
-    func requestEducation(_ data: Education.SerializedObject? = nil) -> Education.SerializedObject {
+    func requestEducation(_ data: Education.DTO? = nil) -> Education.DTO {
         guard data != nil || Self.meta.education == nil else {
             return Self.meta.education!
         }
-        let expected = data ?? Education.SerializedObject.generate()
-        var model: Education.SerializedObject = .init()
+        var expected = data ?? Education.DTO.generate()
+        expected.userId = login().user.id
+        var model: Education.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, Education.schema, headers: login().headers, beforeRequest: {
                 try $0.content.encode(expected)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                model = try $0.content.decode(Education.SerializedObject.self)
+                model = try $0.content.decode(Education.DTO.self)
                 XCTAssertNotNil(model.id)
                 XCTAssertNotNil(model.userId)
                 XCTAssertEqual(model.school, expected.school)
@@ -401,19 +408,19 @@ extension Application {
     }
     
     @discardableResult
-    func requestSocialNetworkingService(_ data: SocialNetworkingService.SerializedObject? = nil) -> SocialNetworkingService.SerializedObject {
+    func requestSocialNetworkingService(_ data: SocialNetworkingService.DTO? = nil) -> SocialNetworkingService.DTO {
         guard data != nil || Self.meta.socialNetworkingService == nil else {
             return Self.meta.socialNetworkingService!
         }
-        let expected = data ?? SocialNetworkingService.SerializedObject.generate()
-        var model: SocialNetworkingService.SerializedObject = .init()
+        let expected = data ?? SocialNetworkingService.DTO.generate()
+        var model: SocialNetworkingService.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, SocialNetworking.schema + "/services", headers: login().headers, beforeRequest: {
                 try $0.content.encode(expected)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                model = try $0.content.decode(SocialNetworkingService.SerializedObject.self)
+                model = try $0.content.decode(SocialNetworkingService.DTO.self)
                 XCTAssertNotNil(model.id)
                 XCTAssertEqual(model.type, expected.type)
                 
@@ -426,29 +433,30 @@ extension Application {
     }
     
     @discardableResult
-    func requestSocialNetworking(_ data: SocialNetworking.SerializedObject? = nil) -> SocialNetworking.SerializedObject {
+    func requestSocialNetworking(_ data: SocialNetworking.DTO? = nil) -> SocialNetworking.DTO {
         guard data != nil || Self.meta.socialNetworking == nil else {
             return Self.meta.socialNetworking!
         }
-        var expected = data ?? SocialNetworking.SerializedObject.generate()
+        var expected = data ?? SocialNetworking.DTO.generate()
+        
         if data == nil {
-            expected.service = requestSocialNetworkingService()
+            expected.serviceId = requestSocialNetworkingService().id
         }
         
-        var model: SocialNetworking.SerializedObject = .init()
+        var model: SocialNetworking.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, SocialNetworking.schema, headers: login().headers, beforeRequest: {
                 try $0.content.encode(expected)
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                model = try $0.content.decode(SocialNetworking.SerializedObject.self)
+                model = try $0.content.decode(SocialNetworking.DTO.self)
 
                 XCTAssertNotNil(model.id)
                 XCTAssertNotNil(model.userId)
                 XCTAssertEqual(model.url, expected.url)
                 XCTAssertNotNil(model.service)
-                XCTAssertEqual(model.service?.id, expected.service?.id)
+                XCTAssertEqual(model.service?.id, expected.serviceId)
                 
                 if Self.meta.socialNetworking == nil {
                     Self.meta.socialNetworking = model
@@ -460,14 +468,14 @@ extension Application {
     }
     
     @discardableResult
-    func requestProject(_ data: Project.SerializedObject? = nil) -> Project.SerializedObject {
+    func requestProject(_ data: Project.DTO? = nil) -> Project.DTO {
         
         guard data != nil || Self.meta.project == nil else {
             return Self.meta.project!
         }
-        let expected = data ?? Project.SerializedObject.generate()
+        let expected = data ?? Project.DTO.generate()
         
-        var model: Project.SerializedObject = .init()
+        var model: Project.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, Project.schema, headers: login().headers, beforeRequest: {
@@ -504,13 +512,13 @@ extension Application {
     }
     
     @discardableResult
-    func requestSkill(_ data: Skill.SerializedObject? = nil) -> Skill.SerializedObject {
+    func requestSkill(_ data: Skill.DTO? = nil) -> Skill.DTO {
         guard data != nil || Self.meta.skill == nil else {
             return Self.meta.skill!
         }
-        let expected = data ?? Skill.SerializedObject.generate()
+        let expected = data ?? Skill.DTO.generate()
         
-        var model: Skill.SerializedObject = .init()
+        var model: Skill.DTO = .init()
         
         XCTAssertNoThrow(
             try test(.POST, Skill.schema, headers: login().headers, beforeRequest: {
@@ -518,7 +526,7 @@ extension Application {
             }, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 
-                model = try $0.content.decode(Skill.SerializedObject.self)
+                model = try $0.content.decode(Skill.DTO.self)
 
                 XCTAssertNotNil(model.id)
                 XCTAssertEqual(model.professional, expected.professional)

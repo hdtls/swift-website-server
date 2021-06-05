@@ -167,6 +167,7 @@ class UserCollectionTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(user.education!.count, 1)
             XCTAssertGreaterThanOrEqual(user.experiences!.count, 1)
             XCTAssertGreaterThanOrEqual(user.blog!.count, 1)
+            XCTAssertNotNil(user.skill)
         })
     }
 
@@ -249,7 +250,7 @@ class UserCollectionTests: XCTestCase {
         try app.test(.GET, path + "/\(app.login().user.username)" + "/blog", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let serializedBlog = try $0.content.decode([Blog.SerializedObject].self).filter({ $0.id == blog.id }).first
+            let serializedBlog = try $0.content.decode([Blog.DTO].self).filter({ $0.id == blog.id }).first
 
             XCTAssertNotNil(serializedBlog)
             XCTAssertEqual(serializedBlog?.id, blog.id)
@@ -258,8 +259,6 @@ class UserCollectionTests: XCTestCase {
             XCTAssertEqual(serializedBlog?.artworkUrl, blog.artworkUrl)
             XCTAssertEqual(serializedBlog?.excerpt, blog.excerpt)
             XCTAssertEqual(serializedBlog?.tags, blog.tags)
-            XCTAssertEqual(serializedBlog?.createdAt, blog.createdAt)
-            XCTAssertEqual(serializedBlog?.updatedAt, blog.updatedAt)
             XCTAssertEqual(serializedBlog?.userId, blog.userId)
         })
     }

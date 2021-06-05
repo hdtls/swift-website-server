@@ -31,7 +31,7 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testCreate() {
-        var expected = Experience.SerializedObject.generate()
+        var expected = Experience.DTO.generate()
         expected.industries = [app.requestIndustry(.generate())]
         app.requestJobExperience(expected)
     }
@@ -42,22 +42,22 @@ class ExpCollectionTests: XCTestCase {
 
     func testQueryWithWorkID() throws {
         let exp = app.requestJobExperience()
-        try app.test(.GET, path + "/\(exp.id!.uuidString)", afterResponse: {
+        try app.test(.GET, path + "/\(exp.id.uuidString)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
-            let coding = try $0.content.decode(Experience.SerializedObject.self)
+            let coding = try $0.content.decode(Experience.DTO.self)
             XCTAssertEqual(coding, exp)
         })
     }
 
     func testUpdate() throws {
-        let upgrade = Experience.SerializedObject.generate()
+        let upgrade = Experience.DTO.generate()
 
-        try app.test(.PUT, path + "/" + app.requestJobExperience().id!.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/" + app.requestJobExperience().id.uuidString, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Experience.SerializedObject.self)
+            let coding = try $0.content.decode(Experience.DTO.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
@@ -78,6 +78,6 @@ class ExpCollectionTests: XCTestCase {
     func testDelete() throws {
         let exp = app.requestJobExperience(.generate())
 
-        try app.test(.DELETE, path + "/\(exp.id!.uuidString)", headers: app.login().headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(exp.id.uuidString)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

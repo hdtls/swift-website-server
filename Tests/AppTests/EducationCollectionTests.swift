@@ -40,7 +40,7 @@ class EducationCollectionTests: XCTestCase {
     func testQueryWithEduID() throws {
         let exp = app.requestEducation()
 
-        try app.test(.GET, path + "/" + exp.id!.uuidString, afterResponse: {
+        try app.test(.GET, path + "/" + exp.id.uuidString, afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(Education.Coding.self)
@@ -58,13 +58,13 @@ class EducationCollectionTests: XCTestCase {
 
     func testUpdate() throws {
         let exp = app.requestEducation()
-        let upgrade = Education.SerializedObject.generate()
+        let upgrade = Education.DTO.generate()
         
-        try app.test(.PUT, path + "/" + exp.id!.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/" + exp.id.uuidString, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Education.SerializedObject.self)
+            let coding = try $0.content.decode(Education.DTO.self)
 
             XCTAssertNotNil(coding.id)
             XCTAssertNotNil(coding.userId)
@@ -83,6 +83,6 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testDelete() throws {
-        try app.test(.DELETE, path + "/" + app.requestEducation(.generate()).id!.uuidString, headers: app.login().headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/" + app.requestEducation(.generate()).id.uuidString, headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

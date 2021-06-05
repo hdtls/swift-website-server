@@ -31,24 +31,14 @@ class SkillCollectionTests: XCTestCase {
         app.requestSkill(.generate())
     }
 
-    func testCreateWithoutProfessional() throws {
-        let json = ["workflow": ["xxx"]]
-        try app.test(.POST, path, headers: app.login().headers, beforeRequest: {
-            try $0.content.encode(json)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .badRequest)
-            XCTAssertContains($0.body.string, "Value required for key 'professional'")
-        })
-    }
-
     func testCreateWithoutWorkflow() throws {
-        var expected = Skill.SerializedObject.generate()
+        var expected = Skill.DTO.generate()
         expected.workflow = nil
         app.requestSkill(expected)
     }
 
     func testCreateWithInvalidDataType() throws {
-        let json = ["professional" : ""]
+        let json = ["id": "\(UUID())", "professional" : ""]
         try app.test(.POST, path, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(json)
         }, afterResponse: {
@@ -60,9 +50,9 @@ class SkillCollectionTests: XCTestCase {
     func testQuery() throws {
         let saved = app.requestSkill()
 
-        try app.test(.GET, path + "/\(saved.id!)", afterResponse: {
+        try app.test(.GET, path + "/\(saved.id)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Skill.SerializedObject.self)
+            let coding = try $0.content.decode(Skill.DTO.self)
 
             XCTAssertEqual(coding.id, saved.id)
             XCTAssertEqual(coding.professional, saved.professional)
@@ -78,11 +68,11 @@ class SkillCollectionTests: XCTestCase {
         var saved = app.requestSkill()
         saved.professional.append(.random(length: 12))
         
-        try app.test(.PUT, path + "/\(saved.id!)", headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(saved.id)", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(saved)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Skill.SerializedObject.self)
+            let coding = try $0.content.decode(Skill.DTO.self)
 
             XCTAssertEqual(coding.id, saved.id)
             XCTAssertEqual(coding.professional, saved.professional)
@@ -92,15 +82,15 @@ class SkillCollectionTests: XCTestCase {
 
     func testUpdateWithNoExistentID() throws {
         try app.test(.PUT, path + "/1", headers: app.login().headers, beforeRequest: {
-            try $0.content.encode(Skill.SerializedObject.generate())
-        }, afterResponse: assertHttpNotFound)
+            try $0.content.encode(Skill.DTO.generate())
+        }, afterResponse: assertHttpBadRequest)
     }
 
     func testDelete() throws {
-        try app.test(.DELETE, path + "/\(app.requestSkill(.generate()).id!)", headers: app.login().headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(app.requestSkill(.generate()).id)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 
     func testDeleteWithNonExistentID() throws {
-        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpBadRequest)
     }
 }

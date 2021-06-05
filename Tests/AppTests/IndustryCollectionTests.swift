@@ -23,8 +23,7 @@ class IndustryCollectionTests: XCTestCase {
     }
 
     func testCreateWithConflictIndustry() throws {
-        var industry = app.requestIndustry()
-        industry.id = nil
+        let industry = app.requestIndustry()
         
         try app.test(.POST, path, beforeRequest: {
             try $0.content.encode(industry)
@@ -41,7 +40,7 @@ class IndustryCollectionTests: XCTestCase {
     func testQueryWithID() throws {
         let industry = app.requestIndustry()
         
-        try app.test(.GET, path + "/\(industry.id!)", afterResponse: {
+        try app.test(.GET, path + "/\(industry.id)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             
             let coding = try $0.content.decode(Industry.Coding.self)
@@ -63,11 +62,11 @@ class IndustryCollectionTests: XCTestCase {
         var expected = app.requestIndustry(.generate())
         expected.title = .random(length: 7)
         
-        try app.test(.PUT, path + "/\(expected.id!)", beforeRequest: {
+        try app.test(.PUT, path + "/\(expected.id)", beforeRequest: {
             try $0.content.encode(expected)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
-            let coding = try $0.content.decode(Industry.SerializedObject.self)
+            let coding = try $0.content.decode(Industry.DTO.self)
             XCTAssertNotNil(coding.id)
             XCTAssertEqual(coding.title, expected.title)
         })
@@ -76,7 +75,7 @@ class IndustryCollectionTests: XCTestCase {
     func testDelete() throws {
         let industry = app.requestIndustry(.generate())
         
-        try app.test(.DELETE, path + "/\(industry.id!)", afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(industry.id)", afterResponse: assertHttpOk)
             .test(.DELETE, path + "/1", afterResponse: assertHttpNotFound)
     }
 }
