@@ -1,2 +1,478 @@
-#  <#Title#>
-
+{
+    "Blog": {
+        "schema": "blog",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "alias",
+                "type": "String"
+            },
+            {
+                "name": "title",
+                "type": "String"
+            },
+            {
+                "name": "excerpt",
+                "type": "String"
+            },
+            {
+                "name": "content",
+                "type": "String",
+                "codable": "String?"
+            },
+            {
+                "name": "artworkUrl",
+                "type": "String?"
+            },
+            {
+                "name": "tags",
+                "type": "[String]?"
+            },
+            {
+                "field_id": "Parent",
+                "name": "user",
+                "type": "User",
+                "codable": "User.DTO?"
+            },
+            {
+                "field_id": "Siblings",
+                "through": "Linker<BlogCategory, Blog>.self",
+                "parent_from_field": "$to",
+                "parent_to_field": "$from",
+                "name": "categories",
+                "type": "[BlogCategory]",
+                "codable": "[BlogCategory.DTO]"
+            }
+        ]
+    },
+    "BlogCategory": {
+        "schema": "blog_categories",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "name",
+                "type": "String"
+            },
+            {
+                "field_id": "Siblings",
+                "through": "Linker<BlogCategory, Blog>.self",
+                "parent_from_field": "$from",
+                "parent_to_field": "$to",
+                "name": "blog",
+                "type": "[Blog]",
+                "codable": "[Blog.DTO]?"
+            }
+        ]
+    },
+    "Education": {
+        "schema": "education",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "school",
+                "type": "String"
+            },
+            {
+                "name": "degree",
+                "type": "String"
+            },
+            {
+                "name": "field",
+                "type": "String"
+            },
+            {
+                "name": "startYear",
+                "type": "String?"
+            },
+            {
+                "name": "endYear",
+                "type": "String?"
+            },
+            {
+                "name": "grade",
+                "type": "String?"
+            },
+            {
+                "name": "activities",
+                "type": "[String]?"
+            },
+            {
+                "name": "accomplishments",
+                "type": "[String]?"
+            },
+            {
+                "name": "media",
+                "type": "String?"
+            },
+            {
+                "field_id": "Parent",
+                "name": "user",
+                "type": "User",
+                "codable": "User.DTO?"
+            }
+        ]
+    },
+    "Experience": {
+        "schema": "experiences",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "title",
+                "type": "String"
+            },
+            {
+                "name": "companyName",
+                "type": "String"
+            },
+            {
+                "name": "location",
+                "type": "String"
+            },
+            {
+                "name": "startDate",
+                "type": "String"
+            },
+            {
+                "name": "endDate",
+                "type": "String"
+            },
+            {
+                "name": "headline",
+                "type": "String?"
+            },
+            {
+                "name": "responsibilities",
+                "type": "[String]?"
+            },
+            {
+                "name": "media",
+                "type": "String?"
+            },
+            {
+                "field_id": "Parent",
+                "name": "user",
+                "type": "User",
+                "codable": "User.DTO?"
+            },
+            {
+                "field_id": "Siblings",
+                "through": "Linker<Industry, Experience>.self",
+                "parent_from_field": "$to",
+                "parent_to_field": "$from",
+                "name": "industries",
+                "type": "[Industry]",
+                "codable": "[Industry.DTO]"
+            }
+        ]
+    },
+    "Industry": {
+        "schema": "industries",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "title",
+                "type": "String",
+                "codable": "String?"
+            },
+            {
+                "field_id": "Siblings",
+                "through": "Linker<Industry, Experience>.self",
+                "parent_from_field": "$from",
+                "parent_to_field": "$to",
+                "name": "experience",
+                "type": "[Experience]",
+                "exclude_from_codable": true
+            }
+        ]
+    },
+    "Project": {
+        "schema": "projects",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "name",
+                "type": "String"
+            },
+            {
+                "name": "summary",
+                "type": "String"
+            },
+            {
+                "field_id": "Enum",
+                "name": "kind",
+                "type": "ProjKind"
+            },
+            {
+                "field_id": "Enum",
+                "name": "visibility",
+                "type": "ProjVisibility"
+            },
+            {
+                "name": "startDate",
+                "type": "String"
+            },
+            {
+                "name": "endDate",
+                "type": "String"
+            },
+            {
+                "name": "note",
+                "type": "String?"
+            },
+            {
+                "name": "artworkUrl",
+                "type": "String?"
+            },
+            {
+                "name": "backgroundImageUrl",
+                "type": "String?"
+            },
+            {
+                "name": "promoImageUrl",
+                "type": "String?"
+            },
+            {
+                "name": "trackViewUrl",
+                "type": "String?"
+            },
+            {
+                "name": "trackId",
+                "type": "String?"
+            },
+            {
+                "name": "genres",
+                "type": "[String]?"
+            },
+            {
+                "name": "screenshotUrls",
+                "type": "[String]?"
+            },
+            {
+                "name": "padScreenshotUrls",
+                "type": "[String]?"
+            },
+            {
+                "field_id": "Parent",
+                "name": "user",
+                "type": "User",
+                "codable": "User.DTO?"
+            }
+        ]
+    },
+    "Skill": {
+        "schema": "skills",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "professional",
+                "type": "[String]"
+            },
+            {
+                "name": "workflow",
+                "type": "[String]?"
+            },
+            {
+                "field_id": "Parent",
+                "name": "user",
+                "type": "User",
+                "exclude_from_codable": true
+            }
+        ]
+    },
+    "SocialNetworking": {
+        "schema": "social_networking",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "url",
+                "type": "String"
+            },
+            {
+                "field_id": "Parent",
+                "name": "user",
+                "type": "User",
+                "codable": "User.DTO?"
+            },
+            {
+                "field_id": "Parent",
+                "name": "service",
+                "type": "SocialNetworkingService",
+                "codable": "SocialNetworkingService.DTO?"
+            }
+        ]
+    },
+    "SocialNetworkingService": {
+        "schema": "social_networking_services",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "type",
+                "type": "ServiceType",
+                "codable": "ServiceType?"
+            },
+            {
+                "field_id": "Children",
+                "parent_field": "$service",
+                "name": "social",
+                "type": "[SocialNetworking]",
+                "exclude_from_codable": true
+            }
+        ]
+    },
+    "User": {
+        "schema": "users",
+        "codable": "Coding",
+        "properties": [
+            {
+                "field_id": "ID",
+                "name": "id",
+                "type": "UUID?",
+                "codable": "UUID"
+            },
+            {
+                "name": "username",
+                "type": "String"
+            },
+            {
+                "name": "pwd",
+                "type": "String",
+                "exclude_from_codable": true
+            },
+            {
+                "name": "firstName",
+                "type": "String"
+            },
+            {
+                "name": "lastName",
+                "type": "String"
+            },
+            {
+                "name": "avatarUrl",
+                "type": "String?"
+            },
+            {
+                "name": "phone",
+                "type": "String?"
+            },
+            {
+                "name": "emailAddress",
+                "type": "String?"
+            },
+            {
+                "name": "aboutMe",
+                "type": "String?"
+            },
+            {
+                "name": "location",
+                "type": "String?"
+            },
+            {
+                "name": "interests",
+                "type": "[String]?"
+            },
+            {
+                "field_id": "OptionalChild",
+                "parent_field": "$user",
+                "name": "skill",
+                "type": "Skill?",
+                "codable": "Skill.DTO?"
+            },
+            {
+                "field_id": "Children",
+                "parent_field": "$user",
+                "name": "tokens",
+                "type": "[Token]",
+                "exclude_from_codable": true
+            },
+            {
+                "field_id": "Children",
+                "parent_field": "$user",
+                "name": "social",
+                "type": "[SocialNetworking]",
+                "codable": "[SocialNetworking.DTO]?"
+            },
+            {
+                "field_id": "Children",
+                "parent_field": "$user",
+                "name": "projects",
+                "type": "[Project]",
+                "codable": "[Project.DTO]?"
+            },
+            {
+                "field_id": "Children",
+                "parent_field": "$user",
+                "name": "education",
+                "type": "[Education]",
+                "codable": "[Education.DTO]?"
+            },
+            {
+                "field_id": "Children",
+                "parent_field": "$user",
+                "name": "experiences",
+                "type": "[Experience]",
+                "codable": "[Experience.DTO]?"
+            },
+            {
+                "field_id": "Children",
+                "parent_field": "$user",
+                "name": "blog",
+                "type": "[Blog]",
+                "codable": "[Blog.DTO]?"
+            }
+        ]
+    }
+}
