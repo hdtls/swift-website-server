@@ -7,16 +7,18 @@ extension Skill {
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Skill.schema)
+            database.schema(schema)
                 .id()
-                .field(FieldKeys.professional.rawValue, .array(of: .string))
-                .field(FieldKeys.workflow.rawValue, .array(of: .string))
-                .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
+                .field(FieldKeys.professional, .array(of: .string))
+                .field(FieldKeys.workflow, .array(of: .string))
+                .field(FieldKeys.user, .uuid, .references(User.schema, .id))
+                .field(.createdAt, .datetime)
+                .field(.updatedAt, .datetime)
                 .create()
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Skill.schema).delete()
+            database.schema(schema).delete()
         }
     }
 }

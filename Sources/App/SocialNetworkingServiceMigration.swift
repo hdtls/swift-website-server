@@ -18,7 +18,9 @@ extension SocialNetworkingService {
                 .flatMap({
                     database.schema(SocialNetworkingService.schema)
                         .id()
-                        .field(FieldKeys.type.rawValue, $0, .required)
+                        .field(FieldKeys.type, $0, .required)
+                        .field(.createdAt, .datetime)
+                        .field(.updatedAt, .datetime)
                         .create()
                 })
         }

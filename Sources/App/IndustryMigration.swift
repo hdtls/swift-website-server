@@ -7,15 +7,17 @@ extension Industry {
     class Migration: Fluent.Migration {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Industry.schema)
+            database.schema(schema)
                 .id()
-                .field(FieldKeys.title.rawValue, .string, .required)
-                .unique(on: FieldKeys.title.rawValue)
+                .field(FieldKeys.title, .string, .required)
+                .unique(on: FieldKeys.title)
+                .field(.createdAt, .datetime)
+                .field(.updatedAt, .datetime)
                 .create()
         }
 
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Industry.schema).delete()
+            database.schema(schema).delete()
         }
     }
 }

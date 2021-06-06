@@ -9,8 +9,10 @@ extension BlogCategory {
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(BlogCategory.schema)
                 .id()
-                .field(FieldKeys.name.rawValue, .string, .required)
-                .unique(on: FieldKeys.name.rawValue)
+                .field(FieldKeys.name, .string, .required)
+                .unique(on: FieldKeys.name)
+                .field(.createdAt, .datetime)
+                .field(.updatedAt, .datetime)
                 .create()
         }
 
