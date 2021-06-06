@@ -11,26 +11,26 @@ protocol RestfulApiCollection: RouteCollection {
     var restfulIDKey: String { get }
 
     /// Create new model
-    /// This operation will decode request content with `T.SerializedObject` and transfer it to type `T`
+    /// This operation will decode request content with `T.DTO` and transfer it to type `T`
     /// then save to db after that a saved model reverted object will be return for user.
-    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject>
+    func create(_ req: Request) throws -> EventLoopFuture<T.DTO>
 
     /// Read model by given `id`.
     /// This operation will request model id as parameter, if db don't have a model type with `T`
     /// and id equal to `id` a `404 notFound` will be send to user, otherwise return model's
     /// reverted object to user.
-    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject>
+    func read(_ req: Request) throws -> EventLoopFuture<T.DTO>
 
     /// Read all model type with `T`.
     /// Query all models and return all model reverted object to user.
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]>
+    func readAll(_ req: Request) throws -> EventLoopFuture<[T.DTO]>
 
     /// Update a model with given `id`
     /// This operation will query model with `id` first, if there is no model return `404` error
     /// otherwise update that model with transfered new model, final return new model's reverted
     /// object to user.
     /// - warning: This operation will change db model value, be careful if you want do this.
-    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject>
+    func update(_ req: Request) throws -> EventLoopFuture<T.DTO>
 
     /// Delete a model with given `id`
     /// First this operation will query model with `id`, if there is no model with `id` `404`
@@ -65,14 +65,14 @@ protocol RestfulApiCollection: RouteCollection {
     func applyingEagerLoadersForQueryAll(_ builder: QueryBuilder<T>) -> QueryBuilder<T>
 
     /// Common update function.
-    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject>
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO>
 }
 
 extension RestfulApiCollection {
     var path: String { T.schema }
     var restfulIDKey: String { "id" }
 
-    func performUpdate(on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func performUpdate(on req: Request) throws -> EventLoopFuture<T.DTO> {
         try performUpdate(nil, on: req)
     }
 }
@@ -92,11 +92,11 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
         routes.on(.DELETE, path, use: delete)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func create(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         try performUpdate(on: req)
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func read(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         var builder = try specifiedIDQueryBuilder(on: req)
         builder = applyingFields(builder)
         builder = applyingEagerLoaders(builder)
@@ -107,7 +107,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
             .flatMapThrowing({ try $0.dataTransferObject() })
     }
 
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
+    func readAll(_ req: Request) throws -> EventLoopFuture<[T.DTO]> {
         var builder = T.query(on: req.db)
         builder = applyingFieldsForQueryAll(builder)
         builder = applyingEagerLoadersForQueryAll(builder)
@@ -117,7 +117,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
             .flatMapEachThrowing({ try $0.dataTransferObject() })
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         try specifiedIDQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort(.notFound))
@@ -164,8 +164,8 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
         applyingEagerLoaders(builder)
     }
 
-    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let coding = try req.content.decode(T.SerializedObject.self)
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {
+        let coding = try req.content.decode(T.DTO.self)
 
         var upgrade = T.init()
 
@@ -173,6 +173,7 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
             upgrade = try original.update(with: coding)
         } else {
             upgrade = try T.init(from: coding)
+            upgrade.id = nil
         }
 
         return upgrade.save(on: req.db)
@@ -182,76 +183,6 @@ extension RestfulApiCollection where T.IDValue: LosslessStringConvertible {
                 }
                 throw $0
             })
-            .flatMapThrowing({
-                try upgrade.dataTransferObject()
-            })
-    }
-}
-
-extension RestfulApiCollection where T: UserOwnable, T.IDValue: LosslessStringConvertible {
-
-    func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped(path.components(separatedBy: "/").map(PathComponent.constant))
-
-        routes.on(.GET, use: readAll)
-
-        let path  = PathComponent.parameter(restfulIDKey)
-
-        routes.on(.GET, path, use: read)
-
-        let trusted = routes.grouped([
-            User.authenticator(),
-            Token.authenticator(),
-            User.guardMiddleware()
-        ])
-
-        trusted.on(.POST, use: create)
-        trusted.on(.PUT, path, use: update)
-        trusted.on(.DELETE, path, use: delete)
-    }
-
-    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let userId = try req.auth.require(User.self).requireID()
-
-        return try specifiedIDQueryBuilder(on: req)
-            .filter(T.uidFieldKey, .equal, userId)
-            .first()
-            .unwrap(or: Abort(.notFound))
-            .flatMap({
-                do {
-                    return try self.performUpdate($0, on: req)
-                } catch {
-                    return req.eventLoop.makeFailedFuture(error)
-                }
-            })
-    }
-
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let userId = try req.auth.require(User.self).requireID()
-
-        return try specifiedIDQueryBuilder(on: req)
-            .filter(T.uidFieldKey, .equal, userId)
-            .first()
-            .unwrap(or: Abort(.notFound))
-            .flatMap({
-                $0.delete(on: req.db)
-            })
-            .transform(to: .ok)
-    }
-
-    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
-        let coding = try req.content.decode(T.SerializedObject.self)
-
-        var upgrade = T.init()
-
-        if let original = original {
-            upgrade = try original.update(with: coding)
-        } else {
-            upgrade = try T.init(from: coding)
-        }
-        upgrade._$user.id = try req.auth.require(User.self).requireID()
-
-        return upgrade.save(on: req.db)
             .flatMapThrowing({
                 try upgrade.dataTransferObject()
             })
