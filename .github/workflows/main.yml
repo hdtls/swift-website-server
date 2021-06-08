@@ -22,10 +22,12 @@ jobs:
     steps:
       - name: Check out test case
         uses: actions/checkout@v2
+      - name: Install python
+        run: apt -q update && apt -q dist-upgrade -y && apt install -y python rsync
       - name: Run tests with Thread Sanitizer
         env:
           MYSQL_HOST: mysql
-        run: swift test --enable-test-discovery --sanitize=thread
+        run: python build-script.py --test
 
   push_to_registry:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
