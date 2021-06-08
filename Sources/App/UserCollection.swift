@@ -48,10 +48,10 @@ class UserCollection: RestfulApiCollection {
     /// - seealso: `User.Creation` for more creation content info.
     /// - note: We make `username` unique so if the `username` already taken an `conflic` statu will be
     /// send to custom.
-    func create(_ req: Request) throws -> EventLoopFuture<User.SerializedObject> {
+    func create(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         try User.Creation.validate(content: req)
         
-        let user = try User.init(req.content.decode(User.Creation.self))
+        let user = try T.init(req.content.decode(User.Creation.self))
                 
         return user.save(on: req.db)
             .flatMapErrorThrowing({
@@ -67,7 +67,7 @@ class UserCollection: RestfulApiCollection {
     
     /// Query user with specified`userID`.
     /// - seealso: `readAll(_:)`
-    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func read(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         let supportedQueries = try req.query.decode(SupportedQueries.self)
 
         var builder = try specifiedIDQueryBuilder(on: req)
@@ -82,7 +82,7 @@ class UserCollection: RestfulApiCollection {
             })
     }
     
-    func readAll(_ req: Request) throws -> EventLoopFuture<[User.SerializedObject]> {
+    func readAll(_ req: Request) throws -> EventLoopFuture<[T.DTO]> {
         let supportedQueries = try req.query.decode(SupportedQueries.self)
 
         var builder = T.query(on: req.db)
@@ -98,7 +98,7 @@ class UserCollection: RestfulApiCollection {
 
     
     /// Update exists user with `User.Coding` which contain all properties that user need updated.
-    func update(_ req: Request) throws -> EventLoopFuture<User.Coding> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         let userId = try req.auth.require(User.self).requireID()
         let coding = try req.content.decode(User.Coding.self)
         
@@ -118,10 +118,10 @@ class UserCollection: RestfulApiCollection {
             })
     }
     
-    func patch(_ req: Request) throws -> EventLoopFuture<User.Coding> {
+    func patch(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         let userId = try req.auth.require(User.self).requireID()
         
-        return User.find(userId, on: req.db)
+        return T.find(userId, on: req.db)
             .unwrap(or: Abort.init(.notFound))
             .flatMap({ saved -> EventLoopFuture<User> in
                 do {
@@ -139,29 +139,29 @@ class UserCollection: RestfulApiCollection {
             })
     }
     
-    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<User> {
+    func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
         let builder = T.query(on: req.db)
         if let id = req.parameters.get(restfulIDKey, as: User.IDValue.self) {
             builder.filter(\._$id == id)
         } else if let id = req.parameters.get(restfulIDKey) {
-            builder.filter(User.FieldKeys.username.rawValue, .equal, id)
+            builder.filter(User.FieldKeys.username, .equal, id)
         } else {
-            throw Abort(.notFound)
+            throw Abort(.badRequest, reason: "Invalid value for key \(restfulIDKey).")
         }
         return builder
     }
     
     func applyingEagerLoaders(
-        _ builder: QueryBuilder<User>,
+        _ builder: QueryBuilder<T>,
         with supportedQueries: SupportedQueries
-    ) -> QueryBuilder<User> {
+    ) -> QueryBuilder<T> {
         applyingEagerLoadersForQueryAll(builder, with: supportedQueries)
     }
     
     func applyingEagerLoadersForQueryAll(
-        _ builder: QueryBuilder<User>,
+        _ builder: QueryBuilder<T>,
         with supportedQueries: SupportedQueries
-    ) -> QueryBuilder<User> {
+    ) -> QueryBuilder<T> {
         if supportedQueries.includeExperience ?? false {
             builder.with(\.$experiences) {
                 $0.with(\.$industries)
@@ -198,7 +198,7 @@ class UserCollection: RestfulApiCollection {
 
 // MARK: Blog
 extension UserCollection {
-    func readAllBlog(_ req: Request) throws -> EventLoopFuture<[Blog.SerializedObject]> {
+    func readAllBlog(_ req: Request) throws -> EventLoopFuture<[Blog.DTO]> {
         try specifiedIDQueryBuilder(on: req)
             .first()
             .unwrap(or: Abort(.notFound))
@@ -215,7 +215,7 @@ extension UserCollection {
 
 // MARK: CV
 extension UserCollection {
-    func readResume(_ req: Request) throws -> EventLoopFuture<User.SerializedObject> {
+    func readResume(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         try specifiedIDQueryBuilder(on: req)
             .with(\.$projects)
             .with(\.$education)
@@ -236,8 +236,8 @@ extension UserCollection {
 
 // MARK: Social Networking
 extension UserCollection {
-    func createSocialNetworking(_ request: Request) throws -> EventLoopFuture<SocialNetworking.Coding> {
-        let serializedObject = try request.content.decode(SocialNetworking.Coding.self)
+    func createSocialNetworking(_ request: Request) throws -> EventLoopFuture<SocialNetworking.DTO> {
+        let serializedObject = try request.content.decode(SocialNetworking.DTO.self)
         
         let model = try SocialNetworking(from: serializedObject)
         model.$user.id = try request.auth.require(User.self).requireID()
