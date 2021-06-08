@@ -1,7 +1,7 @@
 import Vapor
 import FluentMySQLDriver
 
-class BlogCategoryCollection: RestfulApiCollection {
+class BlogCategoryCollection: ApiCollection {
     typealias T = BlogCategory
     
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {

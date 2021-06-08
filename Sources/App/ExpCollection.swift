@@ -1,14 +1,32 @@
 import Vapor
 import Fluent
 
-class ExpCollection: RestfulApiCollection {
+class ExpCollection: ApiCollection {
     typealias T = Experience
+    
+    func boot(routes: RoutesBuilder) throws {
+        let routes = routes.grouped(path.components(separatedBy: "/").map(PathComponent.constant))
+        
+        routes.on(.GET, use: readAll)
+        
+        routes.on(.GET, .parameter(restfulIDKey), use: read)
+        
+        let trusted = routes.grouped([
+            User.authenticator(),
+            Token.authenticator(),
+            User.guardMiddleware()
+        ])
+        
+        trusted.on(.POST, use: create)
+        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
+        trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
+    }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         let userId = try req.auth.require(User.self).requireID()
 
         return try specifiedIDQueryBuilder(on: req)
-            .filter(T.uidFieldKey, .equal, userId)
+            .filter(\.$user.$id == userId)
             .with(\.$industries)
             .first()
             .unwrap(orError: Abort(.notFound))
@@ -21,7 +39,7 @@ class ExpCollection: RestfulApiCollection {
             })
     }
 
-    func applyingEagerLoaders(_ builder: QueryBuilder<Experience>) -> QueryBuilder<Experience> {
+    func applyingEagerLoaders(_ builder: QueryBuilder<T>) -> QueryBuilder<T> {
         builder.with(\.$industries)
     }
 
@@ -38,19 +56,11 @@ class ExpCollection: RestfulApiCollection {
             .map({ .ok })
     }
 
-    func performUpdate(_ original: Experience?, on req: Request) throws -> EventLoopFuture<Experience.Coding> {
-
-        let serializedObject = try req.content.decode(T.SerializedObject.self)
-
-        let industries: [Industry] = try serializedObject.industries.map({
-            // Model's `id` field is optional by default, but
-            // required by create relation of `experience` and `industry`, so we will
-            // add additional check to make sure it have `id` to attach with.
-            guard $0.id != nil else {
-                throw Abort(.badRequest, reason: "Value required for key: 'industries.id'")
-            }
-            return try .init(from: $0)
-        })
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {
+        var serializedObject = try req.content.decode(T.DTO.self)
+        serializedObject.userId = try req.auth.require(User.self).requireID()
+        
+        let industries: [Industry] = try serializedObject.industries.map(Industry.init)
 
         var upgrade = T.init()
 
@@ -59,7 +69,6 @@ class ExpCollection: RestfulApiCollection {
         } else {
             upgrade = try T.init(from: serializedObject)
         }
-        upgrade.$user.id = try req.auth.require(User.self).requireID()
 
         return upgrade.save(on: req.db)
             .flatMap({

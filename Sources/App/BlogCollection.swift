@@ -2,15 +2,14 @@ import Vapor
 import FluentKit
 import FluentMySQLDriver
 
-class BlogCollection: RestfulApiCollection {
+class BlogCollection: ApiCollection {
     typealias T = Blog
 
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(.constant(path))
 
-        let path = PathComponent.parameter(restfulIDKey)
         routes.on(.GET, use: readAll)
-        routes.on(.GET, path, use: read)
+        routes.on(.GET, .parameter(restfulIDKey), use: read)
 
         routes.group("categories") { (builder) in
             builder.on(.GET, use: readBlogCategories)
@@ -24,11 +23,11 @@ class BlogCollection: RestfulApiCollection {
         ])
 
         trusted.on(.POST, use: create)
-        trusted.on(.PUT, path, use: update)
-        trusted.on(.DELETE, path, use: delete)
+        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
+        trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func read(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         var model: T!
 
         var builder = try specifiedIDQueryBuilder(on: req)
@@ -50,7 +49,7 @@ class BlogCollection: RestfulApiCollection {
             })
     }
 
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.SerializedObject]> {
+    func readAll(_ req: Request) throws -> EventLoopFuture<[T.DTO]> {
         struct SupportedQueries: Decodable {
             var categories: String?
         }
@@ -72,11 +71,11 @@ class BlogCollection: RestfulApiCollection {
             })
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         let userId = try req.auth.require(User.self).requireID()
 
         return try specifiedIDQueryBuilder(on: req)
-            .filter(T.uidFieldKey, .equal, userId)
+            .filter(\.$user.$id == userId)
             .with(\.$categories)
             .first()
             .unwrap(orError: Abort(.notFound))
@@ -93,7 +92,7 @@ class BlogCollection: RestfulApiCollection {
         let userId = try req.auth.require(User.self).requireID()
 
         return try specifiedIDQueryBuilder(on: req)
-            .filter(T.uidFieldKey, .equal, userId)
+            .filter(\.$user.$id == userId)
             .with(\.$categories)
             .first()
             .unwrap(orError: Abort(.notFound))
@@ -136,10 +135,11 @@ class BlogCollection: RestfulApiCollection {
         builder.with(\.$categories)
     }
 
-    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.SerializedObject> {
+    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {
 
-        let serializedObject = try req.content.decode(T.SerializedObject.self)
-
+        var serializedObject = try req.content.decode(T.DTO.self)
+        serializedObject.userId = try req.auth.require(User.self).requireID()
+        
         // Make sure this blog has content
         guard let article = serializedObject.content else {
             throw Abort(.unprocessableEntity, reason: "Value required for key 'content'.")
@@ -147,7 +147,7 @@ class BlogCollection: RestfulApiCollection {
 
         let content = article
 
-        let categories = serializedObject.categories
+        let categories = try serializedObject.categories.map(BlogCategory.init)
 
         var blog: T
 
@@ -158,9 +158,9 @@ class BlogCollection: RestfulApiCollection {
             blog = try original.update(with: serializedObject)
         } else {
             blog = try T.init(from: serializedObject)
+            blog.id = nil
             originalBlogAlias = blog.alias
         }
-        blog.$user.id = try req.auth.require(User.self).requireID()
 
         return blog.save(on: req.db)
         .flatMapErrorThrowing({
@@ -175,7 +175,7 @@ class BlogCollection: RestfulApiCollection {
             }
             return req.fileio.writeFile(.init(string: content), path: self._filepath(req, alias: blog.alias), relative: "")
                 .map({
-                    blog.contentUrl = $0
+                    blog.content = $0
                 })
         })
         .flatMap({ () -> EventLoopFuture<[BlogCategory]> in

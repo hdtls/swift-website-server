@@ -3,10 +3,6 @@ import Vapor
 /// Register your application's routes here.
 public func routes(_ app: Application) throws {
 
-    if app.environment != .production {
-        try app.register(collection: ApiCollection.init())
-    }
-    
     try app.register(collection: FileCollection.init(type: .files))
     try app.register(collection: FileCollection.init(type: .images))
     try app.register(collection: UserCollection.init())

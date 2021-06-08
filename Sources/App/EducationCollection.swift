@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-class EducationCollection: RestfulApiCollection {
+class EducationCollection: ApiCollection {
     
     typealias T = Education
     

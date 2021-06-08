@@ -1,7 +1,7 @@
 import Vapor
 import FluentMySQLDriver
 
-class UserCollection: RestfulApiCollection {
+class UserCollection: ApiCollection {
     
     typealias T = User
     

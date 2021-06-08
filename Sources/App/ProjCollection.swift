@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-class ProjCollection: RestfulApiCollection {
+class ProjCollection: ApiCollection {
     
     typealias T = Project
     

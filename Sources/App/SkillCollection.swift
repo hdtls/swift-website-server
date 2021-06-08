@@ -1,7 +1,7 @@
 import Vapor
 import Fluent
 
-class SkillCollection: RestfulApiCollection {
+class SkillCollection: ApiCollection {
 
     typealias T = Skill
     
