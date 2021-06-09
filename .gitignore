@@ -8,3 +8,4 @@ DerivedData
 .*.sw?
 *.pyc
 Package.resolved
+gyb
