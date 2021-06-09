@@ -3,10 +3,13 @@
 # ================================
 FROM swift:latest as builder
 
+ARG testability=--release
+
 # Install OS updates and, if needed, sqlite3
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q update \
     && apt-get -q dist-upgrade -y \
+    && apt-get install -y python rsync \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up a build area
@@ -22,8 +25,9 @@ RUN swift package resolve
 # Copy entire repo into container
 COPY . .
 
-# Build everything, with optimizations and test discovery
-RUN swift build -c release
+# Build testing, with optimizations and test discovery
+#RUN swift build --enable-test-discovery -c release
+RUN python build-script.py $testability
 
 # Makedir
 # RUN mkdir -p Public Resources
@@ -36,8 +40,8 @@ RUN cp "$(swift build --package-path /build -c release --show-bin-path)/Run" ./
 
 # Uncomment the next line if you need to load resources from the `Public` directory.
 # Ensure that by default, neither the directory nor any of its contents are writable.
-# RUN mv /build/Public Public && mv /build/Resources Resources
-RUN mv /build/docs docs
+# RUN mv /build/Public Public
+RUN mv /build/Resources Resources
 
 # ================================
 # Run image
@@ -66,5 +70,5 @@ USER vapor:vapor
 EXPOSE 8080
 
 # Start the Vapor service when the image is run, default to listening on 8080 in production environment
-ENTRYPOINT ["./Run"]
+ENTRYPOINT ["/app/Run"]
 CMD ["serve", "--env", "production", "--hostname", "0.0.0.0", "--port", "8080"]
