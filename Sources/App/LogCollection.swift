@@ -1,36 +1,49 @@
 import Vapor
 
 class LogCollection: RouteCollection {
-
+    
     func boot(routes: RoutesBuilder) throws {
-        routes.grouped(User.authenticator()).on(.POST, "login", use: logIn(_:))
-        routes.grouped(
+        let routes = routes.grouped([
+            User.authenticator()
+        ])
+        
+        let authorize = routes.grouped("authorize")
+        authorize.on(.POST, "basic", use: authWithBasic)
+        
+        let trusted = routes.grouped([
             Token.authenticator(),
-            User.authenticator(),
+            Token.guardMiddleware(),
             User.guardMiddleware()
-        ).on(.POST, "logout", use: logOut(_:))
+        ])
+        trusted.on(.DELETE, "unauthorized", use: unauthorized)
     }
-
-    func logIn(_ req: Request) throws -> EventLoopFuture<AuthorizeMsg> {
-        let user = try req.auth.require(User.self)
-        let token = try Token.init(user)
-
-        return token.save(on: req.db)
+    
+    func authWithBasic(_ request: Request) throws -> EventLoopFuture<AuthorizedMsg> {
+        if request.auth.has(User.self) && request.auth.has(Token.self) {
+                // If user already logged in, just return authorized msg.
+            let user = try request.auth.require(User.self)
+            let token = try request.auth.require(Token.self)
+            return try request.eventLoop.makeSucceededFuture(AuthorizedMsg(user: user, token: token))
+        } else {
+            let user = try request.auth.require(User.self)
+            let token = try Token.init(user)
+            return token.save(on: request.db)
+                .flatMapThrowing({
+                    request.auth.login(user)
+                    request.auth.login(token)
+                    return try AuthorizedMsg(user: user, token: token)
+                })
+        }
+    }
+    
+    func unauthorized(_ request: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+        try request.auth.require(Token.self)
+            .delete(on: request.db)
             .map({
-                req.auth.login(token)
+                request.auth.logout(User.self)
+                request.auth.logout(Token.self)
+                return .ok
             })
-        .flatMapThrowing({
-            try AuthorizeMsg.init(user: user.dataTransferObject(), token: token)
-        })
     }
-
-    func logOut(_ req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
-        try req.auth.require(Token.self)
-            .delete(on: req.db)
-            .map({
-                req.auth.logout(Token.self)
-                req.auth.logout(User.self)
-            })
-            .map({ .ok })
-    }
+    
 }

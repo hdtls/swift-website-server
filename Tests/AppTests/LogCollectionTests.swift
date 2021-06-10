@@ -3,7 +3,7 @@ import XCTVapor
 
 class LogCollectionTests: XCTestCase {
 
-    let path = "login"
+    let path = "authorize/basic"
     var app: Application!
     
     override func setUpWithError() throws {

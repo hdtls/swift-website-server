@@ -224,9 +224,9 @@ extension Application {
         var identityTokenString = ""
         
         XCTAssertNoThrow(
-            try test(.POST, "login", headers: headers, afterResponse: {
+            try test(.POST, "authorize/basic", headers: headers, afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                identityTokenString = try $0.content.decode(AuthorizeMsg.self).accessToken
+                identityTokenString = try $0.content.decode(AuthorizedMsg.self).identityTokenString
             })
         )
         
@@ -244,7 +244,7 @@ extension Application {
         }
         
         XCTAssertNoThrow(
-            try test(.POST, "logout", headers: loggedInMsg.headers, afterResponse: assertHttpOk)
+            try test(.DELETE, "unauthorized", headers: loggedInMsg.headers, afterResponse: assertHttpOk)
         )
         
         Self.meta.loggedInMsg = nil
