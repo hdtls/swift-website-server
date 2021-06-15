@@ -360,9 +360,9 @@
                 "codable": "Int"
             },
             {
-                "name": "type",
-                "type": "ServiceType",
-                "codable": "ServiceType?"
+                "name": "name",
+                "type": "String",
+                "codable": "String?"
             },
             {
                 "field_id": "Children",

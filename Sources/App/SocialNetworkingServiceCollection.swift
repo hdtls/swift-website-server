@@ -9,9 +9,6 @@ class SocialNetworkingServiceCollection: ApiCollection {
 
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {
         let coding = try req.content.decode(T.DTO.self)
-        guard coding.type != nil else {
-            throw Abort.init(.badRequest, reason: "Value required for key 'type'")
-        }
         
         var upgrade = T.init()
 
