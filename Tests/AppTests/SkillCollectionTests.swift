@@ -21,7 +21,7 @@ class SkillCollectionTests: XCTestCase {
     func testAuthorizeRequire() throws {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path + "/1", afterResponse: assertHttpNotFound)
+                .test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
                 .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
                 .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
         )
@@ -61,7 +61,7 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testQueryWithNonExistentID() throws {
-        try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
+        try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testUpdate() throws {
@@ -83,7 +83,7 @@ class SkillCollectionTests: XCTestCase {
     func testUpdateWithNoExistentID() throws {
         try app.test(.PUT, path + "/1", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(Skill.DTO.generate())
-        }, afterResponse: assertHttpBadRequest)
+        }, afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testDelete() throws {
@@ -91,6 +91,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testDeleteWithNonExistentID() throws {
-        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpBadRequest)
+        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 }

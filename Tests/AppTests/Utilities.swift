@@ -146,6 +146,10 @@ func assertHttpBadRequest(_ response: XCTHTTPResponse) throws {
     XCTAssertEqual(response.status, .badRequest)
 }
 
+func assertHttpUnprocessableEntity(_ response: XCTHTTPResponse) throws {
+    XCTAssertEqual(response.status, .unprocessableEntity)
+}
+
 
 extension Application {
     

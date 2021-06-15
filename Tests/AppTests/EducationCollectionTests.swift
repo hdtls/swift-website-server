@@ -34,7 +34,7 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidEduID() {
-        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
+        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity))
     }
 
     func testQueryWithEduID() throws {
@@ -79,7 +79,7 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalideduID() throws {
-        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testDelete() throws {

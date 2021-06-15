@@ -141,9 +141,7 @@ extension ApiCollection where T.IDValue: LosslessStringConvertible {
     }
 
     func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort.init(.notFound)
-        }
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
         return T.query(on: req.db)
             .filter(\._$id == id)
     }

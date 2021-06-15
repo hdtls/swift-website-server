@@ -35,7 +35,7 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidID() {
-        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound))
+        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity))
     }
 
     func testQueryWithSocialID() throws {
@@ -74,6 +74,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
             XCTAssertEqual($0.status, .ok)
         }).test(.DELETE, path + "/\(socialNetworking.id)", headers: app.login().headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
-        }).test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpBadRequest)
+        }).test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 }

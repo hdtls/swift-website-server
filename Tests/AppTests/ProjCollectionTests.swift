@@ -67,7 +67,7 @@ class ProjCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidWorkID() throws {
-        try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
+        try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testQueryWithWorkID() throws {
@@ -128,7 +128,7 @@ class ProjCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidWorkID() throws {
-        try app.test(.DELETE, path + "/" + "1", headers: app.login().headers, afterResponse: assertHttpBadRequest)
+        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testDelete() throws {

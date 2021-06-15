@@ -23,7 +23,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidID() throws {
-        try app.test(.GET, path + "/1", afterResponse: assertHttpNotFound)
+        try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testQueryWithServiceID() throws {
@@ -55,7 +55,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidServiceID() throws {
-        try app.test(.DELETE, path + "/1", afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/1", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testDelete() throws {
