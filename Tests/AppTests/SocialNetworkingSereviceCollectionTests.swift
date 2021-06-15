@@ -33,7 +33,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(SocialNetworkingService.Coding.self)
             XCTAssertEqual(coding.id, service.id)
-            XCTAssertEqual(coding.type, service.type)
+            XCTAssertEqual(coding.name, service.name)
         })
     }
 
@@ -41,7 +41,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
         let service = app.requestSocialNetworkingService(.generate())
                 
         var copy = SocialNetworkingService.Coding.init()
-        copy.type = .facebook
+        copy.name = .random(length: 8)
 
         try app.test(.PUT, path + "/\(service.id)", beforeRequest: {
             try $0.content.encode(copy)
@@ -50,7 +50,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
 
             let coding = try $0.content.decode(SocialNetworkingService.Coding.self)
             XCTAssertEqual(coding.id, service.id)
-            XCTAssertEqual(coding.type, copy.type)
+            XCTAssertEqual(coding.name, copy.name)
         })
     }
 

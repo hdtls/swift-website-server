@@ -63,7 +63,7 @@ extension SocialNetworkingService.DTO {
     static func generate() -> SocialNetworkingService.DTO {
         var expected = SocialNetworkingService.DTO.init()
         expected.id = .init()
-        expected.type = SocialNetworkingService.ServiceType.allCases.randomElement()
+        expected.name = .random(length: 5)
         return expected
     }
 }
@@ -426,7 +426,7 @@ extension Application {
                 XCTAssertEqual($0.status, .ok)
                 model = try $0.content.decode(SocialNetworkingService.DTO.self)
                 XCTAssertNotNil(model.id)
-                XCTAssertEqual(model.type, expected.type)
+                XCTAssertEqual(model.name, expected.name)
                 
                 if Self.meta.socialNetworkingService == nil {
                     Self.meta.socialNetworkingService = model
