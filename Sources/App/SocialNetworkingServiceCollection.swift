@@ -19,6 +19,7 @@ class SocialNetworkingServiceCollection: ApiCollection {
             upgrade = try original.update(with: coding)
         } else {
             upgrade = try T.init(from: coding)
+            upgrade.id = nil
         }
 
         return upgrade.save(on: req.db)

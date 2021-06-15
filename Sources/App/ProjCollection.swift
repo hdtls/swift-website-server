@@ -6,10 +6,9 @@ class ProjCollection: ApiCollection {
     typealias T = Project
     
     func boot(routes: RoutesBuilder) throws {
-        let routes = routes.grouped(path.components(separatedBy: "/").map(PathComponent.constant))
+        let routes = routes.grouped(.constant(T.schema))
         
         routes.on(.GET, use: readAll)
-        
         routes.on(.GET, .parameter(restfulIDKey), use: read)
         
         let trusted = routes.grouped([
@@ -39,18 +38,15 @@ class ProjCollection: ApiCollection {
     }
     
     func update(_ req: Request) throws -> EventLoopFuture<T.Coding> {
-        let user = try req.auth.require(User.self)
         
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.badRequest, reason: "Invalid id key.")
-        }
+        let user = try req.auth.require(User.self)
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
         
         var model = try req.content.decode(T.DTO.self)
         model.userId = try user.requireID()
         
-        return T.query(on: req.db)
+        return user.$projects.query(on: req.db)
             .filter(\.$id == id)
-            .filter(\.$user.$id == user.id!)
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMap({ exist -> EventLoopFuture<T> in
@@ -67,16 +63,11 @@ class ProjCollection: ApiCollection {
             })
     }
     
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    func delete(_ req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
         let user = try req.auth.require(User.self)
-        
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.badRequest, reason: "Invalid id key.")
-        }
-        
-        return T.query(on: req.db)
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
+        return user.$projects.query(on: req.db)
             .filter(\.$id == id)
-            .filter(\.$user.$id == user.id!)
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMap({

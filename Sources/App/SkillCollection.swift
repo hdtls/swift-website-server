@@ -38,16 +38,12 @@ class SkillCollection: ApiCollection {
     
     func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
         let user = try req.auth.require(User.self)
-        
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.badRequest, reason: "Invalid id key.")
-        }
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
         
         let model = try req.content.decode(T.DTO.self)
         
-        return T.query(on: req.db)
+        return user.$skill.query(on: req.db)
             .filter(\.$id == id)
-            .filter(\.$user.$id == user.id!)
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMap({ exist -> EventLoopFuture<T> in
@@ -66,14 +62,10 @@ class SkillCollection: ApiCollection {
     
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.auth.require(User.self)
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
         
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.badRequest, reason: "Invalid id key.")
-        }
-        
-        return T.query(on: req.db)
+        return user.$skill.query(on: req.db)
             .filter(\.$id == id)
-            .filter(\.$user.$id == user.id!)
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMap({

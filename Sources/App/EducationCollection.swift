@@ -23,24 +23,27 @@ class EducationCollection: ApiCollection {
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
     
-    func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
-        let userId = try req.auth.require(User.self).requireID()
-        
-        return try specifiedIDQueryBuilder(on: req)
-            .filter(\.$user.$id == userId)
+    func update(_ request: Request) throws -> EventLoopFuture<T.DTO> {
+        let user = try request.auth.require(User.self)
+        let id = try request.parameters.require(restfulIDKey, as: T.IDValue.self)
+        return user.$education.query(on: request.db)
+            .filter(\.$id == id)
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMap({
                 do {
-                    return try self.performUpdate($0, on: req)
+                    return try self.performUpdate($0, on: request)
                 } catch {
-                    return req.eventLoop.makeFailedFuture(error)
+                    return request.eventLoop.makeFailedFuture(error)
                 }
             })
     }
     
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try specifiedIDQueryBuilder(on: req)
+        let user = try req.auth.require(User.self)
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
+        return user.$education.query(on: req.db)
+            .filter(\.$id == id)
             .first()
             .unwrap(or: Abort.init(.notFound))
             .flatMap({
@@ -59,6 +62,7 @@ class EducationCollection: ApiCollection {
             upgrade = try original.update(with: serializedObject)
         } else {
             upgrade = try T.init(from: serializedObject)
+            upgrade.id = nil
         }
         
         return upgrade.save(on: req.db)

@@ -68,6 +68,7 @@ class ExpCollection: ApiCollection {
             upgrade = try original.update(with: serializedObject)
         } else {
             upgrade = try T.init(from: serializedObject)
+            upgrade.id = nil
         }
 
         return upgrade.save(on: req.db)

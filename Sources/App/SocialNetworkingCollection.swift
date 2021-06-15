@@ -24,15 +24,11 @@ class SocialNetworkingCollection: ApiCollection {
     }
     
     func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
-        let userId = try req.auth.require(User.self).requireID()
+        let user = try req.auth.require(User.self)
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
         
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.badRequest, reason: "Invalid id key \(restfulIDKey).")
-        }
-        
-        return T.query(on: req.db)
+        return user.$social.query(on: req.db)
             .filter(\.$id == id)
-            .filter(\.$user.$id == userId)
             .first()
             .unwrap(orError: Abort(.notFound))
             .flatMap({
@@ -45,15 +41,12 @@ class SocialNetworkingCollection: ApiCollection {
     }
     
     func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let userId = try req.auth.require(User.self).requireID()
+        let user = try req.auth.require(User.self)
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
+
         
-        guard let id = req.parameters.get(restfulIDKey, as: T.IDValue.self) else {
-            throw Abort(.badRequest, reason: "Invalid id key \(restfulIDKey).")
-        }
-        
-        return T.query(on: req.db)
+        return user.$social.query(on: req.db)
             .filter(\.$id == id)
-            .filter(\.$user.$id == userId)
             .first()
             .unwrap(or: Abort(.notFound))
             .flatMap({
