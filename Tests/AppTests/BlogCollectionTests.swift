@@ -189,7 +189,7 @@ class BlogCollectionTests: XCTestCase {
     }
     
     func testDeleteWithIDThatDoesNotExsit() throws {
-        try app.test(.DELETE, path + "/" + "1", headers: app.login().headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, path + "/" + "0", headers: app.login().headers, afterResponse: assertHttpNotFound)
     }
     
     func testDelete() throws {
