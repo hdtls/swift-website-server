@@ -92,7 +92,7 @@ class UserCollectionTests: XCTestCase {
     
     func testQueryWithUserIDThatDoesNotExsit() throws {
         try app.test(.GET, path + "/notfound", afterResponse: assertHttpNotFound)
-            .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
+            .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
     }
     
     func testQueryWithUserID() throws {

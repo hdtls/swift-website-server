@@ -10,9 +10,9 @@ extension Linker {
         
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(schema)
-                .id()
-                .field("from", .uuid, .references(From.schema, .id))
-                .field("to", .uuid, .references(To.schema, .id))
+                .field(.id, .int, .identifier(auto: true))
+                .field("from", .int, .references(From.schema, .id))
+                .field("to", .int, .references(To.schema, .id))
                 .create()
         }
         

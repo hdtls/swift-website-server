@@ -8,7 +8,7 @@ extension BlogCategory {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(BlogCategory.schema)
-                .id()
+                .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.name, .string, .required)
                 .unique(on: FieldKeys.name)
                 .field(.createdAt, .datetime)

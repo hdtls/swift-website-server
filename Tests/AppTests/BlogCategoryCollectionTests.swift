@@ -43,7 +43,7 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testQueryWithIDThatDoesNotExsit() throws {
-        try app.test(.GET, T.schema + "/\(UUID().uuidString)", afterResponse: assertHttpNotFound)
+        try app.test(.GET, T.schema + "/0", afterResponse: assertHttpNotFound)
     }
 
     func testQueryWithID() throws {
@@ -81,7 +81,7 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testDeleteWithIDThatDoesNotExsit() throws {
-        try app.test(.DELETE, BlogCategory.schema + "/\(UUID())", headers: app.login().headers, afterResponse: assertHttpNotFound)
+        try app.test(.DELETE, BlogCategory.schema + "/0", headers: app.login().headers, afterResponse: assertHttpNotFound)
     }
 
     func testDeleteWithID() throws {

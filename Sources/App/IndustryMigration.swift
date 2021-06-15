@@ -8,7 +8,7 @@ extension Industry {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(schema)
-                .id()
+                .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.title, .string, .required)
                 .unique(on: FieldKeys.title)
                 .field(.createdAt, .datetime)

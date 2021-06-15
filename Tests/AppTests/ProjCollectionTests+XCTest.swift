@@ -12,7 +12,6 @@ extension ProjCollectionTests {
     static var allTests: [(String, (ProjCollectionTests) -> () throws -> Void)] {
         return [
             ("testAuthorizeRequire", testAuthorizeRequire),
-            ("testInvalidCreate", testInvalidCreate),
             ("testCreate", testCreate),
             ("testQueryWithInvalidWorkID", testQueryWithInvalidWorkID),
             ("testQueryWithWorkID", testQueryWithWorkID),

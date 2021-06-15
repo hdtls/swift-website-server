@@ -21,7 +21,7 @@ class SkillCollectionTests: XCTestCase {
     func testAuthorizeRequire() throws {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
+                .test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
                 .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
                 .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
         )
@@ -38,12 +38,11 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testCreateWithInvalidDataType() throws {
-        let json = ["id": "\(UUID())", "professional" : ""]
+        let json = ["id": "0", "professional" : ""]
         try app.test(.POST, path, headers: app.login().headers, beforeRequest: {
             try $0.content.encode(json)
         }, afterResponse: {
             XCTAssertEqual($0.status, .badRequest)
-            XCTAssertContains($0.body.string, "Value of type 'Array<Any>' required for key 'professional'")
         })
     }
 
@@ -60,8 +59,8 @@ class SkillCollectionTests: XCTestCase {
         })
     }
 
-    func testQueryWithNonExistentID() throws {
-        try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
+    func testQueryWithInvalidID() throws {
+        try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testUpdate() throws {
@@ -80,8 +79,8 @@ class SkillCollectionTests: XCTestCase {
         })
     }
 
-    func testUpdateWithNoExistentID() throws {
-        try app.test(.PUT, path + "/1", headers: app.login().headers, beforeRequest: {
+    func testUpdateWithInvalidID() throws {
+        try app.test(.PUT, path + "/invalid", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(Skill.DTO.generate())
         }, afterResponse: assertHttpUnprocessableEntity)
     }
@@ -90,7 +89,7 @@ class SkillCollectionTests: XCTestCase {
         try app.test(.DELETE, path + "/\(app.requestSkill(.generate()).id)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 
-    func testDeleteWithNonExistentID() throws {
-        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
+    func testDeleteWithInvalidID() throws {
+        try app.test(.DELETE, path + "/invalid", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 }

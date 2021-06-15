@@ -20,13 +20,11 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testAuthorizeRequire() {
-        let uuid = UUID.init().uuidString
-
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-            .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
-            .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
+            .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
+            .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
+            .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
         )
     }
 
@@ -37,12 +35,12 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidWorkID() {
-        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity))
+        XCTAssertNoThrow(try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity))
     }
 
     func testQueryWithWorkID() throws {
         let exp = app.requestJobExperience()
-        try app.test(.GET, path + "/\(exp.id.uuidString)", afterResponse: {
+        try app.test(.GET, path + "/\(exp.id)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(Experience.DTO.self)
@@ -53,7 +51,7 @@ class ExpCollectionTests: XCTestCase {
     func testUpdate() throws {
         let upgrade = Experience.DTO.generate()
 
-        try app.test(.PUT, path + "/" + app.requestJobExperience().id.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(app.requestJobExperience().id)", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(upgrade)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -72,12 +70,12 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidWorkID() throws {
-        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
+        try app.test(.DELETE, path + "/invalid", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testDelete() throws {
         let exp = app.requestJobExperience(.generate())
 
-        try app.test(.DELETE, path + "/\(exp.id.uuidString)", headers: app.login().headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(exp.id)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

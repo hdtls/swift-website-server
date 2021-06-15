@@ -17,7 +17,7 @@ extension SocialNetworkingService {
             return enumBuilder.create()
                 .flatMap({
                     database.schema(SocialNetworkingService.schema)
-                        .id()
+                        .field(.id, .int, .identifier(auto: true))
                         .field(FieldKeys.type, $0, .required)
                         .field(.createdAt, .datetime)
                         .field(.updatedAt, .datetime)

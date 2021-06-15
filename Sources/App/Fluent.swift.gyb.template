@@ -62,6 +62,7 @@ def needs_generate_fieldkeys(field_properties):
             property_getFieldType(field)
             in ["Children", "Siblings"]
             or field.get("field_key")
+            or property_getName(field) == "id"
         ),
         field_properties,
     )
@@ -94,7 +95,7 @@ final class ${obj_getClass(fluent_defination)}: Fluent.Model {
 % for field in obj_getProperties(fluent_defination):
 
 %   if property_getFieldType(field) == "ID":
-    ${"@ID()" if property_getAttribute(field) == "UUID?" else "@ID(custom: {})".format(property_getFieldkey(field))}
+    ${"@ID()" if property_getAttribute(field) == "UUID?" else "@ID(custom: .id)"}
 %   elif property_getFieldType(field) in ["Field", "Enum", "Parent"]:
     ${"@{}{}(key: {})".format(("Optional" if is_optional(property_getAttribute(field)) else ""), property_getFieldType(field), property_getFieldkey(field))}
 %   elif property_getFieldType(field) == "OptionalChild":

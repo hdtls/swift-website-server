@@ -21,8 +21,8 @@ extension Project {
                 .and(visibilityBuilder.create())
                 .flatMap({
                     database.schema(schema)
-                        .id()
-                        .field(FieldKeys.user, .uuid, .references(User.schema, .id))
+                        .field(.id, .int, .identifier(auto: true))
+                        .field(FieldKeys.user, .int, .references(User.schema, .id))
                         .field(FieldKeys.name, .string, .required)
                         .field(FieldKeys.note, .string)
                         .field(FieldKeys.genres, .array(of: .string))

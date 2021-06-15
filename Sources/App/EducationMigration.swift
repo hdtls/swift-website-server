@@ -8,8 +8,8 @@ extension Education {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(Education.schema)
-                .id()
-                .field(FieldKeys.user, .uuid, .references(User.schema, .id))
+                .field(.id, .int, .identifier(auto: true))
+                .field(FieldKeys.user, .int, .references(User.schema, .id))
                 .field(FieldKeys.school, .string, .required)
                 .field(FieldKeys.degree, .string, .required)
                 .field(FieldKeys.field, .string, .required)

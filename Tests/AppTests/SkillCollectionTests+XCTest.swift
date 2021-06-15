@@ -16,11 +16,11 @@ extension SkillCollectionTests {
             ("testCreateWithoutWorkflow", testCreateWithoutWorkflow),
             ("testCreateWithInvalidDataType", testCreateWithInvalidDataType),
             ("testQuery", testQuery),
-            ("testQueryWithNonExistentID", testQueryWithNonExistentID),
+            ("testQueryWithInvalidID", testQueryWithInvalidID),
             ("testUpdate", testUpdate),
-            ("testUpdateWithNoExistentID", testUpdateWithNoExistentID),
+            ("testUpdateWithInvalidID", testUpdateWithInvalidID),
             ("testDelete", testDelete),
-            ("testDeleteWithNonExistentID", testDeleteWithNonExistentID),
+            ("testDeleteWithInvalidID", testDeleteWithInvalidID),
         ]
     }
 }

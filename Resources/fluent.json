@@ -6,8 +6,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "alias",
@@ -58,8 +58,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "name",
@@ -83,8 +83,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "school",
@@ -137,8 +137,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "title",
@@ -196,8 +196,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "title",
@@ -222,8 +222,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "name",
@@ -302,8 +302,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "professional",
@@ -328,8 +328,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "url",
@@ -356,8 +356,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "type",
@@ -380,8 +380,8 @@
             {
                 "field_id": "ID",
                 "name": "id",
-                "type": "UUID?",
-                "codable": "UUID"
+                "type": "Int?",
+                "codable": "Int"
             },
             {
                 "name": "username",

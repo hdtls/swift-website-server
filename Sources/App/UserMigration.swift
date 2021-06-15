@@ -8,7 +8,7 @@ extension User {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(User.schema)
-                .id()
+                .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.username, .string, .required)
                 .unique(on: FieldKeys.username)
                 .field(FieldKeys.pwd, .string, .required)

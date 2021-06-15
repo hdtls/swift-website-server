@@ -27,15 +27,15 @@ class SocialNetworkingCollectionTests: XCTestCase {
     func testAuthorizeRequire() {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-            .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
+            .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
                 .test(.GET, path, afterResponse: assertHttpOk)
-            .test(.PUT, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, path + "/" + UUID().uuidString, afterResponse: assertHttpUnauthorized)
+            .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
+            .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
         )
     }
 
     func testQueryWithInvalidID() {
-        XCTAssertNoThrow(try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity))
+        XCTAssertNoThrow(try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity))
     }
 
     func testQueryWithSocialID() throws {
@@ -74,6 +74,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
             XCTAssertEqual($0.status, .ok)
         }).test(.DELETE, path + "/\(socialNetworking.id)", headers: app.login().headers, afterResponse: {
             XCTAssertEqual($0.status, .notFound)
-        }).test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
+        }).test(.DELETE, path + "/invalid", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 }

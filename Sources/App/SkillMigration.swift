@@ -8,10 +8,10 @@ extension Skill {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(schema)
-                .id()
+                .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.professional, .array(of: .string))
                 .field(FieldKeys.workflow, .array(of: .string))
-                .field(FieldKeys.user, .uuid, .references(User.schema, .id))
+                .field(FieldKeys.user, .int, .references(User.schema, .id))
                 .field(.createdAt, .datetime)
                 .field(.updatedAt, .datetime)
                 .create()

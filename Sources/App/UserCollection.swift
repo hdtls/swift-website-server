@@ -141,13 +141,19 @@ class UserCollection: ApiCollection {
     
     func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
         let builder = T.query(on: req.db)
+        
         if let id = req.parameters.get(restfulIDKey, as: User.IDValue.self) {
             builder.filter(\._$id == id)
         } else if let id = req.parameters.get(restfulIDKey) {
             builder.filter(User.FieldKeys.username, .equal, id)
         } else {
-            throw Abort(.badRequest, reason: "Invalid value for key \(restfulIDKey).")
+            if req.parameters.get(restfulIDKey) != nil {
+                throw Abort(.unprocessableEntity)
+            } else {
+                throw Abort(.internalServerError)
+            }
         }
+        
         return builder
     }
     

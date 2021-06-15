@@ -19,14 +19,12 @@ class BlogCollectionTests: XCTestCase {
     }
     
     func testAuthorizeRequire() {
-        let uuid = UUID.init().uuidString
-        
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
                 .test(.GET, path, afterResponse: assertHttpOk)
-                .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
-                .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
-                .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
+                .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
+                .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
+                .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
         )
     }
     
@@ -47,7 +45,7 @@ class BlogCollectionTests: XCTestCase {
     }
     
     func testQueryWithIDThatDoesNotExsit() throws {
-        XCTAssertNoThrow(try app.test(.GET, path + "/\(UUID())", afterResponse: assertHttpNotFound))
+        XCTAssertNoThrow(try app.test(.GET, path + "/0", afterResponse: assertHttpNotFound))
     }
     
     func testQueryWithID() throws {
@@ -67,7 +65,7 @@ class BlogCollectionTests: XCTestCase {
         blog.tags = [.random(length: 4)]
         blog.content = .random(length: 23)
         
-        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(blog.id)", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -89,7 +87,7 @@ class BlogCollectionTests: XCTestCase {
         let category = app.requestBlogCategory(.generate())
         blog.categories.append(category)
         
-        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(blog.id)", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -118,7 +116,7 @@ class BlogCollectionTests: XCTestCase {
         
         blog = app.requestBlog(blog)
         
-        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(blog.id)", headers: app.login().headers, beforeRequest: {
             _ = blog.categories.removeLast()
             try $0.content.encode(blog)
         }, afterResponse: {
@@ -156,7 +154,7 @@ class BlogCollectionTests: XCTestCase {
         var blog = app.requestBlog()
         blog.alias = .random(length: 14)
         
-        try app.test(.PUT, path + "/" + blog.id.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(blog.id)", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(blog)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)

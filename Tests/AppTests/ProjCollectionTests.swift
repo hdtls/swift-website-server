@@ -18,48 +18,10 @@ class ProjCollectionTests: XCTestCase {
     }
     
     func testAuthorizeRequire() throws {
-        let uuid = UUID.init().uuidString
-
         try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-            .test(.GET, path + "/" + uuid, afterResponse: assertHttpNotFound)
-            .test(.PUT, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, path + "/" + uuid, afterResponse: assertHttpUnauthorized)
-    }
-
-    func _testProjCreation(with headers: HTTPHeaders, without key: String) throws {
-
-        var json = [
-            "id": "\(UUID())",
-            "name": "",
-            "summary" : "",
-            "kind" : "app",
-            "visibility" : "public",
-            "startDate" : "",
-            "endDate" : ""
-        ]
-
-        json.removeValue(forKey: key)
-
-        try app.test(.POST, "projects", headers: headers, beforeRequest: {
-            try $0.content.encode(json)
-        }, afterResponse: {
-            XCTAssertEqual($0.status, .badRequest)
-            XCTAssertContains($0.body.string, "Value required for key '\(key)'")
-        })
-    }
-
-    func testInvalidCreate() throws {
-        try _testProjCreation(with: app.login().headers, without: "name")
-
-        try _testProjCreation(with: app.login().headers, without: "summary")
-
-        try _testProjCreation(with: app.login().headers, without: "kind")
-
-        try _testProjCreation(with: app.login().headers, without: "visibility")
-
-        try _testProjCreation(with: app.login().headers, without: "startDate")
-
-        try _testProjCreation(with: app.login().headers, without: "endDate")
+            .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
+            .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
+            .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
     }
 
     func testCreate() throws {
@@ -67,13 +29,13 @@ class ProjCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidWorkID() throws {
-        try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
+        try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testQueryWithWorkID() throws {
         let proj = app.requestProject()
 
-        try app.test(.GET, path + "/\(proj.id.uuidString)", afterResponse: {
+        try app.test(.GET, path + "/\(proj.id)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
 
             let coding = try $0.content.decode(Project.Coding.self)
@@ -101,7 +63,7 @@ class ProjCollectionTests: XCTestCase {
         let proj = app.requestProject()
         let expected = Project.DTO.generate()
         
-        try app.test(.PUT, path + "/" + proj.id.uuidString, headers: app.login().headers, beforeRequest: {
+        try app.test(.PUT, path + "/\(proj.id)", headers: app.login().headers, beforeRequest: {
             try $0.content.encode(expected)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -128,10 +90,10 @@ class ProjCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidWorkID() throws {
-        try app.test(.DELETE, path + "/1", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
+        try app.test(.DELETE, path + "/invalid", headers: app.login().headers, afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testDelete() throws {
-        try app.test(.DELETE, path + "/" + app.requestProject(.generate()).id.uuidString, headers: app.login().headers, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(app.requestProject(.generate()).id)", headers: app.login().headers, afterResponse: assertHttpOk)
     }
 }

@@ -8,7 +8,7 @@ extension Experience {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(schema)
-                .id()
+                .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.title, .string, .required)
                 .field(FieldKeys.companyName, .string, .required)
                 .field(FieldKeys.location, .string)
@@ -17,7 +17,7 @@ extension Experience {
                 .field(FieldKeys.headline, .string)
                 .field(FieldKeys.responsibilities, .array(of: .string))
                 .field(FieldKeys.media, .string)
-                .field(FieldKeys.user, .uuid, .references(User.schema, .id))
+                .field(FieldKeys.user, .int, .references(User.schema, .id))
                 .field(.createdAt, .datetime)
                 .field(.updatedAt, .datetime)
                 .create()

@@ -53,8 +53,8 @@ final class Token: Model {
     static let schema: String = "tokens"
     
         // MARK: Properties
-    @ID()
-    var id: UUID?
+    @ID(custom: .id)
+    var id: Int?
     
     @Field(key: FieldKeys.token.rawValue)
     var token: String

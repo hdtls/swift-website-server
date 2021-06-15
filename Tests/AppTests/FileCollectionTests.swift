@@ -23,7 +23,7 @@ class FileCollectionTests: XCTestCase {
     func testAuthorizeRequire() {
         XCTAssertNoThrow(
             try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path + "/" + UUID().uuidString, afterResponse: assertHttpNotFound)
+                .test(.GET, path + "/1", afterResponse: assertHttpNotFound)
         )
     }
 

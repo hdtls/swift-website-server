@@ -8,8 +8,8 @@ extension Token {
         
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(Token.schema)
-                .id()
-                .field(FieldKeys.user.rawValue, .uuid, .references(User.schema, .id))
+                .field(.id, .int, .identifier(auto: true))
+                .field(FieldKeys.user.rawValue, .int, .references(User.schema, .id))
                 .field(FieldKeys.token.rawValue, .string, .required)
                 .unique(on: FieldKeys.token.rawValue)
                 .field(FieldKeys.expiresAt.rawValue, .date)

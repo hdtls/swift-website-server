@@ -34,7 +34,7 @@ class IndustryCollectionTests: XCTestCase {
     }
     
     func testQueryWithInvalidID() throws {
-        try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
+        try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
     }
     
     func testQueryWithID() throws {
@@ -76,6 +76,6 @@ class IndustryCollectionTests: XCTestCase {
         let industry = app.requestIndustry(.generate())
         
         try app.test(.DELETE, path + "/\(industry.id)", afterResponse: assertHttpOk)
-            .test(.DELETE, path + "/1", afterResponse: assertHttpUnprocessableEntity)
+            .test(.DELETE, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
     }
 }

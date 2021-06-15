@@ -23,13 +23,13 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testQueryWithInvalidID() throws {
-        try app.test(.GET, path + "/1", afterResponse: assertHttpUnprocessableEntity)
+        try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testQueryWithServiceID() throws {
         let service = app.requestSocialNetworkingService()
 
-        try app.test(.GET, path + "/" + service.id.uuidString, afterResponse: {
+        try app.test(.GET, path + "/\(service.id)", afterResponse: {
             XCTAssertEqual($0.status, .ok)
             let coding = try $0.content.decode(SocialNetworkingService.Coding.self)
             XCTAssertEqual(coding.id, service.id)
@@ -43,7 +43,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
         var copy = SocialNetworkingService.Coding.init()
         copy.type = .facebook
 
-        try app.test(.PUT, path + "/" + service.id.uuidString, beforeRequest: {
+        try app.test(.PUT, path + "/\(service.id)", beforeRequest: {
             try $0.content.encode(copy)
         }, afterResponse: {
             XCTAssertEqual($0.status, .ok)
@@ -55,10 +55,10 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testDeleteWithInvalidServiceID() throws {
-        try app.test(.DELETE, path + "/1", afterResponse: assertHttpUnprocessableEntity)
+        try app.test(.DELETE, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
     }
 
     func testDelete() throws {
-        try app.test(.DELETE, path + "/" + app.requestSocialNetworkingService(.generate()).id.uuidString, afterResponse: assertHttpOk)
+        try app.test(.DELETE, path + "/\(app.requestSocialNetworkingService(.generate()).id)", afterResponse: assertHttpOk)
     }
 }

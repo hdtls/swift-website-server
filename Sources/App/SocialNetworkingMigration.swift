@@ -8,10 +8,10 @@ extension SocialNetworking {
 
         func prepare(on database: Database) -> EventLoopFuture<Void> {
             database.schema(schema)
-                .id()
-                .field(FieldKeys.user, .uuid, .required)
+                .field(.id, .int, .identifier(auto: true))
+                .field(FieldKeys.user, .int, .required)
                 .field(FieldKeys.url, .string, .required)
-                .field(FieldKeys.service, .uuid, .required)
+                .field(FieldKeys.service, .int, .required)
                 .field(.createdAt, .datetime)
                 .field(.updatedAt, .datetime)
                 .create()
