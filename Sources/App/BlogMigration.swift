@@ -16,9 +16,9 @@ extension Blog {
                 .field(FieldKeys.excerpt, .string)
                 .field(FieldKeys.tags, .array(of: .string))
                 .field(FieldKeys.content, .string, .required)
+                .field(FieldKeys.user, .int, .references(User.schema, .id))
                 .field(.createdAt, .datetime)
                 .field(.updatedAt, .datetime)
-                .field(FieldKeys.user, .int, .references(User.schema, .id))
                 .create()
         }
 

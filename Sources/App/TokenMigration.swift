@@ -7,17 +7,19 @@ extension Token {
     class Migration: Fluent.Migration {
         
         func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Token.schema)
+            database.schema(schema)
                 .field(.id, .int, .identifier(auto: true))
-                .field(FieldKeys.user.rawValue, .int, .references(User.schema, .id))
-                .field(FieldKeys.token.rawValue, .string, .required)
-                .unique(on: FieldKeys.token.rawValue)
-                .field(FieldKeys.expiresAt.rawValue, .date)
+                .field(FieldKeys.user, .int, .references(User.schema, .id))
+                .field(FieldKeys.token, .string, .required)
+                .unique(on: FieldKeys.token)
+                .field(FieldKeys.expiresAt, .datetime)
+                .field(.createdAt, .datetime)
+                .field(.updatedAt, .datetime)
                 .create()
         }
         
         func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Token.schema).delete()
+            database.schema(schema).delete()
         }
     }
 }

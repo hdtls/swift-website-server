@@ -19,9 +19,9 @@ extension User {
                 .field(FieldKeys.emailAddress, .string)
                 .field(FieldKeys.aboutMe, .sql(raw: "VARCHAR(1024)"))
                 .field(FieldKeys.location, .string)
+                .field(FieldKeys.interests, .array(of: .string))
                 .field(.createdAt, .datetime)
                 .field(.updatedAt, .datetime)
-                .field(FieldKeys.interests, .array(of: .string))
                 .create()
         }
 

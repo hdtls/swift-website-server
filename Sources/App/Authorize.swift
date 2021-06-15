@@ -56,23 +56,29 @@ final class Token: Model {
     @ID(custom: .id)
     var id: Int?
     
-    @Field(key: FieldKeys.token.rawValue)
+    @Field(key: FieldKeys.token)
     var token: String
     
-    @OptionalField(key: FieldKeys.expiresAt.rawValue)
+    @Timestamp(key: FieldKeys.expiresAt, on: .none)
     var expiresAt: Date?
     
         // MARK: Relations
-    @Parent(key: FieldKeys.user.rawValue)
+    @Parent(key: FieldKeys.user)
     var user: User
+    
+    @Timestamp(key: .createdAt, on: .create)
+    var createdAt: Date?
+    
+    @Timestamp(key: .updatedAt, on: .update)
+    var updatedAt: Date?
 }
 
 extension Token {
     
-    enum FieldKeys: FieldKey {
-        case user = "user_id"
-        case token
-        case expiresAt = "expires_at"
+    struct FieldKeys {
+        static let user: FieldKey = "user_id"
+        static let token: FieldKey = "token"
+        static let expiresAt: FieldKey = "expires_at"
     }
 }
 
