@@ -9,6 +9,7 @@ import Vapor
 %{
 import json
 import os
+import re
 import sys
 
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -105,7 +106,7 @@ final class ${obj_getClass(fluent_defination)}: Fluent.Model {
 %   elif property_getFieldType(field) == "Siblings":
     @Siblings(through: ${field["through"]}, from: \.${field["parent_from_field"]}, to: \.${field["parent_to_field"]})
 %   end
-    var ${property_getName(field)}: ${property_getAttribute(field)}
+    var ${property_getName(field)}: ${"{}".format(re.sub(r"^URL", "String", property_getAttribute(field)))}
 % end
     
     @Timestamp(key: .createdAt, on: .create)
@@ -174,53 +175,39 @@ extension ${obj_getClass(fluent_defination)}: Serializing {
 % else:
         var dataTransferObject = DTO.init()
 %   for field in filtered_available_properties(obj_getProperties(fluent_defination)):
-%       if property_getFieldType(field) == "ID":
+%        if property_getFieldType(field) == "ID":
         dataTransferObject.id = try requireID()
-%       elif property_getFieldType(field) in ["Field", "Enum"]:
-%           if is_optional(property_getAttribute(field, False)):
-%               if is_optional(property_getAttribute(field)):
-        dataTransferObject.${property_getName(field)} = $$${property_getName(field)}.value ?? nil
-%               else:
-        dataTransferObject.${property_getName(field)} = $$${property_getName(field)}.value
-%               end
-%           else:
-%               if property_getFieldType(field) == "Enum":
-        dataTransferObject.${property_getName(field)} = $$${property_getName(field)}.value ?? .allCases.first!
-%               else:
-        dataTransferObject.${property_getName(field)} = $$${property_getName(field)}.value ?? .init()
-%               end
-%           end
-%       elif property_getFieldType(field) == "Parent":
+%        else:
+%{
+            if is_optional(property_getAttribute(field, False)):
+                if property_getFieldType(field) == "Field":
+                    suffix = "{}".format(" ?? nil" if is_optional(property_getAttribute(field)) else "")
+                elif property_getFieldType(field) == "Enum":
+                    suffix = "{}".format(" ?? nil" if is_optional(property_getAttribute(field)) else "")
+                elif property_getFieldType(field) in ["Parent", "OptionalChild"]:
+                    suffix = "{}?.dataTransferObject()".format("?" if is_optional(property_getAttribute(field)) else "")
+                else:
+                    suffix = "?.map({ try $0.dataTransferObject() })"
+            else:
+                if property_getFieldType(field) == "Field":
+                    suffix = " ?? .init()"
+                elif property_getFieldType(field) == "Enum":
+                    suffix = " ?? .allCases.first!"
+                elif property_getFieldType(field) in ["Parent", "OptionalChild"]:
+                    suffix = "{}?.dataTransferObject() ?? .init()".format("?" if is_optional(property_getAttribute(field)) else "")
+                else:
+                    suffix = "?.map({ try $0.dataTransferObject() }) ?? []"
+}%
+%       if property_getFieldType(field) == "Parent":
         dataTransferObject.${property_getName(field)}Id = $$${property_getName(field)}.$id.value ?? nil
-%           if is_optional(property_getAttribute(field, False)):
-%               if is_optional(property_getAttribute(field)):
-        dataTransferObject.${property_getName(field)} = try $$${property_getName(field)}.value??.dataTransferObject()
-%               else:
-        dataTransferObject.${property_getName(field)} = try $$${property_getName(field)}.value?.dataTransferObject()
-%               end
-%           else:
-        // Be careful `${property_getName(field)}` is `EagerLoadable` make sure you have load value
-        // before asign it to DTO.
-%               if is_optional(property_getAttribute(field)):
-        dataTransferObject.${property_getName(field)} = try ${property_getName(field)}?.dataTransferObject()
-%               else:
-        dataTransferObject.${property_getName(field)} = try ${property_getName(field)}.dataTransferObject()
-%               end
-%           end
-%       elif property_getFieldType(field) == "OptionalChild":
-%           if is_optional(property_getAttribute(field, False)):
-        dataTransferObject.${property_getName(field)} = try $$${property_getName(field)}.value??.dataTransferObject()
-%           else:
-        dataTransferObject.${property_getName(field)} = try $$${property_getName(field)}.value??.dataTransferObject() ?? .init()
-%           end
-%       elif property_getFieldType(field) in ["Children", "Siblings"]:
-%           if is_optional(property_getAttribute(field, False)):
-        dataTransferObject.${property_getName(field)} = try $$${property_getName(field)}.value?.map({ try $0.dataTransferObject() })
-%           else:
-        dataTransferObject.${property_getName(field)} = try $$${property_getName(field)}.value?.map({ try $0.dataTransferObject() }) ?? []
-%           end
 %       end
-%   end
+        dataTransferObject.${property_getName(field)} = ${"{}${}.value{}".format(
+            ("" if property_getFieldType(field) in ["Field", "Enum"] else "try "),
+            property_getName(field),
+            suffix
+            )}
+%    end
+% end
         return dataTransferObject
 % end
     }
