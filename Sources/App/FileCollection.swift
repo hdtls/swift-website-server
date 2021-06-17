@@ -32,12 +32,12 @@ class FileCollection: RouteCollection {
         case .images:
             return try uploadImageFile(req)
                 .map {
-                    MultipartFileCoding.init(url: $0.absoluteURLString)
+                    MultipartFileCoding.init(url: $0)
                 }
         default:
             return try uploadFile(req, relative: req.application.directory.publicDirectory)
                 .map {
-                    MultipartFileCoding.init(url: $0.absoluteURLString)
+                    MultipartFileCoding.init(url: $0)
                 }
         }
     }

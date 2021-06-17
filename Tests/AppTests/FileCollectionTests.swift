@@ -49,7 +49,7 @@ class FileCollectionTests: XCTestCase {
             url = content.url
         })
 
-        try app.test(.GET, (url.path ?? ""), afterResponse: {
+        try app.test(.GET, URL(string: url)!.path, afterResponse: {
             XCTAssertEqual($0.status, .ok)
             XCTAssertNotNil($0.body)
         })
