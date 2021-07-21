@@ -60,7 +60,11 @@ class ExpCollection: ApiCollection {
         var serializedObject = try req.content.decode(T.DTO.self)
         serializedObject.userId = try req.auth.require(User.self).requireID()
         
-        let industries: [Industry] = try serializedObject.industries.map(Industry.init)
+        let industries: [Industry] = serializedObject.industries.map({
+            let industry = Industry.init()
+            industry.id = $0.id
+            return industry
+        })
 
         var upgrade = T.init()
 
