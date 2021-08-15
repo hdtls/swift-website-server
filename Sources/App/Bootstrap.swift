@@ -18,13 +18,16 @@ public func bootstrap(_ app: Application) throws {
     app.middleware.use(CORSMiddleware.init())
     app.middleware.use(FileMiddleware.init(publicDirectory: app.directory.publicDirectory))
 
+    var tlsConfiguration = TLSConfiguration.makeClientConfiguration()
+    tlsConfiguration.certificateVerification = .none
+    
     app.databases.use(.mysql(
         hostname: Environment.get("MYSQL_HOST") ?? "localhost",
         port: Int(Environment.get("MYSQL_PORT") ?? "3306")!,
         username: Environment.get("MYSQL_USER") ?? "swift",
         password: Environment.get("MYSQL_PASSWORD") ?? "mysql",
         database: Environment.get("MYSQL_DATABASE") ?? "website",
-        tlsConfiguration: .forClient(certificateVerification: .none)
+        tlsConfiguration: tlsConfiguration
     ), as: .mysql)
 
     app.migrations.add(User.migration)
