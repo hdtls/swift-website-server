@@ -84,6 +84,7 @@ extension Project.DTO {
         expected.artworkUrl = "http://localhost:8080/" + .random(length: 12)
         expected.endDate = .random(length: 7)
         expected.startDate = .random(length: 7)
+        expected.isOpenSource = false
         expected.genres = [.random(length: 4)]
         expected.kind = .allCases.randomElement()!
         expected.name = .random(length: 8)
@@ -504,6 +505,7 @@ extension Application {
                 XCTAssertEqual(model.trackId, expected.trackId)
                 XCTAssertEqual(model.startDate, expected.startDate)
                 XCTAssertEqual(model.endDate, expected.endDate)
+                XCTAssertEqual(model.isOpenSource, expected.isOpenSource)
                 XCTAssertNotNil(model.userId)
                 
                 if Self.meta.project == nil {

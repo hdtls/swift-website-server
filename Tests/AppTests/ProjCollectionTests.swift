@@ -1,5 +1,6 @@
 import XCTVapor
 @testable import App
+import XCTest
 
 class ProjCollectionTests: XCTestCase {
     let path = "projects"
@@ -55,6 +56,7 @@ class ProjCollectionTests: XCTestCase {
             XCTAssertEqual(coding.trackId, proj.trackId)
             XCTAssertEqual(coding.startDate, proj.startDate)
             XCTAssertEqual(coding.endDate, proj.endDate)
+            XCTAssertEqual(coding.isOpenSource, proj.isOpenSource)
             XCTAssertNotNil(coding.userId)
         })
     }
@@ -85,6 +87,7 @@ class ProjCollectionTests: XCTestCase {
             XCTAssertEqual(coding.trackViewUrl, expected.trackViewUrl)
             XCTAssertEqual(coding.trackId, expected.trackId)
             XCTAssertEqual(coding.startDate, expected.startDate)
+            XCTAssertEqual(coding.isOpenSource, expected.isOpenSource)
             XCTAssertEqual(coding.endDate, expected.endDate)
         })
     }
