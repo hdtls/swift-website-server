@@ -6,7 +6,7 @@ enum ProjKind: String, CaseIterable, Codable {
     
     case app
     case website
-    case repositry
+    case library
 }
 
 enum ProjVisibility: String, CaseIterable, Codable {

@@ -38,6 +38,7 @@ extension Project {
                         .field(FieldKeys.trackId, .string)
                         .field(FieldKeys.startDate, .string, .required)
                         .field(FieldKeys.endDate, .string, .required)
+                        .field(FieldKeys.isOpenSource, .bool, .required)
                         .field(.createdAt, .datetime)
                         .field(.updatedAt, .datetime)
                         .create()
