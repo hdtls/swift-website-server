@@ -326,9 +326,9 @@ class Builder(object):
         command.extend(["--product", product_name])
 
         env = dict(os.environ)
-        env["SWIFT_BUILD_SCRIPT_ENVIRONMENT"] = "1"
+#        env["SWIFT_BUILD_SCRIPT_ENVIRONMENT"] = "1"
         # Tell other projects in the unified build to use local dependencies
-        env["SWIFTCI_USE_LOCAL_DEPS"] = "1"
+        # env["SWIFTCI_USE_LOCAL_DEPS"] = "1"
         check_call(command, env=env, verbose=self.verbose)
 
 
@@ -412,9 +412,9 @@ def run_xctests(toolchain, build_dir, multiroot_data_file, release, verbose):
     swiftpm_call.extend(["--test-product", "{}PackageTests".format(PACKAGE_NAME)])
 
     env = dict(os.environ)
-    env["SWIFT_BUILD_SCRIPT_ENVIRONMENT"] = "1"
+#    env["SWIFT_BUILD_SCRIPT_ENVIRONMENT"] = "1"
     # Tell other projects in the unified build to use local dependencies
-    env["SWIFTCI_USE_LOCAL_DEPS"] = "1"
+#    env["SWIFTCI_USE_LOCAL_DEPS"] = "1"
     return call(swiftpm_call, env=env, verbose=verbose) == 0
 
 
