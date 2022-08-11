@@ -4,21 +4,21 @@ import Vapor
 extension User: ModelAuthenticatable {
     static var usernameKey = \User.$username
     static var passwordHashKey = \User.$pwd
-    
+
     func verify(password: String) throws -> Bool {
         try Bcrypt.verify(password, created: pwd)
     }
 }
 
 extension User {
-    
+
     struct Creation: Content {
         var firstName: String
         var lastName: String
         var username: String
         var password: String
     }
-    
+
     convenience init(_ creation: Creation) throws {
         self.init()
         username = creation.username
@@ -36,11 +36,11 @@ extension User.Creation: Validatable {
 }
 
 struct AuthorizedMsg: Content {
-    
+
     let user: User.DTO
     var expiresAt: Date?
     let identityTokenString: String
-    
+
     init(user: User, token: Token) throws {
         self.user = try user.dataTransferObject()
         self.expiresAt = token.expiresAt
@@ -49,32 +49,32 @@ struct AuthorizedMsg: Content {
 }
 
 final class Token: Model {
-    
+
     static let schema: String = "tokens"
-    
-        // MARK: Properties
+
+    // MARK: Properties
     @ID(custom: .id)
     var id: Int?
-    
+
     @Field(key: FieldKeys.token)
     var token: String
-    
+
     @Timestamp(key: FieldKeys.expiresAt, on: .none)
     var expiresAt: Date?
-    
-        // MARK: Relations
+
+    // MARK: Relations
     @Parent(key: FieldKeys.user)
     var user: User
-    
+
     @Timestamp(key: .createdAt, on: .create)
     var createdAt: Date?
-    
+
     @Timestamp(key: .updatedAt, on: .update)
     var updatedAt: Date?
 }
 
 extension Token {
-    
+
     struct FieldKeys {
         static let user: FieldKey = "user_id"
         static let token: FieldKey = "token"
@@ -83,10 +83,10 @@ extension Token {
 }
 
 extension Token: ModelTokenAuthenticatable {
-    
+
     static var valueKey = \Token.$token
     static let userKey = \Token.$user
-    
+
     var isValid: Bool {
         guard let expiryDate = expiresAt else {
             return true
@@ -96,7 +96,7 @@ extension Token: ModelTokenAuthenticatable {
 }
 
 extension Token {
-    
+
     convenience init(_ user: User) throws {
         self.init()
         $user.id = try user.requireID()

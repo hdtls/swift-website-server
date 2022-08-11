@@ -1,6 +1,6 @@
-import Vapor
 import Fluent
 import FluentMySQLDriver
+import Vapor
 
 /// Called before your application initializes.
 public func bootstrap(_ app: Application) throws {
@@ -20,15 +20,18 @@ public func bootstrap(_ app: Application) throws {
 
     var tlsConfiguration = TLSConfiguration.makeClientConfiguration()
     tlsConfiguration.certificateVerification = .none
-    
-    app.databases.use(.mysql(
-        hostname: Environment.get("MYSQL_HOST") ?? "localhost",
-        port: Int(Environment.get("MYSQL_PORT") ?? "3306")!,
-        username: Environment.get("MYSQL_USER") ?? "swift",
-        password: Environment.get("MYSQL_PASSWORD") ?? "mysql",
-        database: Environment.get("MYSQL_DATABASE") ?? "website",
-        tlsConfiguration: tlsConfiguration
-    ), as: .mysql)
+
+    app.databases.use(
+        .mysql(
+            hostname: Environment.get("MYSQL_HOST") ?? "localhost",
+            port: Int(Environment.get("MYSQL_PORT") ?? "3306")!,
+            username: Environment.get("MYSQL_USER") ?? "swift",
+            password: Environment.get("MYSQL_PASSWORD") ?? "mysql",
+            database: Environment.get("MYSQL_DATABASE") ?? "blog",
+            tlsConfiguration: tlsConfiguration
+        ),
+        as: .mysql
+    )
 
     app.migrations.add(User.migration)
     app.migrations.add(Token.migration)

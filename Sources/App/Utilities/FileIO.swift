@@ -10,7 +10,11 @@ extension FileIO {
 
         let path = path.hasPrefix("/") ? path : "/" + path
 
-        let directory = relative + path.split(separator: "/", omittingEmptySubsequences: false).dropLast().joined(separator: "/")
+        let directory =
+            relative
+            + path.split(separator: "/", omittingEmptySubsequences: false).dropLast().joined(
+                separator: "/"
+            )
 
         try? FileManager.default.createDirectory(
             atPath: directory,
@@ -28,7 +32,7 @@ extension FileIO {
 ///   - file: file.
 ///   - path: relative path
 /// - Returns: solved file location the value is a tuple of filename and directory.
-fileprivate func _filepath(_ file: MultipartFileProtocol, relative: String = "") -> String {
+private func _filepath(_ file: MultipartFileProtocol, relative: String = "") -> String {
     var directory = relative.hasSuffix("/") ? relative : relative + "/"
 
     var prefix = file.filename.prefix(8)
@@ -43,7 +47,7 @@ fileprivate func _filepath(_ file: MultipartFileProtocol, relative: String = "")
     return directory + file.filename
 }
 
-struct MultipartFormData: Content {    
+struct MultipartFormData: Content {
     var image: MultipartImage?
     var file: MultipartFile?
 }
@@ -70,7 +74,8 @@ func uploadFile(_ req: Request, relative path: String) throws -> EventLoopFuture
         throw Abort(.badRequest, reason: "Invalid file buffer.")
     }
 
-    let filepath = "/static/\(UUID().uuidString)\(multipartFile.extension != nil ? ".\(multipartFile.extension!)" : "")"
+    let filepath =
+        "/static/\(UUID().uuidString)\(multipartFile.extension != nil ? ".\(multipartFile.extension!)" : "")"
 
     return req.fileio.writeFile(
         multipartFile.data,
