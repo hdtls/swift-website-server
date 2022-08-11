@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 The ultimate tool for building books.
@@ -15,12 +15,11 @@ import sys
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBRARY_DIR = os.path.join(PACKAGE_DIR, "Sources", "App")
-PACKAGE_NAME = "swift-website-server"
+PACKAGE_NAME = "swift-blog"
 PRODUCT_NAME = "Run"
 TOOLCHAIN = "/usr"
 
 GYB_EXEC = os.path.join(PACKAGE_DIR, "utils", "gyb")
-LINUX_TESTS_GENERATOR = os.path.join(PACKAGE_DIR, "utils", "generate_linux_tests.py")
 
 BASE_KIND_FILES = [
     "Blog",

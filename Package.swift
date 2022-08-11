@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "swift-website-server",
+    name: "swift-blog",
     platforms: [
         .macOS("12.0")
     ],

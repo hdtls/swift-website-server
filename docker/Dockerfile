@@ -1,16 +1,19 @@
 # ================================
 # Build image
 # ================================
-FROM swift:latest as builder
+FROM swift as builder
 
-ARG testability=--release
+RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
 
-# Install OS updates and, if needed, sqlite3
-RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
-    && apt-get -q update \
+# Install OS updates and set as UTF-8
+RUN apt-get update -q \
     && apt-get -q dist-upgrade -y \
-    && apt-get install -y python rsync \
+    && apt-get -q install -y locales locales-all python3 \
     && rm -rf /var/lib/apt/lists/*
+
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
 
 # Set up a build area
 WORKDIR /build
@@ -25,9 +28,8 @@ RUN swift package resolve
 # Copy entire repo into container
 COPY . .
 
-# Build testing, with optimizations and test discovery
-#RUN swift build --enable-test-discovery -c release
-RUN python build-script.py $testability
+# Planning build
+RUN python3 build-script.py --configuration release
 
 # Makedir
 # RUN mkdir -p Public Resources

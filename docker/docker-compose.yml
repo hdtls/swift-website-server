@@ -11,30 +11,46 @@
 
 version: "3.7"
 
-x-mysql: &mysql
+x-mysql:
+  &mysql
   MYSQL_USER: swift
   MYSQL_PASSWORD: mysql
   MYSQL_DATABASE: blog
 
+x-imagefile:
+  &imagefile
+  image: swift-blog
+
 services:
 
-  test:
-    image: swift-blog-tests
+  runtime-setup:
+    <<: *imagefile
     build:
       context: ..
-      dockerfile: docker/Dockerfile.test
+      dockerfile: docker/Dockerfile
+
+  common:
+    &common
+    <<: *imagefile
+    depends_on: [ db, runtime-setup ]
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       MYSQL_HOST: db
       <<: *mysql
-    volumes:
-      - ..:/code:z
-    working_dir: /code
-    cap_drop:
-      - CAP_NET_RAW
-      - CAP_NET_BIND_SERVICE
-    depends_on: [db]
-    command: python3 build-script.py --test
+
+  app:
+    <<: *common
+    ports:
+      - "8080:8080"
+    command: serve --env production --hostname 0.0.0.0 --port 8080
+
+  migrate:
+    <<: *common
+    command: migrate --yes
+
+  revert:
+    <<: *common
+    command: migrate --revert --yes
 
   db:
     image: mysql:latest
@@ -43,3 +59,5 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       LANG: C.UTF-8
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-character-set-client-handshake
+    ports:
+      - "3306:3306"
