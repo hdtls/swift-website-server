@@ -169,7 +169,8 @@ def get_swiftpm_invocation(toolchain, action, configuration):
     swift_exec = os.path.join(toolchain, "bin", "swift")
 
     popenargs = [swift_exec, action]
-    popenargs.extend(["--package-path", PACKAGE_DIR, "--configuration", configuration])
+    popenargs.extend(["--package-path", PACKAGE_DIR])
+    popenargs.extend(["--configuration", configuration])
 
     return popenargs
 
@@ -250,7 +251,6 @@ def parse_args():
     build_group.add_argument(
         "-c", "--configuration", 
         default="debug", 
-        action="store_true", 
         help="Build with configuration (default: %(default)s)."
     )
 
