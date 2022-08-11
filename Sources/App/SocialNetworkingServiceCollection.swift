@@ -9,7 +9,7 @@ class SocialNetworkingServiceCollection: ApiCollection {
 
     func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {
         let coding = try req.content.decode(T.DTO.self)
-        
+
         var upgrade = T.init()
 
         if let original = original {

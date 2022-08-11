@@ -1,6 +1,6 @@
-import Vapor
 import FluentKit
 import FluentMySQLDriver
+import Vapor
 
 class BlogCollection: ApiCollection {
     typealias T = Blog
@@ -19,7 +19,7 @@ class BlogCollection: ApiCollection {
         let trusted = routes.grouped([
             User.authenticator(),
             Token.authenticator(),
-            User.guardMiddleware()
+            User.guardMiddleware(),
         ])
 
         trusted.on(.POST, use: create)
@@ -27,29 +27,23 @@ class BlogCollection: ApiCollection {
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
-    func read(_ req: Request) throws -> EventLoopFuture<T.DTO> {
-        var model: T!
-
+    func read(_ req: Request) async throws -> T.DTO {
         var builder = try specifiedIDQueryBuilder(on: req)
         builder = applyingEagerLoaders(builder)
         builder = applyingFields(builder)
 
-        return builder
-            .first()
-            .unwrap(orError: Abort(.notFound))
-            .flatMap({ saved -> EventLoopFuture<ByteBuffer> in
-                model = saved
-                return req.fileio.collectFile(at: self._filepath(req, alias: saved.alias))
-            })
-            .flatMapThrowing({
-                var byteBuffer = $0
-                var coding = try model.dataTransferObject()
-                coding.content = byteBuffer.readString(length: byteBuffer.readableBytes) ?? ""
-                return coding
-            })
+        guard let blog = try await builder.first() else {
+            throw Abort(.notFound)
+        }
+
+        var byteBuffer = try await req.fileio.collectFile(at: _filepath(req, alias: blog.alias))
+
+        var coding = try blog.dataTransferObject()
+        coding.content = byteBuffer.readString(length: byteBuffer.readableBytes) ?? ""
+        return coding
     }
 
-    func readAll(_ req: Request) throws -> EventLoopFuture<[T.DTO]> {
+    func readAll(_ req: Request) async throws -> [T.DTO] {
         struct SupportedQueries: Decodable {
             var categories: String?
         }
@@ -64,46 +58,44 @@ class BlogCollection: ApiCollection {
             queryBuilder.filter(BlogCategory.self, \BlogCategory.$name ~~ categories)
         }
 
-        return queryBuilder
-            .all()
-            .flatMapEachThrowing({
-                try $0.dataTransferObject()
-            })
+        return try await queryBuilder.all().map {
+            try $0.dataTransferObject()
+        }
     }
 
-    func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
+    func update(_ req: Request) async throws -> T.DTO {
         let userId = try req.auth.require(User.self).requireID()
 
-        return try specifiedIDQueryBuilder(on: req)
-            .filter(\.$user.$id == userId)
-            .with(\.$categories)
-            .first()
-            .unwrap(orError: Abort(.notFound))
-            .flatMap({
-                do {
-                    return try self.performUpdate($0, on: req)
-                } catch {
-                    return req.eventLoop.makeFailedFuture(error)
-                }
-            })
+        guard
+            let blog = try await specifiedIDQueryBuilder(on: req)
+                .filter(\.$user.$id == userId)
+                .with(\.$categories)
+                .first()
+        else {
+            throw Abort(.notFound)
+        }
+
+        return try await performUpdate(blog, on: req)
     }
 
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    func delete(_ req: Request) async throws -> HTTPStatus {
         let userId = try req.auth.require(User.self).requireID()
 
-        return try specifiedIDQueryBuilder(on: req)
-            .filter(\.$user.$id == userId)
-            .with(\.$categories)
-            .first()
-            .unwrap(orError: Abort(.notFound))
-            .flatMap({ saved in
-                saved.$categories.detach(saved.categories, on: req.db).flatMap({
-                    saved.delete(on: req.db).flatMap({
-                        self._removeBlog(saved.alias, on: req)
-                        return req.eventLoop.makeSucceededFuture(.ok)
-                    })
-                })
-            })
+        guard
+            let saved = try await specifiedIDQueryBuilder(on: req)
+                .filter(\.$user.$id == userId)
+                .with(\.$categories)
+                .first()
+        else {
+            throw Abort(.notFound)
+        }
+
+        try await saved.$categories.detach(saved.categories, on: req.db)
+        try await saved.delete(on: req.db)
+        Task {
+            self._removeBlog(saved.alias, on: req)
+        }
+        return .ok
     }
 
     func specifiedIDQueryBuilder(on req: Request) throws -> QueryBuilder<T> {
@@ -135,11 +127,11 @@ class BlogCollection: ApiCollection {
         builder.with(\.$categories)
     }
 
-    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {
+    func performUpdate(_ original: T?, on req: Request) async throws -> T.DTO {
 
         var serializedObject = try req.content.decode(T.DTO.self)
         serializedObject.userId = try req.auth.require(User.self).requireID()
-        
+
         // Make sure this blog has content
         guard let article = serializedObject.content else {
             throw Abort(.unprocessableEntity, reason: "Value required for key 'content'.")
@@ -152,7 +144,7 @@ class BlogCollection: ApiCollection {
         var blog: T
 
         var originalBlogAlias: String
-        
+
         if let original = original {
             originalBlogAlias = original.alias
             blog = try original.update(with: serializedObject)
@@ -162,44 +154,46 @@ class BlogCollection: ApiCollection {
             originalBlogAlias = blog.alias
         }
 
-        return blog.save(on: req.db)
-        .flatMapErrorThrowing({
-            if case MySQLError.duplicateEntry = $0 {
-                throw Abort.init(.unprocessableEntity, reason: "Value for key 'alias' already exsit.")
+        do {
+            try await blog.save(on: req.db)
+        } catch {
+            if case MySQLError.duplicateEntry = error {
+                throw Abort.init(
+                    .unprocessableEntity,
+                    reason: "Value for key 'alias' already exsit."
+                )
             }
-            throw $0
-        })
-        .flatMap({
-            if originalBlogAlias != blog.alias {
-                self._removeBlog(originalBlogAlias, on: req)
-            }
-            return req.fileio.writeFile(.init(string: content), path: self._filepath(req, alias: blog.alias), relative: "")
-                .map({
-                    blog.content = $0
-                })
-        })
-        .flatMap({ () -> EventLoopFuture<[BlogCategory]> in
-            let difference = categories.difference(from: blog.$categories.value ?? []) {
-                $0.id == $1.id
-            }
+            throw error
+        }
 
-            return EventLoopFuture<Void>.andAllSucceed(difference.map({
-                switch $0 {
+        if originalBlogAlias != blog.alias {
+            self._removeBlog(originalBlogAlias, on: req)
+        }
+
+        blog.content = try await req.fileio.writeFile(
+            .init(string: content),
+            path: self._filepath(req, alias: blog.alias),
+            relative: ""
+        ).get()
+
+        let difference = categories.difference(from: blog.$categories.value ?? []) {
+            $0.id == $1.id
+        }
+
+        for diff in difference {
+            switch diff {
                 case .insert(offset: _, element: let category, associatedWith: _):
-                    return blog.$categories.attach(category, on: req.db)
+                    try await blog.$categories.attach(category, on: req.db)
                 case .remove(offset: _, element: let category, associatedWith: _):
-                    return blog.$categories.detach(category, on: req.db)
-                }
-            }), on: req.eventLoop)
-            .flatMap({
-                blog.$categories.get(reload: true, on: req.db)
-            })
-        })
-        .flatMapThrowing({ _ in
-            var result = try blog.dataTransferObject()
-            result.content = content
-            return result
-        })
+                    try await blog.$categories.detach(category, on: req.db)
+            }
+        }
+
+        try await blog.$categories.load(on: req.db)
+
+        var result = try blog.dataTransferObject()
+        result.content = content
+        return result
     }
 
     private func _filepath(_ req: Request, alias: String) -> String {
@@ -210,7 +204,8 @@ class BlogCollection: ApiCollection {
         var isDirectory = ObjCBool(false)
         let filepath = _filepath(req, alias: alias)
         if FileManager.default.fileExists(atPath: filepath, isDirectory: &isDirectory),
-           isDirectory.boolValue == false {
+            isDirectory.boolValue == false
+        {
             try? FileManager.default.removeItem(atPath: filepath)
         }
     }

@@ -1,17 +1,17 @@
-import Vapor
 import FluentMySQLDriver
+import Vapor
 
 class IndustryCollection: ApiCollection {
     typealias T = Industry
 
-    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<T.DTO> {
+    func performUpdate(_ original: T?, on req: Request) async throws -> T.DTO {
         let coding = try req.content.decode(T.DTO.self)
         guard coding.title != nil else {
             throw Abort.init(.unprocessableEntity, reason: "Value required for key 'title'")
         }
 
         var upgrade = T.init()
-        
+
         if let original = original {
             upgrade = try original.update(with: coding)
         } else {
@@ -19,15 +19,14 @@ class IndustryCollection: ApiCollection {
             upgrade.id = nil
         }
 
-        return upgrade.save(on: req.db)
-            .flatMapErrorThrowing({
-                if case MySQLError.duplicateEntry(let localizedErrorDescription) = $0 {
-                    throw Abort.init(.unprocessableEntity, reason: localizedErrorDescription)
-                }
-                throw $0
-            })
-            .flatMapThrowing({
-                try upgrade.dataTransferObject()
-            })
+        do {
+            try await upgrade.save(on: req.db)
+        } catch {
+            if case MySQLError.duplicateEntry(let localizedErrorDescription) = error {
+                throw Abort.init(.unprocessableEntity, reason: localizedErrorDescription)
+            }
+            throw error
+        }
+        return try upgrade.dataTransferObject()
     }
 }

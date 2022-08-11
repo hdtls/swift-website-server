@@ -1,5 +1,5 @@
-import Vapor
 import Fluent
+import Vapor
 
 class SocialNetworkingCollection: ApiCollection {
 
@@ -7,64 +7,62 @@ class SocialNetworkingCollection: ApiCollection {
 
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(path.components(separatedBy: "/").map(PathComponent.constant))
-        
+
         routes.on(.GET, use: readAll)
-                
+
         routes.on(.GET, .parameter(restfulIDKey), use: read)
-        
+
         let trusted = routes.grouped([
             User.authenticator(),
             Token.authenticator(),
-            User.guardMiddleware()
+            User.guardMiddleware(),
         ])
-        
+
         trusted.on(.POST, use: create)
         trusted.on(.PUT, .parameter(restfulIDKey), use: update)
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
-    
-    func update(_ req: Request) throws -> EventLoopFuture<T.DTO> {
-        let user = try req.auth.require(User.self)
-        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
-        
-        return user.$social.query(on: req.db)
-            .filter(\.$id == id)
-            .first()
-            .unwrap(orError: Abort(.notFound))
-            .flatMap({
-                do {
-                    return try self.performUpdate($0, on: req)
-                } catch {
-                    return req.eventLoop.makeFailedFuture(error)
-                }
-            })
-    }
-    
-    func delete(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+    func update(_ req: Request) async throws -> T.DTO {
         let user = try req.auth.require(User.self)
         let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
 
-        
-        return user.$social.query(on: req.db)
-            .filter(\.$id == id)
-            .first()
-            .unwrap(or: Abort(.notFound))
-            .flatMap({
-                $0.delete(on: req.db)
-            })
-            .transform(to: .ok)
+        guard
+            let socialNetworking = try await user.$social.query(on: req.db)
+                .filter(\.$id == id)
+                .first()
+        else {
+            throw Abort(.notFound)
+        }
+        return try await performUpdate(socialNetworking, on: req)
     }
-    
-    func applyingFields(_ builder: QueryBuilder<SocialNetworking>) -> QueryBuilder<SocialNetworking> {
+
+    func delete(_ req: Request) async throws -> HTTPStatus {
+        let user = try req.auth.require(User.self)
+        let id = try req.parameters.require(restfulIDKey, as: T.IDValue.self)
+
+        guard
+            let saved = try await user.$social.query(on: req.db)
+                .filter(\.$id == id)
+                .first()
+        else {
+            throw Abort(.notFound)
+        }
+        try await saved.delete(on: req.db)
+        return .ok
+    }
+
+    func applyingFields(_ builder: QueryBuilder<SocialNetworking>) -> QueryBuilder<SocialNetworking>
+    {
         builder.with(\.$service)
     }
 
-    func performUpdate(_ original: T?, on req: Request) throws -> EventLoopFuture<SocialNetworking.Coding> {
+    func performUpdate(_ original: T?, on req: Request) async throws -> SocialNetworking.Coding {
         var serializedObject = try req.content.decode(T.DTO.self)
         serializedObject.userId = try req.auth.require(User.self).requireID()
-        
+
         var upgrade = T.init()
- 
+
         if let original = original {
             upgrade = try original.update(with: serializedObject)
         } else {
@@ -72,14 +70,12 @@ class SocialNetworkingCollection: ApiCollection {
             upgrade.id = nil
         }
 
-        return upgrade.save(on: req.db)
-            .flatMap({
-                // Make sure `$socialNetworkingService` has been eager loaded
-                // before try `model.dataTransferObject()`.
-                upgrade.$service.get(reload: true, on: req.db)
-            })
-            .flatMapThrowing({ _ in
-                try upgrade.dataTransferObject()
-            })
+        try await upgrade.save(on: req.db)
+
+        // Make sure `$socialNetworkingService` has been eager loaded
+        // before try `model.dataTransferObject()`.
+        try await upgrade.$service.load(on: req.db)
+
+        return try upgrade.dataTransferObject()
     }
 }

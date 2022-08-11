@@ -21,7 +21,7 @@ class FileCollection: RouteCollection {
         let trusted = routes.grouped([
             User.authenticator(),
             Token.authenticator(),
-            User.guardMiddleware()
+            User.guardMiddleware(),
         ])
 
         trusted.on(.POST, body: .collect(maxSize: maximumBodySize), use: create)
@@ -29,16 +29,16 @@ class FileCollection: RouteCollection {
 
     func create(_ req: Request) throws -> EventLoopFuture<MultipartFileCoding> {
         switch type {
-        case .images:
-            return try uploadImageFile(req)
-                .map {
-                    MultipartFileCoding.init(url: $0)
-                }
-        default:
-            return try uploadFile(req, relative: req.application.directory.publicDirectory)
-                .map {
-                    MultipartFileCoding.init(url: $0)
-                }
+            case .images:
+                return try uploadImageFile(req)
+                    .map {
+                        MultipartFileCoding.init(url: $0)
+                    }
+            default:
+                return try uploadFile(req, relative: req.application.directory.publicDirectory)
+                    .map {
+                        MultipartFileCoding.init(url: $0)
+                    }
         }
     }
 }
