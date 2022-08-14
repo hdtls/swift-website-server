@@ -1,12 +1,11 @@
 # ================================
 # Build image
 # ================================
-FROM swift as builder
+FROM swift:5.6-focal as builder
 
-RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
-
-# Install OS updates and set as UTF-8
-RUN apt-get update -q \
+# Install updates and set locales to en_US.UTF-8.
+RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
+    && apt-get -q update \
     && apt-get -q dist-upgrade -y \
     && apt-get -q install -y locales locales-all python3 \
     && rm -rf /var/lib/apt/lists/*
@@ -29,7 +28,7 @@ RUN swift package resolve
 COPY . .
 
 # Planning build
-RUN python3 build-script.py --configuration release
+RUN python3 build-script.py --configuration release --static-swift-stdlib
 
 # Makedir
 # RUN mkdir -p Public Resources
@@ -40,6 +39,9 @@ WORKDIR /staging
 # Copy main executable to staging area
 RUN cp "$(swift build --package-path /build -c release --show-bin-path)/Run" ./
 
+# Copy resources bundled by SPM to staging area
+RUN find -L "$(swift build --package-path /build -c release --show-bin-path)/" -regex '.*\.resources$' -exec cp -Ra {} ./ \;
+
 # Uncomment the next line if you need to load resources from the `Public` directory.
 # Ensure that by default, neither the directory nor any of its contents are writable.
 # RUN mv /build/Public Public && mv /build/Resources Resources
@@ -47,7 +49,7 @@ RUN cp "$(swift build --package-path /build -c release --show-bin-path)/Run" ./
 # ================================
 # Run image
 # ================================
-FROM swift:slim
+FROM ubuntu:focal
 
 # Make sure all system packages are up to date.
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \

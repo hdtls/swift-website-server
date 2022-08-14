@@ -269,6 +269,13 @@ def parse_args():
         ),
     )
     
+    build_group.add_argument(
+        "--static-swift-stdlib",
+        action="store_true",
+        default=False,
+        help="Link Swift stdlib statically (default: %(default)s)."
+    )
+    
     test_group = parser.add_argument_group("Test")
 
     test_group.add_argument("-t", "--test", action="store_true", help="Run tests")
@@ -306,6 +313,8 @@ def main():
             popenargs.append("--verbose")
         print("Planing build product " + PRODUCT_NAME)
         popenargs.extend(["--product", PRODUCT_NAME])
+        if args.static_swift_stdlib:
+            popenargs.append("--static-swift-stdlib")
         check_call(popenargs, args.verbose)
     except subprocess.CalledProcessError as e:
         printerr("FAIL: Building product failed")
