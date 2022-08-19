@@ -14,7 +14,7 @@ import sys
 
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
-LIBRARY_DIR = os.path.join(PACKAGE_DIR, "Sources", "App")
+LIBRARY_DIR = os.path.join(PACKAGE_DIR, "Sources", "Backend")
 PACKAGE_NAME = "swift-blog"
 PRODUCT_NAME = "Run"
 TOOLCHAIN = "/usr"
