@@ -1,7 +1,5 @@
 import Foundation
-
-import struct NIO.ByteBuffer
-import enum NIO.Endianness
+import NIOCore
 
 protocol ImageSerializing {
     var fileExtension: String { get }

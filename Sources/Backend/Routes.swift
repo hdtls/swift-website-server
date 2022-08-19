@@ -1,7 +1,7 @@
 import Vapor
 
 /// Register your application's routes here.
-public func routes(_ app: Application) throws {
+func routes(_ app: Application) throws {
 
     try app.register(collection: FileCollection.init(type: .files))
     try app.register(collection: FileCollection.init(type: .images))

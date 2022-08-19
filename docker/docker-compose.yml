@@ -34,7 +34,7 @@ services:
     <<: *imagefile
     depends_on: [ db, runtime-setup ]
     environment:
-      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       MYSQL_HOST: db
       <<: *mysql
 

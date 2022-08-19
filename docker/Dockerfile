@@ -37,7 +37,7 @@ RUN python3 build-script.py --configuration release --static-swift-stdlib
 WORKDIR /staging
 
 # Copy main executable to staging area
-RUN cp "$(swift build --package-path /build -c release --show-bin-path)/Run" ./
+RUN cp "$(swift build --package-path /build -c release --show-bin-path)/swift-blog" ./
 
 # Copy resources bundled by SPM to staging area
 RUN find -L "$(swift build --package-path /build -c release --show-bin-path)/" -regex '.*\.resources$' -exec cp -Ra {} ./ \;
@@ -73,5 +73,5 @@ USER vapor:vapor
 EXPOSE 8080
 
 # Start the Vapor service when the image is run, default to listening on 8080 in production environment
-ENTRYPOINT ["/app/Run"]
+ENTRYPOINT ["/app/swift-blog"]
 CMD ["serve", "--env", "production", "--hostname", "0.0.0.0", "--port", "8080"]
