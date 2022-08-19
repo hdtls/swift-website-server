@@ -4,7 +4,7 @@ import Vapor
 class ExpCollection: RouteCollection {
 
     private let restfulIDKey: String = "id"
-    
+
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(.constant(Experience.schema))
 
@@ -24,93 +24,63 @@ class ExpCollection: RouteCollection {
     }
 
     func create(_ req: Request) async throws -> Experience.DTO {
-        try await performUpdate(nil, on: req)
+        var newValue = try req.content.decode(Experience.DTO.self)
+        newValue.userId = try req.uid
+
+        let industries: [Industry] = newValue.industries.map {
+            let industry = Industry.init()
+            industry.id = $0.id
+            return industry
+        }
+
+        let model = try Experience(from: newValue)
+        model.id = nil
+
+        try await req.repository.experience.create(model, industries: industries)
+
+        return try model.dataTransferObject()
     }
-    
+
     func read(_ req: Request) async throws -> Experience.DTO {
         let id = try req.parameters.require(restfulIDKey, as: Experience.IDValue.self)
-        
-        guard let saved = try await req.repository.exp.query(id).with(\.$industries).first() else {
-            throw Abort(.notFound)
-        }
-        
+
+        let saved = try await req.repository.experience.identified(by: id)
+
         return try saved.dataTransferObject()
     }
-    
+
     func readAll(_ req: Request) async throws -> [Experience.DTO] {
-        try await req.repository.exp.query().with(\.$industries).all().map {
+        try await req.repository.experience.readAll().map {
             try $0.dataTransferObject()
         }
     }
-    
+
     func update(_ req: Request) async throws -> Experience.DTO {
         let id = try req.parameters.require(restfulIDKey, as: Experience.IDValue.self)
 
-        guard
-            let exp = try await req.repository.exp.query(id)
-                .filter(\.$user.$id == req.uid)
-                .with(\.$industries)
-                .first()
-        else {
-            throw Abort(.notFound)
+        var newValue = try req.content.decode(Experience.DTO.self)
+        newValue.userId = try req.uid
+
+        let industries: [Industry] = newValue.industries.map {
+            let industry = Industry.init()
+            industry.id = $0.id
+            return industry
         }
 
-        return try await performUpdate(exp, on: req)
+        let saved = try await req.repository.experience.identified(by: id, owned: true)
+        try saved.update(with: newValue)
+
+        precondition(saved.$user.id == newValue.userId)
+        try await req.repository.experience.update(saved, industries: industries)
+
+        return try saved.dataTransferObject()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         let id = try req.parameters.require(restfulIDKey, as: Experience.IDValue.self)
 
-        guard
-            let exp = try await req.repository.exp.query(id)
-                .filter(\.$user.$id == req.uid)
-                .with(\.$industries)
-                .first()
-        else {
-            throw Abort.init(.notFound)
-        }
-
-        try await exp.$industries.detach(exp.industries, on: req.db)
-        try await req.repository.exp.delete(exp.requireID())
+        try await req.repository.experience.delete(id)
 
         return .ok
-    }
-
-    func performUpdate(_ original: Experience?, on req: Request) async throws -> Experience.DTO {
-        var serializedObject = try req.content.decode(Experience.DTO.self)
-        serializedObject.userId = try req.uid
-
-        let industries: [Industry] = serializedObject.industries.map({
-            let industry = Industry.init()
-            industry.id = $0.id
-            return industry
-        })
-
-        var upgrade = Experience.init()
-
-        if let original = original {
-            upgrade = try original.update(with: serializedObject)
-        } else {
-            upgrade = try Experience.init(from: serializedObject)
-            upgrade.id = nil
-        }
-
-        try await req.repository.exp.save(upgrade)
-
-        let difference = industries.difference(from: upgrade.$industries.value ?? []) {
-            $0.id == $1.id
-        }
-
-        for diff in difference {
-            switch diff {
-                case .insert(offset: _, element: let industry, associatedWith: _):
-                    try await upgrade.$industries.attach(industry, on: req.db)
-                case .remove(offset: _, element: let industry, associatedWith: _):
-                    try await upgrade.$industries.detach(industry, on: req.db)
-            }
-        }
-
-        try await upgrade.$industries.load(on: req.db)
-        return try upgrade.dataTransferObject()
     }
 }

@@ -1,46 +1,27 @@
-import Vapor
 import FluentMySQLDriver
+import Vapor
 
 struct IndustryRepository: Repository {
-        
+
     var req: Request
-    
+
     init(req: Request) {
         self.req = req
     }
-    
+
     func query() -> QueryBuilder<Industry> {
         Industry.query(on: req.db)
     }
-    
+
     func query(_ id: Industry.IDValue) -> QueryBuilder<Industry> {
         query().filter(\.$id == id)
     }
-    
+
     func create(_ model: Industry) async throws {
         try await save(model)
     }
 
-    func read(_ id: Industry.IDValue) async throws -> Industry {
-        guard let result = try await query(id).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-    
-    func readAll() async throws -> [Industry] {
-        try await query().all()
-    }
-    
-    func update(_ model: Industry) async throws {
-        try await save(model)
-    }
-        
-    func delete(_ id: Industry.IDValue) async throws {
-        try await query(id).delete()
-    }
-    
-    private func save(_ model: Industry) async throws {
+    func save(_ model: Industry) async throws {
         do {
             try await model.save(on: req.db)
         } catch {
@@ -49,6 +30,25 @@ struct IndustryRepository: Repository {
             }
             throw error
         }
+    }
+
+    func identified(by id: Industry.IDValue) async throws -> Industry {
+        guard let result = try await query(id).first() else {
+            throw Abort(.notFound)
+        }
+        return result
+    }
+
+    func readAll() async throws -> [Industry] {
+        try await query().all()
+    }
+
+    func update(_ model: Industry) async throws {
+        try await save(model)
+    }
+
+    func delete(_ id: Industry.IDValue) async throws {
+        try await query(id).delete()
     }
 }
 

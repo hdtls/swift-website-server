@@ -1,56 +1,49 @@
-import Vapor
 import Fluent
+import Vapor
 
 struct ProjectRepository: Repository {
-        
+
     var req: Request
-    
+
     init(req: Request) {
         self.req = req
     }
-    
-    func query() -> QueryBuilder<Project> {
-        Project.query(on: req.db)
+
+    func query(owned: Bool = false) throws -> QueryBuilder<Project> {
+        let query = Project.query(on: req.db)
+
+        if owned {
+            try query.filter(\.$user.$id == req.uid)
+        }
+
+        return query
     }
-    
-    func query(_ id: Project.IDValue) -> QueryBuilder<Project> {
-        query().filter(\.$id == id)
+
+    func query(_ id: Project.IDValue, owned: Bool = false) throws -> QueryBuilder<Project> {
+        try query(owned: owned).filter(\.$id == id)
     }
-    
+
     func create(_ model: Project) async throws {
         try await req.user.$projects.create(model, on: req.db)
     }
 
-    func read(_ id: Project.IDValue) async throws -> Project {
-        guard let result = try await query(id).first() else {
+    func identified(by id: Project.IDValue, owned: Bool = false) async throws -> Project {
+        guard let result = try await query(id, owned: owned).first() else {
             throw Abort(.notFound)
         }
         return result
     }
-    
-    func owned(_ id: Project.IDValue) async throws -> Project {
-        let result = try await req.user.$projects.query(on: req.db)
-            .filter(\.$id == id)
-            .first()
-            
-        guard let result = result else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-    
+
     func readAll() async throws -> [Project] {
         try await query().all()
     }
-    
+
     func update(_ model: Project) async throws {
-        // Authentication check
-        _ = try req.user
         try await model.update(on: req.db)
     }
-        
+
     func delete(_ id: Project.IDValue) async throws {
-        try await req.user.$projects.query(on: req.db).filter(\.$id == id).delete()
+        try await query(id, owned: true).delete()
     }
 }
 

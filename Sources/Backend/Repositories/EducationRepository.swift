@@ -1,56 +1,49 @@
-import Vapor
 import Fluent
+import Vapor
 
 struct EducationRepository: Repository {
-        
+
     var req: Request
-    
+
     init(req: Request) {
         self.req = req
     }
-    
-    func query() -> QueryBuilder<Education> {
-        Education.query(on: req.db)
+
+    func query(owned: Bool = false) throws -> QueryBuilder<Education> {
+        let query = Education.query(on: req.db)
+
+        if owned {
+            try query.filter(\.$user.$id == req.uid)
+        }
+
+        return query
     }
-    
-    func query(_ id: Education.IDValue) -> QueryBuilder<Education> {
-        query().filter(\.$id == id)
+
+    func query(_ id: Education.IDValue, owned: Bool = false) throws -> QueryBuilder<Education> {
+        try query(owned: owned).filter(\.$id == id)
     }
-    
+
     func create(_ model: Education) async throws {
         try await req.user.$education.create(model, on: req.db)
     }
 
-    func read(_ id: Education.IDValue) async throws -> Education {
-        guard let result = try await query(id).first() else {
+    func identified(by id: Education.IDValue, owned: Bool = false) async throws -> Education {
+        guard let result = try await query(id, owned: owned).first() else {
             throw Abort(.notFound)
         }
         return result
     }
-    
-    func owned(_ id: Education.IDValue) async throws -> Education {
-        let result = try await req.user.$education.query(on: req.db)
-            .filter(\.$id == id)
-            .first()
-            
-        guard let result = result else {
-            throw Abort(.notFound)
-        }
-        return result
+
+    func readAll(owned: Bool = false) async throws -> [Education] {
+        try await query(owned: owned).all()
     }
-    
-    func readAll() async throws -> [Education] {
-        try await query().all()
-    }
-    
+
     func update(_ model: Education) async throws {
-        // Authentication check
-        _ = try req.user
         try await model.update(on: req.db)
     }
-        
+
     func delete(_ id: Education.IDValue) async throws {
-        try await req.user.$education.query(on: req.db).filter(\.$id == id).delete()
+        try await query(id, owned: true).delete()
     }
 }
 

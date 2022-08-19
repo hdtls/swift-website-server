@@ -4,7 +4,7 @@ import Vapor
 class BlogCategoryCollection: RouteCollection {
 
     private let restfulIDKey = "id"
-    
+
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(.constant(BlogCategory.schema))
         routes.on(.POST, use: create)
@@ -13,23 +13,23 @@ class BlogCategoryCollection: RouteCollection {
         routes.on(.PUT, .parameter(restfulIDKey), use: update)
         routes.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
-    
+
     func create(_ req: Request) async throws -> BlogCategory.DTO {
         let newValue = try req.content.decode(BlogCategory.DTO.self)
 
         let model = try BlogCategory(from: newValue)
         model.id = nil
-        
+
         try await req.repository.blogCategory.create(model)
-        
+
         return try model.dataTransferObject()
     }
-    
+
     func read(_ req: Request) async throws -> BlogCategory.DTO {
         let id = try req.parameters.require(restfulIDKey, as: BlogCategory.IDValue.self)
 
-        let result = try await req.repository.blogCategory.read(id)
-        
+        let result = try await req.repository.blogCategory.identified(by: id)
+
         return try result.dataTransferObject()
     }
 
@@ -38,25 +38,25 @@ class BlogCategoryCollection: RouteCollection {
             try $0.dataTransferObject()
         }
     }
-    
+
     func update(_ req: Request) async throws -> BlogCategory.DTO {
         let id = try req.parameters.require(restfulIDKey, as: BlogCategory.IDValue.self)
 
         let newValue = try req.content.decode(BlogCategory.DTO.self)
-                    
-        let saved = try await req.repository.blogCategory.read(id)
+
+        let saved = try await req.repository.blogCategory.identified(by: id)
         try saved.update(with: newValue)
-        
+
         try await req.repository.blogCategory.update(saved)
-        
+
         return try saved.dataTransferObject()
     }
-    
+
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         let id = try req.parameters.require(restfulIDKey, as: BlogCategory.IDValue.self)
-        
+
         try await req.repository.blogCategory.delete(id)
-        
+
         return .ok
     }
 }

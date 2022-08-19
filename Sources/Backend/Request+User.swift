@@ -6,7 +6,7 @@ extension Request {
             try auth.require()
         }
     }
-    
+
     var uid: User.IDValue {
         get throws {
             try user.requireID()

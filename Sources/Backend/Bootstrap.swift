@@ -52,13 +52,13 @@ public func bootstrap(_ app: Application) throws {
     app.registry.use(BlogCategoryRepository.init, as: .blogCategory)
     app.registry.use(BlogRepository.init, as: .blog)
     app.registry.use(EducationRepository.init, as: .education)
-    app.registry.use(ExpRepository.init, as: .exp)
+    app.registry.use(ExperienceRepository.init, as: .experience)
     app.registry.use(IndustryRepository.init, as: .industry)
     app.registry.use(ProjectRepository.init, as: .project)
     app.registry.use(SkillRepository.init, as: .skill)
     app.registry.use(SocialNetworkingRepository.init, as: .socialNetworking)
     app.registry.use(SocialNetworkingServiceRepository.init, as: .socialNetworkingService)
     app.registry.use(UserRepository.init, as: .user)
-    
+
     try routes(app)
 }

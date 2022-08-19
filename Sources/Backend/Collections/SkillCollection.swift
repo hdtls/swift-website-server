@@ -2,9 +2,9 @@ import Fluent
 import Vapor
 
 class SkillCollection: RouteCollection {
-    
+
     private let restfulIDKey: String = "id"
-    
+
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped(.constant(Skill.schema))
 
@@ -35,27 +35,27 @@ class SkillCollection: RouteCollection {
     func read(_ req: Request) async throws -> Skill.DTO {
         let id = try req.parameters.require(restfulIDKey, as: Skill.IDValue.self)
 
-        let result = try await req.repository.skill.read(id)
-            
+        let result = try await req.repository.skill.identified(by: id)
+
         return try result.dataTransferObject()
     }
-    
+
     func readAll(_ req: Request) async throws -> [Skill.DTO] {
         try await req.repository.skill.readAll().map {
             try $0.dataTransferObject()
         }
     }
-    
+
     func update(_ req: Request) async throws -> Skill.DTO {
         let id = try req.parameters.require(restfulIDKey, as: Skill.IDValue.self)
 
-        let model = try req.content.decode(Skill.DTO.self)
+        let newValue = try req.content.decode(Skill.DTO.self)
 
-        let saved = try await req.repository.skill.owned(id)
-        try saved.update(with: model)
-        
+        let saved = try await req.repository.skill.identified(by: id, owned: true)
+        try saved.update(with: newValue)
+
         try await req.repository.skill.update(saved)
-  
+
         return try saved.dataTransferObject()
     }
 

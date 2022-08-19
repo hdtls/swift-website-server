@@ -1,50 +1,55 @@
-import Vapor
 import Fluent
+import Vapor
 
 struct SocialNetworkingRepository: Repository {
-        
+
     var req: Request
-    
+
     init(req: Request) {
         self.req = req
     }
-    
-    func query() -> QueryBuilder<SocialNetworking> {
-        SocialNetworking.query(on: req.db)
-    }
-    
-    func query(_ id: SocialNetworking.IDValue) -> QueryBuilder<SocialNetworking> {
-        query().filter(\.$id == id)
+
+    func query(owned: Bool = false) throws -> QueryBuilder<SocialNetworking> {
+        let query = SocialNetworking.query(on: req.db).with(\.$service)
+
+        if owned {
+            try query.filter(\.$user.$id == req.uid)
+        }
+
+        return query
     }
 
-    func save(_ model: SocialNetworking) async throws {
+    func query(_ id: SocialNetworking.IDValue, owned: Bool = false) throws -> QueryBuilder<
+        SocialNetworking
+    > {
+        try query(owned: owned).filter(\.$id == id)
+    }
+
+    func create(_ model: SocialNetworking) async throws {
+        try await req.user.$social.create(model, on: req.db)
+        try await model.$service.load(on: req.db)
+    }
+
+    func identified(by id: SocialNetworking.IDValue, owned: Bool = false) async throws
+        -> SocialNetworking
+    {
+        guard let result = try await query(id, owned: owned).first() else {
+            throw Abort(.notFound)
+        }
+        return result
+    }
+
+    func readAll(owned: Bool = false) async throws -> [SocialNetworking] {
+        try await query(owned: owned).all()
+    }
+
+    func update(_ model: SocialNetworking) async throws {
         try await model.save(on: req.db)
+        try await model.$service.load(on: req.db)
     }
 
-    func read(_ id: SocialNetworking.IDValue) async throws -> SocialNetworking {
-        guard let result = try await query(id).with(\.$service).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-    
-    func owned(_ id: SocialNetworking.IDValue) async throws -> SocialNetworking {
-        let result = try await req.user.$social.query(on: req.db)
-            .filter(\.$id == id)
-            .first()
-            
-        guard let result = result else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-    
-    func readAll() async throws -> [SocialNetworking] {
-        try await query().with(\.$service).all()
-    }
-        
     func delete(_ id: SocialNetworking.IDValue) async throws {
-        try await req.user.$social.query(on: req.db).filter(\.$id == id).delete()
+        try await query(id, owned: true).delete()
     }
 }
 

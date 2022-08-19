@@ -1,8 +1,8 @@
-import Vapor
 import Fluent
+import Vapor
 
 class UserCollection: RouteCollection {
-    
+
     struct SupportedQueries: Decodable {
         var includeExperience: Bool?
         var includeEducation: Bool?
@@ -22,7 +22,7 @@ class UserCollection: RouteCollection {
     }
 
     private let restfulIDKey = "id"
-    
+
     func boot(routes: RoutesBuilder) throws {
 
         let users = routes.grouped(.constant(User.schema))
@@ -86,7 +86,7 @@ class UserCollection: RouteCollection {
         let supportedQueries = try req.query.decode(SupportedQueries.self)
 
         let query = req.repository.user.query().addEagerLoaders(with: supportedQueries)
-            
+
         return try await query.all().map {
             try $0.dataTransferObject()
         }
@@ -94,24 +94,25 @@ class UserCollection: RouteCollection {
 
     /// Update exists user with `User.Coding` which contain all properties that user need updated.
     func update(_ req: Request) async throws -> User.DTO {
-        let coding = try req.content.decode(User.Coding.self)
+        let newValue = try req.content.decode(User.DTO.self)
 
-        let saved = try await req.repository.user.read(req.uid)
+        let saved = try await req.repository.user.identified(by: req.uid)
+        try saved.update(with: newValue)
 
-        try await req.repository.user.update(saved.update(with: coding))
-        
+        try await req.repository.user.update(saved)
+
         return try saved.dataTransferObject()
     }
 
     func patch(_ req: Request) async throws -> User.DTO {
-        let saved = try await req.repository.user.read(req.uid)
+        let saved = try await req.repository.user.identified(by: req.uid)
         saved.avatarUrl = try await uploadImageFile(req).get()
-        
+
         try await req.repository.user.update(saved)
-        
+
         return try saved.dataTransferObject()
     }
-    
+
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         try await req.repository.user.delete(req.uid)
         return .ok
@@ -136,9 +137,9 @@ class UserCollection: RouteCollection {
     }
 }
 
-private extension QueryBuilder where Model == User {
-    
-    func addEagerLoaders(with queries: UserCollection.SupportedQueries) -> Self {
+extension QueryBuilder where Model == User {
+
+    fileprivate func addEagerLoaders(with queries: UserCollection.SupportedQueries) -> Self {
         if queries.includeExperience ?? false {
             with(\.$experiences) {
                 $0.with(\.$industries)
@@ -179,34 +180,23 @@ extension UserCollection {
             throw Abort(.notFound)
         }
 
-        let models = try await BlogCollection()
-            .applyingFieldsForQueryAll(user.$blog.query(on: req.db))
+        return try await req.repository.blog.queryAll()
+            .filter(\.$user.$id == user.requireID())
             .all()
-
-        return try models.map {
-            try $0.dataTransferObject()
-        }
+            .map {
+                try $0.dataTransferObject()
+            }
     }
 }
 
 // MARK: CV
 extension UserCollection {
     func readResume(_ req: Request) async throws -> User.DTO {
-        let resume = try await query(on: req)
-            .with(\.$projects)
-            .with(\.$education)
-            .with(\.$experiences) {
-                $0.with(\.$industries)
-            }
-            .with(\.$social) {
-                $0.with(\.$service)
-            }
-            .with(\.$skill)
-            .first()
-
-        guard let resume = resume else {
-            throw Abort(.notFound)
+        guard let id = req.parameters.get(restfulIDKey, as: String.self) else {
+            throw Abort(.badRequest)
         }
+
+        let resume = try await req.repository.user.formatted(by: id)
 
         return try resume.dataTransferObject()
     }

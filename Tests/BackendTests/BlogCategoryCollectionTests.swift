@@ -112,7 +112,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             .DELETE,
             BlogCategory.schema + "/0",
             headers: app.login().headers,
-            afterResponse: assertHttpNotFound
+            afterResponse: assertHttpOk
         )
     }
 
