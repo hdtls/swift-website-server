@@ -26,7 +26,7 @@ jobs:
       - name: Install python
         run: apt -q update && apt -q dist-upgrade -y && apt install -y python3
       
-      - name: Run tests with Thread Sanitizer
+      - name: Run tests
         env:
           MYSQL_HOST: mysql
         run: python3 build-script.py --test
