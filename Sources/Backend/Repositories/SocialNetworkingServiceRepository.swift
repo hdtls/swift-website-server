@@ -38,8 +38,8 @@ struct SocialNetworkingServiceRepository: Repository {
     }
 }
 
-extension RepositoryID {
-    static let socialNetworkingService: RepositoryID = "social_networking_service"
+extension RepositoryFactoryKey {
+    static let socialNetworkingService: RepositoryFactoryKey = "social_networking_service"
 }
 
 extension Request {

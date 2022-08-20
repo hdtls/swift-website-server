@@ -36,9 +36,9 @@ class BlogCollection: RouteCollection {
             throw Abort(.unprocessableEntity, reason: "Value required for key 'content'.")
         }
 
-        let categories = try newValue.categories.map(BlogCategory.init)
+        let categories = try newValue.categories.map(BlogCategory.fromBridgedDTO)
 
-        let model = try Blog.init(from: newValue)
+        let model = try Blog.fromBridgedDTO(newValue)
         model.id = nil
 
         let originalBlogAlias = model.alias
@@ -58,7 +58,7 @@ class BlogCollection: RouteCollection {
             removeBlog(alias, on: req)
         }
 
-        var result = try model.dataTransferObject()
+        var result = try model.bridged()
         result.content = article
         return result
     }
@@ -70,7 +70,7 @@ class BlogCollection: RouteCollection {
 
         var byteBuffer = try await req.fileio.collectFile(at: filepath(req, alias: saved.alias))
 
-        var result = try saved.dataTransferObject()
+        var result = try saved.bridged()
         result.content = byteBuffer.readString(length: byteBuffer.readableBytes) ?? ""
         return result
     }
@@ -88,7 +88,7 @@ class BlogCollection: RouteCollection {
         }
 
         return try await queryBuilder.all().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -105,7 +105,7 @@ class BlogCollection: RouteCollection {
             throw Abort(.unprocessableEntity, reason: "Value required for key 'content'.")
         }
 
-        let categories = try newValue.categories.map(BlogCategory.init)
+        let categories = try newValue.categories.map(BlogCategory.fromBridgedDTO)
 
         let originalBlogAlias = saved.alias
         try saved.update(with: newValue)
@@ -124,7 +124,7 @@ class BlogCollection: RouteCollection {
             removeBlog(alias, on: req)
         }
 
-        var result = try saved.dataTransferObject()
+        var result = try saved.bridged()
         result.content = article
         return result
     }

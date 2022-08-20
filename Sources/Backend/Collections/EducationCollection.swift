@@ -26,12 +26,12 @@ class EducationCollection: RouteCollection {
         var newValue = try req.content.decode(Education.DTO.self)
         newValue.userId = try req.owner.__id
 
-        let model = try Education(from: newValue)
+        let model = try Education.fromBridgedDTO(newValue)
         model.id = nil
 
         try await req.education.create(model)
 
-        return try model.dataTransferObject()
+        return try model.bridged()
     }
 
     func read(_ req: Request) async throws -> Education.DTO {
@@ -39,12 +39,12 @@ class EducationCollection: RouteCollection {
 
         let saved = try await req.education.identified(by: id)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
-    func readAll(_ req: Request) async throws -> [Education.Coding] {
+    func readAll(_ req: Request) async throws -> [Education.DTO] {
         try await req.education.readAll().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -60,7 +60,7 @@ class EducationCollection: RouteCollection {
         precondition(saved.$user.id == newValue.userId)
         try await req.education.update(saved)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {

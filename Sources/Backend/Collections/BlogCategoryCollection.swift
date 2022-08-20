@@ -16,12 +16,12 @@ class BlogCategoryCollection: RouteCollection {
     func create(_ req: Request) async throws -> BlogCategory.DTO {
         let newValue = try req.content.decode(BlogCategory.DTO.self)
 
-        let model = try BlogCategory(from: newValue)
+        let model = try BlogCategory.fromBridgedDTO(newValue)
         model.id = nil
 
         try await req.blogCategory.save(model)
 
-        return try model.dataTransferObject()
+        return try model.bridged()
     }
 
     func read(_ req: Request) async throws -> BlogCategory.DTO {
@@ -29,12 +29,12 @@ class BlogCategoryCollection: RouteCollection {
 
         let result = try await req.blogCategory.identified(by: id)
 
-        return try result.dataTransferObject()
+        return try result.bridged()
     }
 
     func readAll(_ req: Request) async throws -> [BlogCategory.DTO] {
         try await req.blogCategory.readAll().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -48,7 +48,7 @@ class BlogCategoryCollection: RouteCollection {
 
         try await req.blogCategory.save(saved)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {

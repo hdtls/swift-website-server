@@ -21,9 +21,11 @@ jobs:
           MYSQL_RANDOM_ROOT_PASSWORD: "yes"
     steps:
       - name: Check out test case
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
       - name: Install python
         run: apt -q update && apt -q dist-upgrade -y && apt install -y python3
+      
       - name: Run tests with Thread Sanitizer
         env:
           MYSQL_HOST: mysql
@@ -34,19 +36,18 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v2
-      -
-        name: Repository metadata
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Repository metadata
         id: repository
         uses: actions/github-script@v3
         with:
           script: |
             const repo = await github.repos.get(context.repo)
             return repo.data
-      -
-        name: Prepare image description.
+
+      - name: Prepare image description.
         id: prepare
         run: |
           DOCKER_IMAGE=${{ secrets.DOCKER_REGISTRY }}/${{ github.repository }}
@@ -81,17 +82,17 @@ jobs:
       -
         name: Setup docker buildx
         id: builder
-        uses: docker/setup-buildx-action@v1
-      -
-        name: Login to registry
-        uses: docker/login-action@v1
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to registry
+        uses: docker/login-action@v2
         with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-      -
-        name: Build and push docker to registry
-        uses: docker/build-push-action@v2
+      
+      - name: Build and push docker to registry
+        uses: docker/build-push-action@v3
         with:
           builder: ${{ steps.builder.outputs.name }}
           context: .

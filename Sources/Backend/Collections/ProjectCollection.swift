@@ -25,12 +25,12 @@ class ProjectCollection: RouteCollection {
         var newValue = try req.content.decode(Project.DTO.self)
         newValue.userId = try req.owner.__id
 
-        let model = try Project(from: newValue)
+        let model = try Project.fromBridgedDTO(newValue)
         model.id = nil
 
         try await req.project.create(model)
 
-        return try model.dataTransferObject()
+        return try model.bridged()
     }
 
     func read(_ req: Request) async throws -> Project.DTO {
@@ -38,12 +38,12 @@ class ProjectCollection: RouteCollection {
 
         let saved = try await req.project.identified(by: id)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func readAll(_ req: Request) async throws -> [Project.DTO] {
         try await req.project.readAll().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -59,7 +59,7 @@ class ProjectCollection: RouteCollection {
         precondition(saved.$user.id == newValue.userId)
         try await req.project.update(saved)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {

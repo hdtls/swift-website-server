@@ -26,12 +26,12 @@ class SocialNetworkingCollection: RouteCollection {
         var newValue = try req.content.decode(SocialNetworking.DTO.self)
         newValue.userId = try req.owner.__id
 
-        let model = try SocialNetworking(from: newValue)
+        let model = try SocialNetworking.fromBridgedDTO(newValue)
         model.id = nil
 
         try await req.socialNetworking.create(model)
 
-        return try model.dataTransferObject()
+        return try model.bridged()
     }
 
     func read(_ req: Request) async throws -> SocialNetworking.DTO {
@@ -39,12 +39,12 @@ class SocialNetworkingCollection: RouteCollection {
 
         let saved = try await req.socialNetworking.identified(by: id)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func readAll(_ req: Request) async throws -> [SocialNetworking.DTO] {
         try await req.socialNetworking.readAll().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -60,7 +60,7 @@ class SocialNetworkingCollection: RouteCollection {
         precondition(saved.$user.id == newValue.userId)
         try await req.socialNetworking.update(saved)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {

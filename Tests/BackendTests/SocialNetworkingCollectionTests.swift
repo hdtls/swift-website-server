@@ -50,7 +50,7 @@ class SocialNetworkingCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(SocialNetworking.Coding.self)
+                let coding = try $0.content.decode(SocialNetworking.DTO.self)
                 XCTAssertEqual(coding, socialNetworking)
             }
         )
@@ -70,7 +70,7 @@ class SocialNetworkingCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(SocialNetworking.Coding.self)
+                let coding = try $0.content.decode(SocialNetworking.DTO.self)
                 XCTAssertEqual(coding.id, socialNetworking.id)
                 XCTAssertEqual(coding.url, socialNetworking.url)
                 XCTAssertEqual(coding.service, socialNetworking.service)

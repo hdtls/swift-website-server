@@ -135,7 +135,7 @@ class UserCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                user = try! $0.content.decode(User.Coding.self)
+                user = try! $0.content.decode(User.DTO.self)
                 XCTAssertNotNil(user.id)
                 XCTAssertEqual(user.username, user.username)
                 XCTAssertEqual(user.firstName, user.firstName)
@@ -162,7 +162,7 @@ class UserCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let user = try $0.content.decode(User.Coding.self)
+                let user = try $0.content.decode(User.DTO.self)
                 XCTAssertNotNil(user.id)
                 XCTAssertEqual(user.username, userCreation.username)
                 XCTAssertEqual(user.firstName, userCreation.firstName)
@@ -197,7 +197,7 @@ class UserCollectionTests: XCTestCase {
             path + "/\(userCreation.username)\(query)",
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let user = try $0.content.decode(User.Coding.self)
+                let user = try $0.content.decode(User.DTO.self)
                 XCTAssertNotNil(user.id)
                 XCTAssertEqual(user.username, userCreation.username)
                 XCTAssertEqual(user.firstName, userCreation.firstName)
@@ -222,7 +222,7 @@ class UserCollectionTests: XCTestCase {
             path,
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                XCTAssertNoThrow(try $0.content.decode([User.Coding].self))
+                XCTAssertNoThrow(try $0.content.decode([User.DTO].self))
             }
         )
     }
@@ -244,7 +244,7 @@ class UserCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let users = try $0.content.decode([User.Coding].self)
+                let users = try $0.content.decode([User.DTO].self)
                 XCTAssertNotNil(users.first)
 
                 let user = users.filter({
@@ -288,7 +288,7 @@ class UserCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let user = try $0.content.decode(User.Coding.self)
+                let user = try $0.content.decode(User.DTO.self)
                 XCTAssertNotNil(user.id)
                 XCTAssertEqual(user.username, userCreation.username)
                 XCTAssertEqual(user.firstName, userCreation.firstName)

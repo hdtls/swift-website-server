@@ -34,7 +34,7 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testCreateWithoutContent() throws {
-        var blog = Blog.Coding.generate()
+        var blog = Blog.DTO.generate()
         blog.content = nil
 
         try app.test(

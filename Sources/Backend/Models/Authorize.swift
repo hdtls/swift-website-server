@@ -42,7 +42,7 @@ struct AuthorizedMsg: Content {
     let identityTokenString: String
 
     init(user: User, token: Token) throws {
-        self.user = try user.dataTransferObject()
+        self.user = try user.bridged()
         self.expiresAt = token.expiresAt
         self.identityTokenString = token.token
     }

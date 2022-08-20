@@ -43,7 +43,7 @@ class ProjectCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(Project.Coding.self)
+                let coding = try $0.content.decode(Project.DTO.self)
                 XCTAssertNotNil(coding.id)
                 XCTAssertEqual(coding.name, proj.name)
                 XCTAssertEqual(coding.note, proj.note)
@@ -80,7 +80,7 @@ class ProjectCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(Project.Coding.self)
+                let coding = try $0.content.decode(Project.DTO.self)
                 XCTAssertNotNil(coding.id)
                 XCTAssertNotNil(coding.userId)
                 XCTAssertEqual(coding.name, expected.name)

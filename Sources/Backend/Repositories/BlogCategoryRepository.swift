@@ -37,8 +37,8 @@ struct BlogCategoryRepository: Repository {
     }
 }
 
-extension RepositoryID {
-    static let blogCategory: RepositoryID = "blog_category"
+extension RepositoryFactoryKey {
+    static let blogCategory: RepositoryFactoryKey = "blog_category"
 }
 
 extension Request {

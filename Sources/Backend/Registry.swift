@@ -1,6 +1,6 @@
 import Vapor
 
-struct RepositoryID: Equatable, Hashable, RawRepresentable, ExpressibleByStringLiteral {
+struct RepositoryFactoryKey: Equatable, Hashable, RawRepresentable, ExpressibleByStringLiteral {
     typealias StringLiteralType = String
 
     var rawValue: String
@@ -17,22 +17,22 @@ struct RepositoryID: Equatable, Hashable, RawRepresentable, ExpressibleByStringL
 final class Registry {
 
     private let app: Application
-    private var builders: [RepositoryID: ((Request) -> Repository)]
+    private var storage: [RepositoryFactoryKey: ((Request) -> Repository)]
 
     fileprivate init(application: Application) {
         self.app = application
-        self.builders = [:]
+        self.storage = [:]
     }
 
-    func repository(_ id: RepositoryID, _ req: Request) -> Repository {
-        guard let builder = builders[id] else {
+    func repository(_ id: RepositoryFactoryKey, _ req: Request) -> Repository {
+        guard let factory = storage[id] else {
             fatalError("Repository for id `\(id)` is not configured.")
         }
-        return builder(req)
+        return factory(req)
     }
 
-    public func use(_ builder: @escaping (Request) -> Repository, as id: RepositoryID) {
-        builders[id] = builder
+    public func use(_ factory: @escaping (Request) -> Repository, as id: RepositoryFactoryKey) {
+        storage[id] = factory
     }
 }
 

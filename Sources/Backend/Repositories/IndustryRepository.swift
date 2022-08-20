@@ -37,8 +37,8 @@ struct IndustryRepository: Repository {
     }
 }
 
-extension RepositoryID {
-    static let industry: RepositoryID = "industry"
+extension RepositoryFactoryKey {
+    static let industry: RepositoryFactoryKey = "industry"
 }
 
 extension Request {

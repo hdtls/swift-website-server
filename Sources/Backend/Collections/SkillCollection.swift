@@ -23,12 +23,12 @@ class SkillCollection: RouteCollection {
     }
 
     func create(_ req: Request) async throws -> Skill.DTO {
-        let model = try Skill.init(from: req.content.decode(Skill.DTO.self))
+        let model = try Skill.fromBridgedDTO(req.content.decode(Skill.DTO.self))
         model.id = nil
 
         try await req.skill.create(model)
 
-        return try model.dataTransferObject()
+        return try model.bridged()
     }
 
     func read(_ req: Request) async throws -> Skill.DTO {
@@ -36,12 +36,12 @@ class SkillCollection: RouteCollection {
 
         let result = try await req.skill.identified(by: id)
 
-        return try result.dataTransferObject()
+        return try result.bridged()
     }
 
     func readAll(_ req: Request) async throws -> [Skill.DTO] {
         try await req.skill.readAll().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -55,7 +55,7 @@ class SkillCollection: RouteCollection {
 
         try await req.skill.update(saved)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {

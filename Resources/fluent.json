@@ -1,7 +1,6 @@
 {
     "Blog": {
         "schema": "blog",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -53,7 +52,6 @@
     },
     "BlogCategory": {
         "schema": "blog_categories",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -78,7 +76,6 @@
     },
     "Education": {
         "schema": "education",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -132,7 +129,6 @@
     },
     "Experience": {
         "schema": "experiences",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -191,7 +187,6 @@
     },
     "Industry": {
         "schema": "industries",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -217,7 +212,6 @@
     },
     "Project": {
         "schema": "projects",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -301,7 +295,6 @@
     },
     "Skill": {
         "schema": "skills",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -327,7 +320,6 @@
     },
     "SocialNetworking": {
         "schema": "social_networking",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -355,7 +347,6 @@
     },
     "SocialNetworkingService": {
         "schema": "social_networking_services",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",
@@ -379,7 +370,6 @@
     },
     "User": {
         "schema": "users",
-        "codable": "Coding",
         "properties": [
             {
                 "field_id": "ID",

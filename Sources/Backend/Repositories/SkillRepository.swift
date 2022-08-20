@@ -47,8 +47,8 @@ struct SkillRepository: Repository {
     }
 }
 
-extension RepositoryID {
-    static let skill: RepositoryID = "skill"
+extension RepositoryFactoryKey {
+    static let skill: RepositoryFactoryKey = "skill"
 }
 
 extension Request {

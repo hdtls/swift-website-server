@@ -58,8 +58,8 @@ struct ExperienceRepository: Repository {
     }
 }
 
-extension RepositoryID {
-    static let experience: RepositoryID = "experience"
+extension RepositoryFactoryKey {
+    static let experience: RepositoryFactoryKey = "experience"
 }
 
 extension Request {

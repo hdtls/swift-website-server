@@ -65,7 +65,7 @@ class UserCollection: RouteCollection {
 
         try await req.user.save(user)
 
-        return try user.dataTransferObject()
+        return try user.bridged()
     }
 
     /// Query user with specified`userID`.
@@ -79,7 +79,7 @@ class UserCollection: RouteCollection {
             throw Abort(.notFound)
         }
 
-        return try user.dataTransferObject()
+        return try user.bridged()
     }
 
     func readAll(_ req: Request) async throws -> [User.DTO] {
@@ -88,7 +88,7 @@ class UserCollection: RouteCollection {
         let query = req.user.query().addEagerLoaders(with: supportedQueries)
 
         return try await query.all().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -101,7 +101,7 @@ class UserCollection: RouteCollection {
 
         try await req.user.save(saved)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func patch(_ req: Request) async throws -> User.DTO {
@@ -110,7 +110,7 @@ class UserCollection: RouteCollection {
 
         try await req.user.save(saved)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
@@ -184,7 +184,7 @@ extension UserCollection {
             .filter(\.$user.$id == user.requireID())
             .all()
             .map {
-                try $0.dataTransferObject()
+                try $0.bridged()
             }
     }
 }
@@ -198,7 +198,7 @@ extension UserCollection {
 
         let resume = try await req.user.formatted(by: id)
 
-        return try resume.dataTransferObject()
+        return try resume.bridged()
     }
 }
 
@@ -207,13 +207,13 @@ extension UserCollection {
     func createSocialNetworking(_ request: Request) async throws -> SocialNetworking.DTO {
         let serializedObject = try request.content.decode(SocialNetworking.DTO.self)
 
-        let model = try SocialNetworking(from: serializedObject)
+        let model = try SocialNetworking.fromBridgedDTO(serializedObject)
         model.$user.id = try request.auth.require(User.self).requireID()
 
         try await model.save(on: request.db)
 
         try await model.$service.load(on: request.db)
 
-        return try model.dataTransferObject()
+        return try model.bridged()
     }
 }

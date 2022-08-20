@@ -558,7 +558,7 @@ extension Application {
                 afterResponse: {
                     XCTAssertEqual($0.status, .ok)
 
-                    model = try $0.content.decode(Project.Coding.self)
+                    model = try $0.content.decode(Project.DTO.self)
                     XCTAssertNotNil(model.id)
                     XCTAssertEqual(model.name, expected.name)
                     XCTAssertEqual(model.note, expected.note)

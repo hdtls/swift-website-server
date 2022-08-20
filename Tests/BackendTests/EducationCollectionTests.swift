@@ -47,7 +47,7 @@ class EducationCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(Education.Coding.self)
+                let coding = try $0.content.decode(Education.DTO.self)
                 XCTAssertEqual(coding.id, exp.id)
                 XCTAssertEqual(coding.userId, exp.userId)
                 XCTAssertEqual(coding.school, exp.school)

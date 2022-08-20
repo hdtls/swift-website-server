@@ -35,7 +35,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
             path + "/\(service.id)",
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(SocialNetworkingService.Coding.self)
+                let coding = try $0.content.decode(SocialNetworkingService.DTO.self)
                 XCTAssertEqual(coding.id, service.id)
                 XCTAssertEqual(coding.name, service.name)
             }
@@ -45,7 +45,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     func testUpdate() throws {
         let service = app.requestSocialNetworkingService(.generate())
 
-        var copy = SocialNetworkingService.Coding.init()
+        var copy = SocialNetworkingService.DTO.init()
         copy.name = .random(length: 8)
 
         try app.test(
@@ -57,7 +57,7 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(SocialNetworkingService.Coding.self)
+                let coding = try $0.content.decode(SocialNetworkingService.DTO.self)
                 XCTAssertEqual(coding.id, service.id)
                 XCTAssertEqual(coding.name, copy.name)
             }

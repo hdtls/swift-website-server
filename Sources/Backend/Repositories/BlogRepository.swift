@@ -71,8 +71,8 @@ struct BlogRepository: Repository {
     }
 }
 
-extension RepositoryID {
-    static let blog: RepositoryID = "blog"
+extension RepositoryFactoryKey {
+    static let blog: RepositoryFactoryKey = "blog"
 }
 
 extension Request {

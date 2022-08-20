@@ -47,8 +47,8 @@ struct EducationRepository: Repository {
     }
 }
 
-extension RepositoryID {
-    static let education: RepositoryID = "education"
+extension RepositoryFactoryKey {
+    static let education: RepositoryFactoryKey = "education"
 }
 
 extension Request {

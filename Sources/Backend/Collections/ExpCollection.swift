@@ -32,12 +32,12 @@ class ExpCollection: RouteCollection {
             return industry
         }
 
-        let model = try Experience(from: newValue)
+        let model = try Experience.fromBridgedDTO(newValue)
         model.id = nil
 
         try await req.experience.create(model, industries: industries)
 
-        return try model.dataTransferObject()
+        return try model.bridged()
     }
 
     func read(_ req: Request) async throws -> Experience.DTO {
@@ -45,12 +45,12 @@ class ExpCollection: RouteCollection {
 
         let saved = try await req.experience.identified(by: id)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func readAll(_ req: Request) async throws -> [Experience.DTO] {
         try await req.experience.readAll().map {
-            try $0.dataTransferObject()
+            try $0.bridged()
         }
     }
 
@@ -72,7 +72,7 @@ class ExpCollection: RouteCollection {
         precondition(saved.$user.id == newValue.userId)
         try await req.experience.update(saved, industries: industries)
 
-        return try saved.dataTransferObject()
+        return try saved.bridged()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {

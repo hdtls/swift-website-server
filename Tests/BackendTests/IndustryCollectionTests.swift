@@ -52,7 +52,7 @@ class IndustryCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(Industry.Coding.self)
+                let coding = try $0.content.decode(Industry.DTO.self)
                 XCTAssertEqual(coding, industry)
             }
         )

@@ -17,7 +17,7 @@ PACKAGE_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
 FLUENT_FILE = os.path.join(PACKAGE_DIR, "Resources", "fluent.json")
 
 try:
-    fluent_defination = json.load(open(FLUENT_FILE))
+    fluent_definition = json.load(open(FLUENT_FILE))
 except OSError as e:
     print("FAIL: GENERATING .gyb fiels failed", file=sys.stderr)
     sys.exit(e.errno)
@@ -52,7 +52,7 @@ def obj_getClass(obj):
     return EMIT_KIND
 
 def obj_getDTOClass(obj):
-    return obj[EMIT_KIND]["codable"]
+    return obj[EMIT_KIND].get("codable", "DTO")
 
 def obj_getProperties(obj):
     return obj[EMIT_KIND]["properties"]
@@ -89,10 +89,10 @@ def filtered_available_properties(field_properties):
     return filter(lambda field: not field.get("exclude_from_codable"), field_properties)
 }%
 
-final class ${obj_getClass(fluent_defination)}: Fluent.Model {
+final class ${obj_getClass(fluent_definition)}: Fluent.Model {
 
-    static var schema: String = "${fluent_defination[EMIT_KIND]["schema"]}"
-% for field in obj_getProperties(fluent_defination):
+    static var schema: String = "${fluent_definition[EMIT_KIND]["schema"]}"
+% for field in obj_getProperties(fluent_definition):
 
 %   if property_getFieldType(field) == "ID":
     ${"@ID()" if property_getAttribute(field) == "UUID?" else "@ID(custom: .id)"}
@@ -115,11 +115,11 @@ final class ${obj_getClass(fluent_defination)}: Fluent.Model {
     var updatedAt: Date?
 }
 
-% if needs_generate_fieldkeys(obj_getProperties(fluent_defination)):
-extension ${obj_getClass(fluent_defination)} {
+% if needs_generate_fieldkeys(obj_getProperties(fluent_definition)):
+extension ${obj_getClass(fluent_definition)} {
     
     struct FieldKeys {
-% for field in needs_generate_fieldkeys(obj_getProperties(fluent_defination)):
+% for field in needs_generate_fieldkeys(obj_getProperties(fluent_definition)):
 %   if property_getFieldType(field) == "Parent":
         static let ${property_getName(field)}: FieldKey = "${convert_to_snake_case(property_getName(field))}_id"
 %   else:
@@ -130,49 +130,52 @@ extension ${obj_getClass(fluent_defination)} {
 }
 %end
 
-extension ${obj_getClass(fluent_defination)}: Serializing {
+extension ${obj_getClass(fluent_definition)}: Bridgeable {
     
-    typealias DTO = ${obj_getDTOClass(fluent_defination)}
-
-    convenience init(from dataTransferObject: ${obj_getDTOClass(fluent_defination)}) throws {
-        self.init()
-%   for field in filtered_available_properties(obj_getProperties(fluent_defination)):
+    %if obj_getDTOClass(fluent_definition) != "DTO":    
+    typealias DTO = ${obj_getDTOClass(fluent_definition)}
+    
+    %end
+    static func fromBridgedDTO(_ dataTransferObject: ${obj_getDTOClass(fluent_definition)}) throws -> ${obj_getClass(fluent_definition)} {
+        let model = ${obj_getClass(fluent_definition)}.init()
+%   for field in filtered_available_properties(obj_getProperties(fluent_definition)):
 %       if property_getFieldType(field) in ["ID", "Field", "Enum"]:
 %           if is_optional(property_getAttribute(field, False)):
 %               if is_optional(property_getAttribute(field)):
-        ${property_getName(field)} = dataTransferObject.${property_getName(field)}
+        model.${property_getName(field)} = dataTransferObject.${property_getName(field)}
 %               else:
         guard let ${property_getName(field)} = dataTransferObject.${property_getName(field)} else {
             throw Abort(.badRequest, reason: "Value required for key '${property_getName(field)}'", identifier: "keyNotFound")
         }
-        self.${property_getName(field)} = ${property_getName(field)}
+        model.${property_getName(field)} = ${property_getName(field)}
 %               end
 %           else:
-        ${property_getName(field)} = dataTransferObject.${property_getName(field)}
+        model.${property_getName(field)} = dataTransferObject.${property_getName(field)}
 %           end
 %       elif property_getFieldType(field) == "Parent":
 %           if is_optional(property_getAttribute(field)):
-        $$${property_getName(field)}.id = dataTransferObject.${property_getName(field)}Id
+        model.$$${property_getName(field)}.id = dataTransferObject.${property_getName(field)}Id
 %           else:
 %               if is_optional(property_getAttribute(field, False)):
         guard let ${property_getName(field)}Id = dataTransferObject.${property_getName(field)}Id else {
             throw Abort(.badRequest, reason: "Value required for key '${property_getName(field)}Id'", identifier: "keyNotFound")
         }
-        $$${property_getName(field)}.id = ${property_getName(field)}Id
+        model.$$${property_getName(field)}.id = ${property_getName(field)}Id
 %               else:
-        $$${property_getName(field)}.id = dataTransferObject.${property_getName(field)}Id
+        model.$$${property_getName(field)}.id = dataTransferObject.${property_getName(field)}Id
 %               end
 %           end
 %       end
 % end
+        return model
     }
     
-    func dataTransferObject() throws -> ${obj_getDTOClass(fluent_defination)} {
-% if obj_getDTOClass(fluent_defination) == obj_getClass(fluent_defination):
+    func bridged() throws -> ${obj_getDTOClass(fluent_definition)} {
+% if obj_getDTOClass(fluent_definition) == obj_getClass(fluent_definition):
         return self
 % else:
         var dataTransferObject = DTO.init()
-%   for field in filtered_available_properties(obj_getProperties(fluent_defination)):
+%   for field in filtered_available_properties(obj_getProperties(fluent_definition)):
 %        if property_getFieldType(field) == "ID":
         dataTransferObject.id = try requireID()
 %        else:
@@ -183,18 +186,18 @@ extension ${obj_getClass(fluent_defination)}: Serializing {
                 elif property_getFieldType(field) == "Enum":
                     suffix = "{}".format(" ?? nil" if is_optional(property_getAttribute(field)) else "")
                 elif property_getFieldType(field) in ["Parent", "OptionalChild"]:
-                    suffix = "{}?.dataTransferObject()".format("?" if is_optional(property_getAttribute(field)) else "")
+                    suffix = "{}?.bridged()".format("?" if is_optional(property_getAttribute(field)) else "")
                 else:
-                    suffix = "?.map({ try $0.dataTransferObject() })"
+                    suffix = "?.map({ try $0.bridged() })"
             else:
                 if property_getFieldType(field) == "Field":
                     suffix = " ?? .init()"
                 elif property_getFieldType(field) == "Enum":
                     suffix = " ?? .allCases.first!"
                 elif property_getFieldType(field) in ["Parent", "OptionalChild"]:
-                    suffix = "{}?.dataTransferObject() ?? .init()".format("?" if is_optional(property_getAttribute(field)) else "")
+                    suffix = "{}?.bridged() ?? .init()".format("?" if is_optional(property_getAttribute(field)) else "")
                 else:
-                    suffix = "?.map({ try $0.dataTransferObject() }) ?? []"
+                    suffix = "?.map({ try $0.bridged() }) ?? []"
 }%
 %       if property_getFieldType(field) == "Parent":
         dataTransferObject.${property_getName(field)}Id = $$${property_getName(field)}.$id.value ?? nil
@@ -211,11 +214,10 @@ extension ${obj_getClass(fluent_defination)}: Serializing {
     }
 }
 
-extension ${obj_getClass(fluent_defination)}: Updatable {
+extension ${obj_getClass(fluent_definition)}: Updatable {
     
-    @discardableResult
-    func update(with dataTransferObject: DTO) throws -> ${obj_getClass(fluent_defination)} {
-%   for field in filter(lambda field: not (property_getFieldType(field) == "ID" or field.get("exclude_from_codable")), obj_getProperties(fluent_defination)):
+    func update(with dataTransferObject: DTO) throws {
+%   for field in filter(lambda field: not (property_getFieldType(field) == "ID" or field.get("exclude_from_codable")), obj_getProperties(fluent_definition)):
 %       if property_getFieldType(field) in ["ID", "Field", "Enum"]:
 %           if is_optional(property_getAttribute(field, False)):
 %               if is_optional(property_getAttribute(field)):
@@ -244,14 +246,13 @@ extension ${obj_getClass(fluent_defination)}: Updatable {
 %           end
 %       end
 % end
-        return self
     }
 }
 
-extension ${obj_getClass(fluent_defination)} {
+extension ${obj_getClass(fluent_definition)} {
     
-    struct ${obj_getDTOClass(fluent_defination)}: Codable, Equatable {
-%   for field in filtered_available_properties(obj_getProperties(fluent_defination)):
+    struct ${obj_getDTOClass(fluent_definition)}: Codable, Equatable {
+%   for field in filtered_available_properties(obj_getProperties(fluent_definition)):
         var ${property_getName(field)}: ${property_getAttribute(field, False)}
 %       if property_getFieldType(field) == "Parent":
         var ${property_getName(field)}Id: ${property_getAttribute(field)}.IDValue?
@@ -259,7 +260,7 @@ extension ${obj_getClass(fluent_defination)} {
 %   end
 
         init() {
-%   for field in filtered_available_properties(obj_getProperties(fluent_defination)):
+%   for field in filtered_available_properties(obj_getProperties(fluent_definition)):
 %       if not is_optional(property_getAttribute(field, False)):
 %           if property_getFieldType(field) == "Enum":
             ${property_getName(field)} = .allCases.first!
@@ -272,4 +273,4 @@ extension ${obj_getClass(fluent_defination)} {
     }
 }
 
-extension ${obj_getClass(fluent_defination)}.${obj_getDTOClass(fluent_defination)}: Content {}
+extension ${obj_getClass(fluent_definition)}.${obj_getDTOClass(fluent_definition)}: Content {}
