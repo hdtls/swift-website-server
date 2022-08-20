@@ -5,9 +5,9 @@ extension MySQLError: AbortError {
 
     public var status: NIOHTTP1.HTTPResponseStatus {
         guard case .duplicateEntry = self else {
-            return .unprocessableEntity
+            return .internalServerError
         }
-        return .internalServerError
+        return .unprocessableEntity
     }
 
     private var isRelease: Bool {
