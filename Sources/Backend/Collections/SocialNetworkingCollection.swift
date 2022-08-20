@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 class SocialNetworkingCollection: RouteCollection {
@@ -25,12 +24,12 @@ class SocialNetworkingCollection: RouteCollection {
 
     func create(_ req: Request) async throws -> SocialNetworking.DTO {
         var newValue = try req.content.decode(SocialNetworking.DTO.self)
-        newValue.userId = try req.uid
+        newValue.userId = try req.owner.__id
 
         let model = try SocialNetworking(from: newValue)
         model.id = nil
 
-        try await req.repository.socialNetworking.create(model)
+        try await req.socialNetworking.create(model)
 
         return try model.dataTransferObject()
     }
@@ -38,13 +37,13 @@ class SocialNetworkingCollection: RouteCollection {
     func read(_ req: Request) async throws -> SocialNetworking.DTO {
         let id = try req.parameters.require(restfulIDKey, as: SocialNetworking.IDValue.self)
 
-        let saved = try await req.repository.socialNetworking.identified(by: id)
+        let saved = try await req.socialNetworking.identified(by: id)
 
         return try saved.dataTransferObject()
     }
 
     func readAll(_ req: Request) async throws -> [SocialNetworking.DTO] {
-        try await req.repository.socialNetworking.readAll().map {
+        try await req.socialNetworking.readAll().map {
             try $0.dataTransferObject()
         }
     }
@@ -53,13 +52,13 @@ class SocialNetworkingCollection: RouteCollection {
         let id = try req.parameters.require(restfulIDKey, as: SocialNetworking.IDValue.self)
 
         var newValue = try req.content.decode(SocialNetworking.DTO.self)
-        newValue.userId = try req.uid
+        newValue.userId = try req.owner.__id
 
-        let saved = try await req.repository.socialNetworking.identified(by: id, owned: true)
+        let saved = try await req.socialNetworking.identified(by: id, owned: true)
         try saved.update(with: newValue)
 
         precondition(saved.$user.id == newValue.userId)
-        try await req.repository.socialNetworking.update(saved)
+        try await req.socialNetworking.update(saved)
 
         return try saved.dataTransferObject()
     }
@@ -67,7 +66,7 @@ class SocialNetworkingCollection: RouteCollection {
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         let id = try req.parameters.require(restfulIDKey, as: SocialNetworking.IDValue.self)
 
-        try await req.repository.socialNetworking.delete(id)
+        try await req.socialNetworking.delete(id)
 
         return .ok
     }

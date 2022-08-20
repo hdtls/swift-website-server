@@ -13,7 +13,7 @@ struct SkillRepository: Repository {
         let query = Skill.query(on: req.db)
 
         if owned {
-            try query.filter(\.$user.$id == req.uid)
+            try query.filter(\.$user.$id == req.owner.__id)
         }
 
         return query
@@ -24,7 +24,7 @@ struct SkillRepository: Repository {
     }
 
     func create(_ model: Skill) async throws {
-        try await req.user.$skill.create(model, on: req.db)
+        try await req.owner.$skill.create(model, on: req.db)
     }
 
     func identified(by id: Skill.IDValue, owned: Bool = false) async throws -> Skill {
@@ -51,10 +51,10 @@ extension RepositoryID {
     static let skill: RepositoryID = "skill"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var skill: SkillRepository {
-        guard let result = repository(.skill) as? SkillRepository else {
+        guard let result = registry.repository(.skill, self) as? SkillRepository else {
             fatalError("Skill repository is not configured")
         }
         return result

@@ -1,4 +1,4 @@
-import FluentMySQLDriver
+import Fluent
 import Vapor
 
 struct UserRepository: Repository {
@@ -17,8 +17,8 @@ struct UserRepository: Repository {
         query().filter(\.$id == id)
     }
 
-    func create(_ model: User) async throws {
-        try await save(model)
+    func save(_ model: User) async throws {
+        try await model.save(on: req.db)
     }
 
     func identified(by id: User.IDValue) async throws -> User {
@@ -49,26 +49,8 @@ struct UserRepository: Repository {
         return saved
     }
 
-    func update(_ model: User) async throws {
-        try await save(model)
-    }
-
     func delete(_ id: User.IDValue) async throws {
         try await query(id).delete()
-    }
-
-    private func save(_ model: User) async throws {
-        do {
-            try await model.save(on: req.db)
-        } catch {
-            if case MySQLError.duplicateEntry = error {
-                throw Abort.init(
-                    .unprocessableEntity,
-                    reason: "Value for key 'username' already exsit."
-                )
-            }
-            throw error
-        }
     }
 }
 
@@ -76,10 +58,10 @@ extension RepositoryID {
     static let user: RepositoryID = "user"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var user: UserRepository {
-        guard let result = repository(.user) as? UserRepository else {
+        guard let result = registry.repository(.user, self) as? UserRepository else {
             fatalError("User repository is not configured")
         }
         return result

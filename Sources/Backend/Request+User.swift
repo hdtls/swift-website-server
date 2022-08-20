@@ -1,15 +1,19 @@
 import Vapor
 
 extension Request {
-    var user: User {
+
+    var owner: User {
         get throws {
             try auth.require()
         }
     }
+}
 
-    var uid: User.IDValue {
+extension User {
+
+    var __id: IDValue {
         get throws {
-            try user.requireID()
+            try requireID()
         }
     }
 }

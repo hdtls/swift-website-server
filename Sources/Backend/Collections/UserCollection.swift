@@ -63,7 +63,7 @@ class UserCollection: RouteCollection {
         try User.Creation.validate(content: req)
         let user = try User.init(req.content.decode(User.Creation.self))
 
-        try await req.repository.user.create(user)
+        try await req.user.save(user)
 
         return try user.dataTransferObject()
     }
@@ -85,7 +85,7 @@ class UserCollection: RouteCollection {
     func readAll(_ req: Request) async throws -> [User.DTO] {
         let supportedQueries = try req.query.decode(SupportedQueries.self)
 
-        let query = req.repository.user.query().addEagerLoaders(with: supportedQueries)
+        let query = req.user.query().addEagerLoaders(with: supportedQueries)
 
         return try await query.all().map {
             try $0.dataTransferObject()
@@ -96,30 +96,30 @@ class UserCollection: RouteCollection {
     func update(_ req: Request) async throws -> User.DTO {
         let newValue = try req.content.decode(User.DTO.self)
 
-        let saved = try await req.repository.user.identified(by: req.uid)
+        let saved = try await req.user.identified(by: req.owner.__id)
         try saved.update(with: newValue)
 
-        try await req.repository.user.update(saved)
+        try await req.user.save(saved)
 
         return try saved.dataTransferObject()
     }
 
     func patch(_ req: Request) async throws -> User.DTO {
-        let saved = try await req.repository.user.identified(by: req.uid)
+        let saved = try await req.user.identified(by: req.owner.__id)
         saved.avatarUrl = try await uploadImageFile(req).get()
 
-        try await req.repository.user.update(saved)
+        try await req.user.save(saved)
 
         return try saved.dataTransferObject()
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
-        try await req.repository.user.delete(req.uid)
+        try await req.user.delete(req.owner.__id)
         return .ok
     }
 
     private func query(on req: Request) throws -> QueryBuilder<User> {
-        let builder = req.repository.user.query()
+        let builder = req.user.query()
 
         if let id = req.parameters.get(restfulIDKey, as: User.IDValue.self) {
             builder.filter(\._$id == id)
@@ -180,7 +180,7 @@ extension UserCollection {
             throw Abort(.notFound)
         }
 
-        return try await req.repository.blog.queryAll()
+        return try await req.blog.queryAll()
             .filter(\.$user.$id == user.requireID())
             .all()
             .map {
@@ -196,7 +196,7 @@ extension UserCollection {
             throw Abort(.badRequest)
         }
 
-        let resume = try await req.repository.user.formatted(by: id)
+        let resume = try await req.user.formatted(by: id)
 
         return try resume.dataTransferObject()
     }

@@ -13,7 +13,7 @@ struct EducationRepository: Repository {
         let query = Education.query(on: req.db)
 
         if owned {
-            try query.filter(\.$user.$id == req.uid)
+            try query.filter(\.$user.$id == req.owner.__id)
         }
 
         return query
@@ -24,7 +24,7 @@ struct EducationRepository: Repository {
     }
 
     func create(_ model: Education) async throws {
-        try await req.user.$education.create(model, on: req.db)
+        try await req.owner.$education.create(model, on: req.db)
     }
 
     func identified(by id: Education.IDValue, owned: Bool = false) async throws -> Education {
@@ -51,10 +51,10 @@ extension RepositoryID {
     static let education: RepositoryID = "education"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var education: EducationRepository {
-        guard let result = repository(.education) as? EducationRepository else {
+        guard let result = registry.repository(.education, self) as? EducationRepository else {
             fatalError("Education repository is not configured")
         }
         return result

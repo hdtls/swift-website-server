@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 class BlogCategoryCollection: RouteCollection {
@@ -20,7 +19,7 @@ class BlogCategoryCollection: RouteCollection {
         let model = try BlogCategory(from: newValue)
         model.id = nil
 
-        try await req.repository.blogCategory.create(model)
+        try await req.blogCategory.save(model)
 
         return try model.dataTransferObject()
     }
@@ -28,13 +27,13 @@ class BlogCategoryCollection: RouteCollection {
     func read(_ req: Request) async throws -> BlogCategory.DTO {
         let id = try req.parameters.require(restfulIDKey, as: BlogCategory.IDValue.self)
 
-        let result = try await req.repository.blogCategory.identified(by: id)
+        let result = try await req.blogCategory.identified(by: id)
 
         return try result.dataTransferObject()
     }
 
     func readAll(_ req: Request) async throws -> [BlogCategory.DTO] {
-        try await req.repository.blogCategory.readAll().map {
+        try await req.blogCategory.readAll().map {
             try $0.dataTransferObject()
         }
     }
@@ -44,10 +43,10 @@ class BlogCategoryCollection: RouteCollection {
 
         let newValue = try req.content.decode(BlogCategory.DTO.self)
 
-        let saved = try await req.repository.blogCategory.identified(by: id)
+        let saved = try await req.blogCategory.identified(by: id)
         try saved.update(with: newValue)
 
-        try await req.repository.blogCategory.update(saved)
+        try await req.blogCategory.save(saved)
 
         return try saved.dataTransferObject()
     }
@@ -55,7 +54,7 @@ class BlogCategoryCollection: RouteCollection {
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         let id = try req.parameters.require(restfulIDKey, as: BlogCategory.IDValue.self)
 
-        try await req.repository.blogCategory.delete(id)
+        try await req.blogCategory.delete(id)
 
         return .ok
     }

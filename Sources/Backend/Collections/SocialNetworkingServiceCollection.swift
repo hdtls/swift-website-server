@@ -22,7 +22,7 @@ class SocialNetworkingServiceCollection: RouteCollection {
         let model = try SocialNetworkingService(from: newValue)
         model.id = nil
 
-        try await req.repository.socialNetworkingService.create(model)
+        try await req.socialNetworkingService.save(model)
 
         return try model.dataTransferObject()
     }
@@ -30,13 +30,13 @@ class SocialNetworkingServiceCollection: RouteCollection {
     func read(_ req: Request) async throws -> SocialNetworkingService.DTO {
         let id = try req.parameters.require(restfulIDKey, as: SocialNetworkingService.IDValue.self)
 
-        let saved = try await req.repository.socialNetworkingService.identified(by: id)
+        let saved = try await req.socialNetworkingService.identified(by: id)
 
         return try saved.dataTransferObject()
     }
 
     func readAll(_ req: Request) async throws -> [SocialNetworkingService.DTO] {
-        try await req.repository.socialNetworkingService.readAll().map {
+        try await req.socialNetworkingService.readAll().map {
             try $0.dataTransferObject()
         }
     }
@@ -46,10 +46,10 @@ class SocialNetworkingServiceCollection: RouteCollection {
 
         let newValue = try req.content.decode(SocialNetworkingService.DTO.self)
 
-        let saved = try await req.repository.socialNetworkingService.identified(by: id)
+        let saved = try await req.socialNetworkingService.identified(by: id)
         try saved.update(with: newValue)
 
-        try await req.repository.socialNetworkingService.update(saved)
+        try await req.socialNetworkingService.save(saved)
 
         return try saved.dataTransferObject()
     }
@@ -57,7 +57,7 @@ class SocialNetworkingServiceCollection: RouteCollection {
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         let id = try req.parameters.require(restfulIDKey, as: SocialNetworkingService.IDValue.self)
 
-        try await req.repository.socialNetworkingService.delete(id)
+        try await req.socialNetworkingService.delete(id)
 
         return .ok
     }

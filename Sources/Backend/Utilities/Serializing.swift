@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 /// Serializing protocol provide initialze method to create new model from `DTO`
@@ -17,6 +16,8 @@ protocol Serializing {
 protocol Updatable {
 
     associatedtype DTO: Content
+
     /// Update value from data transfer objectl. used to update exsit model.
+    @discardableResult
     func update(with dataTrasferObject: DTO) throws -> Self
 }

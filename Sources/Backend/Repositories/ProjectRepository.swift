@@ -13,7 +13,7 @@ struct ProjectRepository: Repository {
         let query = Project.query(on: req.db)
 
         if owned {
-            try query.filter(\.$user.$id == req.uid)
+            try query.filter(\.$user.$id == req.owner.__id)
         }
 
         return query
@@ -24,7 +24,7 @@ struct ProjectRepository: Repository {
     }
 
     func create(_ model: Project) async throws {
-        try await req.user.$projects.create(model, on: req.db)
+        try await req.owner.$projects.create(model, on: req.db)
     }
 
     func identified(by id: Project.IDValue, owned: Bool = false) async throws -> Project {
@@ -51,10 +51,10 @@ extension RepositoryID {
     static let project: RepositoryID = "project"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var project: ProjectRepository {
-        guard let result = repository(.project) as? ProjectRepository else {
+        guard let result = registry.repository(.project, self) as? ProjectRepository else {
             fatalError("Project repository is not configured")
         }
         return result

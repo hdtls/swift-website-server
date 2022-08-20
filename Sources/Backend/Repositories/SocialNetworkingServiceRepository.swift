@@ -17,8 +17,8 @@ struct SocialNetworkingServiceRepository: Repository {
         query().filter(\.$id == id)
     }
 
-    func create(_ model: SocialNetworkingService) async throws {
-        try await model.create(on: req.db)
+    func save(_ model: SocialNetworkingService) async throws {
+        try await model.save(on: req.db)
     }
 
     func identified(by id: SocialNetworkingService.IDValue) async throws -> SocialNetworkingService
@@ -33,10 +33,6 @@ struct SocialNetworkingServiceRepository: Repository {
         try await query().all()
     }
 
-    func update(_ model: SocialNetworkingService) async throws {
-        try await model.update(on: req.db)
-    }
-
     func delete(_ id: SocialNetworkingService.IDValue) async throws {
         try await query(id).delete()
     }
@@ -46,11 +42,12 @@ extension RepositoryID {
     static let socialNetworkingService: RepositoryID = "social_networking_service"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var socialNetworkingService: SocialNetworkingServiceRepository {
         guard
-            let result = repository(.socialNetworkingService) as? SocialNetworkingServiceRepository
+            let result = registry.repository(.socialNetworkingService, self)
+                as? SocialNetworkingServiceRepository
         else {
             fatalError("Social networking service repository is not configured")
         }

@@ -1,4 +1,3 @@
-import Fluent
 import Vapor
 
 class ExpCollection: RouteCollection {
@@ -25,7 +24,7 @@ class ExpCollection: RouteCollection {
 
     func create(_ req: Request) async throws -> Experience.DTO {
         var newValue = try req.content.decode(Experience.DTO.self)
-        newValue.userId = try req.uid
+        newValue.userId = try req.owner.__id
 
         let industries: [Industry] = newValue.industries.map {
             let industry = Industry.init()
@@ -36,7 +35,7 @@ class ExpCollection: RouteCollection {
         let model = try Experience(from: newValue)
         model.id = nil
 
-        try await req.repository.experience.create(model, industries: industries)
+        try await req.experience.create(model, industries: industries)
 
         return try model.dataTransferObject()
     }
@@ -44,13 +43,13 @@ class ExpCollection: RouteCollection {
     func read(_ req: Request) async throws -> Experience.DTO {
         let id = try req.parameters.require(restfulIDKey, as: Experience.IDValue.self)
 
-        let saved = try await req.repository.experience.identified(by: id)
+        let saved = try await req.experience.identified(by: id)
 
         return try saved.dataTransferObject()
     }
 
     func readAll(_ req: Request) async throws -> [Experience.DTO] {
-        try await req.repository.experience.readAll().map {
+        try await req.experience.readAll().map {
             try $0.dataTransferObject()
         }
     }
@@ -59,7 +58,7 @@ class ExpCollection: RouteCollection {
         let id = try req.parameters.require(restfulIDKey, as: Experience.IDValue.self)
 
         var newValue = try req.content.decode(Experience.DTO.self)
-        newValue.userId = try req.uid
+        newValue.userId = try req.owner.__id
 
         let industries: [Industry] = newValue.industries.map {
             let industry = Industry.init()
@@ -67,11 +66,11 @@ class ExpCollection: RouteCollection {
             return industry
         }
 
-        let saved = try await req.repository.experience.identified(by: id, owned: true)
+        let saved = try await req.experience.identified(by: id, owned: true)
         try saved.update(with: newValue)
 
         precondition(saved.$user.id == newValue.userId)
-        try await req.repository.experience.update(saved, industries: industries)
+        try await req.experience.update(saved, industries: industries)
 
         return try saved.dataTransferObject()
     }
@@ -79,7 +78,7 @@ class ExpCollection: RouteCollection {
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         let id = try req.parameters.require(restfulIDKey, as: Experience.IDValue.self)
 
-        try await req.repository.experience.delete(id)
+        try await req.experience.delete(id)
 
         return .ok
     }

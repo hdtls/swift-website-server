@@ -1,4 +1,3 @@
-import FluentMySQLDriver
 import Vapor
 
 class IndustryCollection: RouteCollection {
@@ -23,7 +22,7 @@ class IndustryCollection: RouteCollection {
         let model = try Industry(from: coding)
         model.id = nil
 
-        try await req.repository.industry.create(model)
+        try await req.industry.save(model)
 
         return try model.dataTransferObject()
     }
@@ -31,13 +30,13 @@ class IndustryCollection: RouteCollection {
     func read(_ req: Request) async throws -> Industry.DTO {
         let id = try req.parameters.require(restfulIDKey, as: Industry.IDValue.self)
 
-        let result = try await req.repository.industry.identified(by: id)
+        let result = try await req.industry.identified(by: id)
 
         return try result.dataTransferObject()
     }
 
     func readAll(_ req: Request) async throws -> [Industry.DTO] {
-        try await req.repository.industry.readAll().map {
+        try await req.industry.readAll().map {
             try $0.dataTransferObject()
         }
     }
@@ -50,10 +49,10 @@ class IndustryCollection: RouteCollection {
             throw Abort.init(.unprocessableEntity, reason: "Value required for key 'title'")
         }
 
-        let saved = try await req.repository.industry.identified(by: id)
+        let saved = try await req.industry.identified(by: id)
         try saved.update(with: coding)
 
-        try await req.repository.industry.update(saved)
+        try await req.industry.save(saved)
 
         return try saved.dataTransferObject()
     }
@@ -61,7 +60,7 @@ class IndustryCollection: RouteCollection {
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
         let id = try req.parameters.require(restfulIDKey, as: Industry.IDValue.self)
 
-        try await req.repository.industry.delete(id)
+        try await req.industry.delete(id)
 
         return .ok
     }

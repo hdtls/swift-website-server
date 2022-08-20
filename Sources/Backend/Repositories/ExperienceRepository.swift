@@ -13,7 +13,7 @@ struct ExperienceRepository: Repository {
         let query = Experience.query(on: req.db).with(\.$industries)
 
         if owned {
-            try query.filter(\.$user.$id == req.uid)
+            try query.filter(\.$user.$id == req.owner.__id)
         }
 
         return query
@@ -24,7 +24,7 @@ struct ExperienceRepository: Repository {
     }
 
     func create(_ model: Experience, industries: [Industry]) async throws {
-        try await req.user.$experiences.create(model, on: req.db)
+        try await req.owner.$experiences.create(model, on: req.db)
 
         try await model.$industries.attach(industries, on: req.db)
         try await model.$industries.load(on: req.db)
@@ -62,10 +62,10 @@ extension RepositoryID {
     static let experience: RepositoryID = "experience"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var experience: ExperienceRepository {
-        guard let result = repository(.experience) as? ExperienceRepository else {
+        guard let result = registry.repository(.experience, self) as? ExperienceRepository else {
             fatalError("Experience repository is not configured")
         }
         return result

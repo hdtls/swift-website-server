@@ -1,4 +1,4 @@
-import FluentMySQLDriver
+import Fluent
 import Vapor
 
 struct IndustryRepository: Repository {
@@ -17,19 +17,8 @@ struct IndustryRepository: Repository {
         query().filter(\.$id == id)
     }
 
-    func create(_ model: Industry) async throws {
-        try await save(model)
-    }
-
     func save(_ model: Industry) async throws {
-        do {
-            try await model.save(on: req.db)
-        } catch {
-            if case MySQLError.duplicateEntry(let localizedErrorDescription) = error {
-                throw Abort.init(.unprocessableEntity, reason: localizedErrorDescription)
-            }
-            throw error
-        }
+        try await model.save(on: req.db)
     }
 
     func identified(by id: Industry.IDValue) async throws -> Industry {
@@ -43,10 +32,6 @@ struct IndustryRepository: Repository {
         try await query().all()
     }
 
-    func update(_ model: Industry) async throws {
-        try await save(model)
-    }
-
     func delete(_ id: Industry.IDValue) async throws {
         try await query(id).delete()
     }
@@ -56,10 +41,10 @@ extension RepositoryID {
     static let industry: RepositoryID = "industry"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var industry: IndustryRepository {
-        guard let result = repository(.industry) as? IndustryRepository else {
+        guard let result = registry.repository(.industry, self) as? IndustryRepository else {
             fatalError("Industry repository is not configured")
         }
         return result

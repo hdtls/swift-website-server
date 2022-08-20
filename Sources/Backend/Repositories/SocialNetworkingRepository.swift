@@ -13,7 +13,7 @@ struct SocialNetworkingRepository: Repository {
         let query = SocialNetworking.query(on: req.db).with(\.$service)
 
         if owned {
-            try query.filter(\.$user.$id == req.uid)
+            try query.filter(\.$user.$id == req.owner.__id)
         }
 
         return query
@@ -26,7 +26,7 @@ struct SocialNetworkingRepository: Repository {
     }
 
     func create(_ model: SocialNetworking) async throws {
-        try await req.user.$social.create(model, on: req.db)
+        try await req.owner.$social.create(model, on: req.db)
         try await model.$service.load(on: req.db)
     }
 
@@ -57,10 +57,12 @@ extension RepositoryID {
     static let socialNetworking: RepositoryID = "social_networking"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var socialNetworking: SocialNetworkingRepository {
-        guard let result = repository(.socialNetworking) as? SocialNetworkingRepository else {
+        guard
+            let result = registry.repository(.socialNetworking, self) as? SocialNetworkingRepository
+        else {
             fatalError("Social networking repository is not configured")
         }
         return result

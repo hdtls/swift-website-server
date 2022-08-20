@@ -1,4 +1,4 @@
-import FluentMySQLDriver
+import Fluent
 import Vapor
 
 struct BlogCategoryRepository: Repository {
@@ -17,19 +17,8 @@ struct BlogCategoryRepository: Repository {
         query().filter(\.$id == id)
     }
 
-    func create(_ model: BlogCategory) async throws {
-        try await save(model)
-    }
-
     func save(_ model: BlogCategory) async throws {
-        do {
-            try await model.save(on: req.db)
-        } catch {
-            if case MySQLError.duplicateEntry(let localizedErrorDescription) = error {
-                throw Abort.init(.unprocessableEntity, reason: localizedErrorDescription)
-            }
-            throw error
-        }
+        try await model.save(on: req.db)
     }
 
     func identified(by id: BlogCategory.IDValue) async throws -> BlogCategory {
@@ -43,10 +32,6 @@ struct BlogCategoryRepository: Repository {
         try await query().all()
     }
 
-    func update(_ model: BlogCategory) async throws {
-        try await save(model)
-    }
-
     func delete(_ id: BlogCategory.IDValue) async throws {
         try await query(id).delete()
     }
@@ -56,10 +41,11 @@ extension RepositoryID {
     static let blogCategory: RepositoryID = "blog_category"
 }
 
-extension RepositoryFactory {
+extension Request {
 
     var blogCategory: BlogCategoryRepository {
-        guard let result = repository(.blogCategory) as? BlogCategoryRepository else {
+        guard let result = registry.repository(.blogCategory, self) as? BlogCategoryRepository
+        else {
             fatalError("Blog category repository is not configured")
         }
         return result

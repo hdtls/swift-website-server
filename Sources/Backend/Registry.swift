@@ -24,11 +24,7 @@ final class Registry {
         self.builders = [:]
     }
 
-    fileprivate func repositoryFactory(_ req: Request) -> RepositoryFactory {
-        .init(req, self)
-    }
-
-    fileprivate func repository(_ id: RepositoryID, _ req: Request) -> Repository {
+    func repository(_ id: RepositoryID, _ req: Request) -> Repository {
         guard let builder = builders[id] else {
             fatalError("Repository for id `\(id)` is not configured.")
         }
@@ -37,20 +33,6 @@ final class Registry {
 
     public func use(_ builder: @escaping (Request) -> Repository, as id: RepositoryID) {
         builders[id] = builder
-    }
-}
-
-struct RepositoryFactory {
-    private var registry: Registry
-    private var req: Request
-
-    fileprivate init(_ req: Request, _ registry: Registry) {
-        self.req = req
-        self.registry = registry
-    }
-
-    public func repository(_ id: RepositoryID) -> Repository {
-        registry.repository(id, req)
     }
 }
 
@@ -70,7 +52,7 @@ extension Application {
 
 extension Request {
 
-    var repository: RepositoryFactory {
-        application.registry.repositoryFactory(self)
+    var registry: Registry {
+        application.registry
     }
 }

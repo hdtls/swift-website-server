@@ -29,7 +29,7 @@ class BlogCollection: RouteCollection {
 
     func create(_ req: Request) async throws -> Blog.DTO {
         var newValue = try req.content.decode(Blog.DTO.self)
-        newValue.userId = try req.uid
+        newValue.userId = try req.owner.__id
 
         // Make sure this blog has content
         guard let article = newValue.content else {
@@ -50,7 +50,7 @@ class BlogCollection: RouteCollection {
             relative: ""
         ).get()
 
-        try await req.repository.blog.create(model, categories: categories)
+        try await req.blog.create(model, categories: categories)
 
         // Remove old blogs with the same alias.
         if originalBlogAlias != model.alias {
@@ -80,7 +80,7 @@ class BlogCollection: RouteCollection {
             var categories: String?
         }
 
-        let queryBuilder = try req.repository.blog.queryAll()
+        let queryBuilder = try req.blog.queryAll()
         let supportedQueries = try req.query.decode(SupportedQueries.self)
 
         if let categories = supportedQueries.categories {
@@ -98,7 +98,7 @@ class BlogCollection: RouteCollection {
         }
 
         var newValue = try req.content.decode(Blog.DTO.self)
-        newValue.userId = try req.uid
+        newValue.userId = try req.owner.__id
 
         // Make sure this blog has content
         guard let article = newValue.content else {
@@ -116,7 +116,7 @@ class BlogCollection: RouteCollection {
             relative: ""
         ).get()
 
-        try await req.repository.blog.update(saved, categories: categories)
+        try await req.blog.update(saved, categories: categories)
 
         // Remove old blogs with the same alias.
         if originalBlogAlias != saved.alias {
@@ -136,7 +136,7 @@ class BlogCollection: RouteCollection {
             return .ok
         }
 
-        try await req.repository.blog.delete(saved.requireID())
+        try await req.blog.delete(saved.requireID())
 
         Task {
             self.removeBlog(saved.alias, on: req)
@@ -146,7 +146,7 @@ class BlogCollection: RouteCollection {
     }
 
     private func query(on req: Request, owned: Bool = false) throws -> QueryBuilder<Blog> {
-        let builder = try req.repository.blog.query(owned: owned)
+        let builder = try req.blog.query(owned: owned)
         if let id = req.parameters.get(restfulIDKey, as: Blog.IDValue.self) {
             builder.filter(\._$id == id)
         } else if let alias = req.parameters.get(restfulIDKey) {
