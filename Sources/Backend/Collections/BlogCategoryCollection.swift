@@ -19,7 +19,7 @@ class BlogCategoryCollection: RouteCollection {
         let model = try BlogCategory.fromBridgedDTO(newValue)
         model.id = nil
 
-        try await req.blogCategory.save(model)
+        try await req.blogCategory.create(model)
 
         return try model.bridged()
     }
@@ -46,7 +46,7 @@ class BlogCategoryCollection: RouteCollection {
         let saved = try await req.blogCategory.identified(by: id)
         try saved.update(with: newValue)
 
-        try await req.blogCategory.save(saved)
+        try await req.blogCategory.update(saved)
 
         return try saved.bridged()
     }

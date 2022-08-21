@@ -138,9 +138,7 @@ class BlogCollection: RouteCollection {
 
         try await req.blog.delete(saved.requireID())
 
-        Task {
-            self.removeBlog(saved.alias, on: req)
-        }
+        removeBlog(saved.alias, on: req)
 
         return .ok
     }

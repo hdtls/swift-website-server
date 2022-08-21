@@ -22,7 +22,7 @@ class IndustryCollection: RouteCollection {
         let model = try Industry.fromBridgedDTO(newValue)
         model.id = nil
 
-        try await req.industry.save(model)
+        try await req.industry.create(model)
 
         return try model.bridged()
     }
@@ -52,7 +52,7 @@ class IndustryCollection: RouteCollection {
         let saved = try await req.industry.identified(by: id)
         try saved.update(with: newValue)
 
-        try await req.industry.save(saved)
+        try await req.industry.update(saved)
 
         return try saved.bridged()
     }

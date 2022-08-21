@@ -3,38 +3,16 @@ import Vapor
 
 struct SocialNetworkingServiceRepository: Repository {
 
-    var req: Request
+    typealias Model = SocialNetworkingService
 
-    init(req: Request) {
-        self.req = req
+    var request: Request
+
+    init(request: Request) {
+        self.request = request
     }
 
-    func query() -> QueryBuilder<SocialNetworkingService> {
-        SocialNetworkingService.query(on: req.db)
-    }
-
-    func query(_ id: SocialNetworkingService.IDValue) -> QueryBuilder<SocialNetworkingService> {
-        query().filter(\.$id == id)
-    }
-
-    func save(_ model: SocialNetworkingService) async throws {
-        try await model.save(on: req.db)
-    }
-
-    func identified(by id: SocialNetworkingService.IDValue) async throws -> SocialNetworkingService
-    {
-        guard let result = try await query(id).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-
-    func readAll() async throws -> [SocialNetworkingService] {
-        try await query().all()
-    }
-
-    func delete(_ id: SocialNetworkingService.IDValue) async throws {
-        try await query(id).delete()
+    func query(owned: Bool = false) throws -> QueryBuilder<Model> {
+        Model.query(on: request.db)
     }
 }
 

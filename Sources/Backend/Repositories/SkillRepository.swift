@@ -3,47 +3,26 @@ import Vapor
 
 struct SkillRepository: Repository {
 
-    var req: Request
+    typealias Model = Skill
 
-    init(req: Request) {
-        self.req = req
+    var request: Request
+
+    init(request: Request) {
+        self.request = request
     }
 
-    func query(owned: Bool = false) throws -> QueryBuilder<Skill> {
-        let query = Skill.query(on: req.db)
+    func query(owned: Bool = false) throws -> QueryBuilder<Model> {
+        let query = Model.query(on: request.db)
 
         if owned {
-            try query.filter(\.$user.$id == req.owner.__id)
+            try query.filter(\.$user.$id == request.owner.__id)
         }
 
         return query
     }
 
-    func query(_ id: Skill.IDValue, owned: Bool = false) throws -> QueryBuilder<Skill> {
-        try query(owned: owned).filter(\.$id == id)
-    }
-
-    func create(_ model: Skill) async throws {
-        try await req.owner.$skill.create(model, on: req.db)
-    }
-
-    func identified(by id: Skill.IDValue, owned: Bool = false) async throws -> Skill {
-        guard let result = try await query(id, owned: owned).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-
-    func readAll(owned: Bool = false) async throws -> [Skill] {
-        try await query(owned: owned).all()
-    }
-
-    func update(_ model: Skill) async throws {
-        try await model.update(on: req.db)
-    }
-
-    func delete(_ id: Skill.IDValue) async throws {
-        try await query(id, owned: true).delete()
+    func create(_ model: Model) async throws {
+        try await request.owner.$skill.create(model, on: request.db)
     }
 }
 

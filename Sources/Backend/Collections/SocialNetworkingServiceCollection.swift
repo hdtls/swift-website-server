@@ -22,7 +22,7 @@ class SocialNetworkingServiceCollection: RouteCollection {
         let model = try SocialNetworkingService.fromBridgedDTO(newValue)
         model.id = nil
 
-        try await req.socialNetworkingService.save(model)
+        try await req.socialNetworkingService.create(model)
 
         return try model.bridged()
     }
@@ -49,7 +49,7 @@ class SocialNetworkingServiceCollection: RouteCollection {
         let saved = try await req.socialNetworkingService.identified(by: id)
         try saved.update(with: newValue)
 
-        try await req.socialNetworkingService.save(saved)
+        try await req.socialNetworkingService.update(saved)
 
         return try saved.bridged()
     }

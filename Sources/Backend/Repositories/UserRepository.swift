@@ -3,32 +3,19 @@ import Vapor
 
 struct UserRepository: Repository {
 
-    var req: Request
+    typealias Model = User
 
-    init(req: Request) {
-        self.req = req
+    var request: Request
+
+    init(request: Request) {
+        self.request = request
     }
 
-    func query() -> QueryBuilder<User> {
-        User.query(on: req.db)
+    func query(owned: Bool = false) throws -> QueryBuilder<Model> {
+        Model.query(on: request.db)
     }
 
-    func query(_ id: User.IDValue) -> QueryBuilder<User> {
-        query().filter(\.$id == id)
-    }
-
-    func save(_ model: User) async throws {
-        try await model.save(on: req.db)
-    }
-
-    func identified(by id: User.IDValue) async throws -> User {
-        guard let result = try await query(id).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-
-    func formatted(by uname: String) async throws -> User {
+    func formatted(by uname: String) async throws -> Model {
         let saved = try await query()
             .filter(\.$username == uname)
             .with(\.$projects)
@@ -47,10 +34,6 @@ struct UserRepository: Repository {
         }
 
         return saved
-    }
-
-    func delete(_ id: User.IDValue) async throws {
-        try await query(id).delete()
     }
 }
 

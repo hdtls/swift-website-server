@@ -3,37 +3,16 @@ import Vapor
 
 struct BlogCategoryRepository: Repository {
 
-    var req: Request
+    typealias Model = BlogCategory
 
-    init(req: Request) {
-        self.req = req
+    var request: Request
+
+    init(request: Request) {
+        self.request = request
     }
 
-    func query() -> QueryBuilder<BlogCategory> {
-        BlogCategory.query(on: req.db)
-    }
-
-    func query(_ id: BlogCategory.IDValue) -> QueryBuilder<BlogCategory> {
-        query().filter(\.$id == id)
-    }
-
-    func save(_ model: BlogCategory) async throws {
-        try await model.save(on: req.db)
-    }
-
-    func identified(by id: BlogCategory.IDValue) async throws -> BlogCategory {
-        guard let result = try await query(id).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-
-    func readAll() async throws -> [BlogCategory] {
-        try await query().all()
-    }
-
-    func delete(_ id: BlogCategory.IDValue) async throws {
-        try await query(id).delete()
+    func query(owned: Bool = false) throws -> QueryBuilder<Model> {
+        Model.query(on: request.db)
     }
 }
 

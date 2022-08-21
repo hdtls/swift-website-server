@@ -17,21 +17,21 @@ struct RepositoryFactoryKey: Equatable, Hashable, RawRepresentable, ExpressibleB
 final class Registry {
 
     private let app: Application
-    private var storage: [RepositoryFactoryKey: ((Request) -> Repository)]
+    private var storage: [RepositoryFactoryKey: ((Request) -> any Repository)]
 
     fileprivate init(application: Application) {
         self.app = application
         self.storage = [:]
     }
 
-    func repository(_ id: RepositoryFactoryKey, _ req: Request) -> Repository {
+    func repository(_ id: RepositoryFactoryKey, _ req: Request) -> any Repository {
         guard let factory = storage[id] else {
             fatalError("Repository for id `\(id)` is not configured.")
         }
         return factory(req)
     }
 
-    public func use(_ factory: @escaping (Request) -> Repository, as id: RepositoryFactoryKey) {
+    public func use(_ factory: @escaping (Request) -> any Repository, as id: RepositoryFactoryKey) {
         storage[id] = factory
     }
 }

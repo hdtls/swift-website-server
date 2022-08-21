@@ -3,23 +3,25 @@ import Vapor
 
 struct BlogRepository: Repository {
 
-    var req: Request
+    typealias Model = Blog
 
-    init(req: Request) {
-        self.req = req
+    var request: Request
+
+    init(request: Request) {
+        self.request = request
     }
 
-    func query(owned: Bool = false) throws -> QueryBuilder<Blog> {
-        let query = Blog.query(on: req.db).with(\.$categories)
+    func query(owned: Bool = false) throws -> QueryBuilder<Model> {
+        let query = Blog.query(on: request.db).with(\.$categories)
 
         if owned {
-            try query.filter(\.$user.$id == req.owner.__id)
+            try query.filter(\.$user.$id == request.owner.__id)
         }
 
         return query
     }
 
-    func queryAll(owned: Bool = false) throws -> QueryBuilder<Blog> {
+    func queryAll(owned: Bool = false) throws -> QueryBuilder<Model> {
         try query(owned: owned)
             .field(\.$id)
             .field(\.$alias)
@@ -32,42 +34,27 @@ struct BlogRepository: Repository {
             .field(\.$user.$id)
     }
 
-    func query(_ id: Blog.IDValue, owned: Bool = false) throws -> QueryBuilder<Blog> {
-        try query(owned: owned).filter(\.$id == id)
+    func create(_ model: Model, categories: [BlogCategory]) async throws {
+        try await request.owner.$blog.create(model, on: request.db)
+
+        try await model.$categories.attach(categories, on: request.db)
+        try await model.$categories.load(on: request.db)
     }
 
-    func create(_ model: Blog, categories: [BlogCategory]) async throws {
-        try await req.owner.$blog.create(model, on: req.db)
+    func update(_ model: Model, categories: [BlogCategory]) async throws {
+        try await model.save(on: request.db)
 
-        try await model.$categories.attach(categories, on: req.db)
-        try await model.$categories.load(on: req.db)
+        try await model.$categories.detachAll(on: request.db)
+        try await model.$categories.attach(categories, on: request.db)
+        try await model.$categories.load(on: request.db)
     }
 
-    func identified(by id: Blog.IDValue, owned: Bool = false) async throws -> Blog {
-        guard let result = try await query(id, owned: owned).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-
-    func readAll(owned: Bool = false) async throws -> [Blog] {
-        try await queryAll(owned: owned).all()
-    }
-
-    func update(_ model: Blog, categories: [BlogCategory]) async throws {
-        try await model.save(on: req.db)
-
-        try await model.$categories.detachAll(on: req.db)
-        try await model.$categories.attach(categories, on: req.db)
-        try await model.$categories.load(on: req.db)
-    }
-
-    func delete(_ id: Blog.IDValue) async throws {
+    func delete(_ id: Model.IDValue) async throws {
         let saved = try await query(id, owned: true).first()
 
-        try await saved?.$categories.detachAll(on: req.db)
+        try await saved?.$categories.detachAll(on: request.db)
 
-        try await saved?.delete(on: req.db)
+        try await saved?.delete(on: request.db)
     }
 }
 

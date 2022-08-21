@@ -63,7 +63,7 @@ class UserCollection: RouteCollection {
         try User.Creation.validate(content: req)
         let user = try User.init(req.content.decode(User.Creation.self))
 
-        try await req.user.save(user)
+        try await req.user.create(user)
 
         return try user.bridged()
     }
@@ -85,7 +85,7 @@ class UserCollection: RouteCollection {
     func readAll(_ req: Request) async throws -> [User.DTO] {
         let supportedQueries = try req.query.decode(SupportedQueries.self)
 
-        let query = req.user.query().addEagerLoaders(with: supportedQueries)
+        let query = try req.user.query().addEagerLoaders(with: supportedQueries)
 
         return try await query.all().map {
             try $0.bridged()
@@ -99,7 +99,7 @@ class UserCollection: RouteCollection {
         let saved = try await req.user.identified(by: req.owner.__id)
         try saved.update(with: newValue)
 
-        try await req.user.save(saved)
+        try await req.user.update(saved)
 
         return try saved.bridged()
     }
@@ -108,7 +108,7 @@ class UserCollection: RouteCollection {
         let saved = try await req.user.identified(by: req.owner.__id)
         saved.avatarUrl = try await uploadImageFile(req).get()
 
-        try await req.user.save(saved)
+        try await req.user.update(saved)
 
         return try saved.bridged()
     }
@@ -119,7 +119,7 @@ class UserCollection: RouteCollection {
     }
 
     private func query(on req: Request) throws -> QueryBuilder<User> {
-        let builder = req.user.query()
+        let builder = try req.user.query()
 
         if let id = req.parameters.get(restfulIDKey, as: User.IDValue.self) {
             builder.filter(\._$id == id)

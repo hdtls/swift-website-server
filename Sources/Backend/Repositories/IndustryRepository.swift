@@ -3,37 +3,16 @@ import Vapor
 
 struct IndustryRepository: Repository {
 
-    var req: Request
+    typealias Model = Industry
 
-    init(req: Request) {
-        self.req = req
+    var request: Request
+
+    init(request: Request) {
+        self.request = request
     }
 
-    func query() -> QueryBuilder<Industry> {
-        Industry.query(on: req.db)
-    }
-
-    func query(_ id: Industry.IDValue) -> QueryBuilder<Industry> {
-        query().filter(\.$id == id)
-    }
-
-    func save(_ model: Industry) async throws {
-        try await model.save(on: req.db)
-    }
-
-    func identified(by id: Industry.IDValue) async throws -> Industry {
-        guard let result = try await query(id).first() else {
-            throw Abort(.notFound)
-        }
-        return result
-    }
-
-    func readAll() async throws -> [Industry] {
-        try await query().all()
-    }
-
-    func delete(_ id: Industry.IDValue) async throws {
-        try await query(id).delete()
+    func query(owned: Bool = false) throws -> QueryBuilder<Model> {
+        Model.query(on: request.db)
     }
 }
 
