@@ -14,15 +14,17 @@ struct RepositoryFactoryKey: Equatable, Hashable, RawRepresentable, ExpressibleB
     }
 }
 
-final class Registry {
+struct Registry {
 
     private let app: Application
-    private var storage: [RepositoryFactoryKey: ((Request) -> any Repository)]
 
     fileprivate init(application: Application) {
         self.app = application
         self.storage = [:]
     }
+
+    #if compiler(>=5.7)
+    private var storage: [RepositoryFactoryKey: ((Request) -> any Repository)]
 
     func repository(_ id: RepositoryFactoryKey, _ req: Request) -> any Repository {
         guard let factory = storage[id] else {
@@ -31,22 +33,45 @@ final class Registry {
         return factory(req)
     }
 
-    public func use(_ factory: @escaping (Request) -> any Repository, as id: RepositoryFactoryKey) {
+    mutating func use(_ factory: @escaping (Request) -> any Repository, as id: RepositoryFactoryKey)
+    {
         storage[id] = factory
     }
+
+    #else
+    private var storage: [RepositoryFactoryKey: ((Request) -> Any)]
+
+    func repository(_ id: RepositoryFactoryKey, _ req: Request) -> Any {
+        guard let factory = storage[id] else {
+            fatalError("Repository for id `\(id)` is not configured.")
+        }
+        return factory(req)
+    }
+
+    mutating func use(_ factory: @escaping (Request) -> Any, as id: RepositoryFactoryKey) {
+        storage[id] = factory
+    }
+    #endif
 }
 
 extension Application {
 
-    private struct Key: StorageKey {
+    private struct RegistryKey: StorageKey {
         typealias Value = Registry
     }
 
     var registry: Registry {
-        if storage[Key.self] == nil {
-            storage[Key.self] = .init(application: self)
+        set {
+            storage[RegistryKey.self] = newValue
         }
-        return storage[Key.self]!
+        get {
+            guard storage[RegistryKey.self] == nil else {
+                return storage[RegistryKey.self]!
+            }
+            let registry = Registry(application: self)
+            storage[RegistryKey.self] = registry
+            return registry
+        }
     }
 }
 

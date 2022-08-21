@@ -2,7 +2,7 @@ import FluentMySQLDriver
 import Vapor
 
 /// Called before your application initializes.
-public func bootstrap(_ app: Application) throws {
+func bootstrap(_ app: Application) throws {
 
     // JSON configuration
     let encoder = JSONEncoder()
