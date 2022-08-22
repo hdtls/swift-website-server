@@ -154,8 +154,7 @@ class UserCollectionTests: XCTestCase {
     func testQueryWithUserIDAndQueryParameters() throws {
         let userCreation = app.login().user
 
-        let query =
-            "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true&incl_blog=true"
+        let query = "?emb=sns.edu.exp.skill.proj.blog"
         try app.test(
             .GET,
             path + "/\(userCreation.username)\(query)",
@@ -190,8 +189,8 @@ class UserCollectionTests: XCTestCase {
         app.requestSkill()
         app.requestBlog()
 
-        let query =
-            "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true&incl_blog=true"
+        let query = "?emb=sns.edu.exp.skill.proj.blog"
+
         try app.test(
             .GET,
             path + "/\(userCreation.username)\(query)",
@@ -236,8 +235,8 @@ class UserCollectionTests: XCTestCase {
         app.requestSkill()
         app.requestBlog()
 
-        let query =
-            "?incl_sns=true&incl_edu_exp=true&incl_wrk_exp=true&incl_skill=true&incl_projs=true&incl_blog=true"
+        let query = "?emb=sns.edu.exp.skill.proj.blog"
+
         try app.test(
             .GET,
             path + query,

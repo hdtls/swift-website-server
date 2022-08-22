@@ -15,25 +15,68 @@ struct UserRepository: Repository {
         Model.query(on: request.db)
     }
 
-    func formatted(by uname: String) async throws -> Model {
-        let saved = try await query()
-            .filter(\.$username == uname)
-            .with(\.$projects)
-            .with(\.$education)
-            .with(\.$experiences) {
-                $0.with(\.$industries)
-            }
-            .with(\.$social) {
-                $0.with(\.$service)
-            }
-            .with(\.$skill)
-            .first()
-
-        guard let saved = saved else {
+    func identified(by id: Model.IDValue, queries: Model.Queries) async throws -> Model {
+        guard let result = try await query(id).applyQueries(queries).first() else {
             throw Abort(.notFound)
         }
+        return result
+    }
 
-        return saved
+    func identified(by name: String) async throws -> Model {
+        let query = try query().filter(\.$username == name)
+        guard let result = try await query.first() else {
+            throw Abort(.notFound)
+        }
+        return result
+    }
+
+    func identified(by name: String, queries: Model.Queries) async throws -> Model {
+        let query = try query().filter(\.$username == name).applyQueries(queries)
+        guard let result = try await query.first() else {
+            throw Abort(.notFound)
+        }
+        return result
+    }
+
+    func readAll(queries: Model.Queries) async throws -> [Model] {
+        try await queryAll().applyQueries(queries).all()
+    }
+}
+
+extension QueryBuilder where Model == User {
+
+    fileprivate func applyQueries(_ queries: Model.Queries) throws -> QueryBuilder<Model> {
+        if queries.includeExperience {
+            with(\.$experiences) {
+                $0.with(\.$industries)
+            }
+        }
+
+        if queries.includeEducation {
+            with(\.$education)
+        }
+
+        if queries.includeSNS {
+            with(\.$social) {
+                $0.with(\.$service)
+            }
+        }
+
+        if queries.includeProjects {
+            with(\.$projects)
+        }
+
+        if queries.includeSkill {
+            with(\.$skill)
+        }
+
+        if queries.includeBlog {
+            with(\.$blog) {
+                $0.with(\.$categories)
+            }
+        }
+
+        return self
     }
 }
 

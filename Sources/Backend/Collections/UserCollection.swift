@@ -1,25 +1,40 @@
-import Fluent
 import Vapor
 
-class UserCollection: RouteCollection {
+extension User {
+    struct Queries: Codable {
+        var emb: String?
 
-    struct SupportedQueries: Decodable {
-        var includeExperience: Bool?
-        var includeEducation: Bool?
-        var includeSNS: Bool?
-        var includeProjects: Bool?
-        var includeSkill: Bool?
-        var includeBlog: Bool?
+        private var _emb: [Substring] {
+            emb?.split(separator: ".") ?? []
+        }
 
-        enum CodingKeys: String, CodingKey {
-            case includeExperience = "incl_wrk_exp"
-            case includeEducation = "incl_edu_exp"
-            case includeSNS = "incl_sns"
-            case includeProjects = "incl_projs"
-            case includeSkill = "incl_skill"
-            case includeBlog = "incl_blog"
+        var includeExperience: Bool {
+            _emb.contains("exp")
+        }
+
+        var includeEducation: Bool {
+            _emb.contains("edu")
+        }
+
+        var includeSNS: Bool {
+            _emb.contains("sns")
+        }
+
+        var includeProjects: Bool {
+            _emb.contains("proj")
+        }
+
+        var includeSkill: Bool {
+            _emb.contains("skill")
+        }
+
+        var includeBlog: Bool {
+            _emb.contains("blog")
         }
     }
+}
+
+class UserCollection: RouteCollection {
 
     private let restfulIDKey = "id"
 
@@ -71,23 +86,15 @@ class UserCollection: RouteCollection {
     /// Query user with specified`userID`.
     /// - seealso: `readAll(_:)`
     func read(_ req: Request) async throws -> User.DTO {
-        let supportedQueries = try req.query.decode(SupportedQueries.self)
+        let queries = try req.query.decode(User.Queries.self)
 
-        let builder = try query(on: req).addEagerLoaders(with: supportedQueries)
-
-        guard let user = try await builder.first() else {
-            throw Abort(.notFound)
-        }
-
-        return try user.bridged()
+        return try await identified(on: req, queries: queries).bridged()
     }
 
     func readAll(_ req: Request) async throws -> [User.DTO] {
-        let supportedQueries = try req.query.decode(SupportedQueries.self)
+        let queries = try req.query.decode(User.Queries.self)
 
-        let query = try req.user.query().addEagerLoaders(with: supportedQueries)
-
-        return try await query.all().map {
+        return try await req.user.readAll(queries: queries).map {
             try $0.bridged()
         }
     }
@@ -118,13 +125,17 @@ class UserCollection: RouteCollection {
         return .ok
     }
 
-    private func query(on req: Request) throws -> QueryBuilder<User> {
-        let builder = try req.user.query()
-
+    private func identified(on req: Request, queries: User.Queries?) async throws -> User {
         if let id = req.parameters.get(restfulIDKey, as: User.IDValue.self) {
-            builder.filter(\._$id == id)
+            guard let queries = queries else {
+                return try await req.user.identified(by: id)
+            }
+            return try await req.user.identified(by: id, queries: queries)
         } else if let id = req.parameters.get(restfulIDKey) {
-            builder.filter(User.FieldKeys.username, .equal, id)
+            guard let queries = queries else {
+                return try await req.user.identified(by: id)
+            }
+            return try await req.user.identified(by: id, queries: queries)
         } else {
             if req.parameters.get(restfulIDKey) != nil {
                 throw Abort(.unprocessableEntity)
@@ -132,56 +143,15 @@ class UserCollection: RouteCollection {
                 throw Abort(.internalServerError)
             }
         }
-
-        return builder
     }
 }
 
-extension QueryBuilder where Model == User {
-
-    fileprivate func addEagerLoaders(with queries: UserCollection.SupportedQueries) -> Self {
-        if queries.includeExperience ?? false {
-            with(\.$experiences) {
-                $0.with(\.$industries)
-            }
-        }
-
-        if queries.includeEducation ?? false {
-            with(\.$education)
-        }
-
-        if queries.includeSNS ?? false {
-            with(\.$social) {
-                $0.with(\.$service)
-            }
-        }
-
-        if queries.includeProjects ?? false {
-            with(\.$projects)
-        }
-
-        if queries.includeSkill ?? false {
-            with(\.$skill)
-        }
-
-        if queries.includeBlog ?? false {
-            with(\.$blog) {
-                $0.with(\.$categories)
-            }
-        }
-        return self
-    }
-}
-
-// MARK: Blog
 extension UserCollection {
     func readAllBlog(_ req: Request) async throws -> [Blog.DTO] {
-        guard let user = try await query(on: req).first() else {
-            throw Abort(.notFound)
-        }
+        let user = try await identified(on: req, queries: nil)
 
         return try await req.blog.queryAll()
-            .filter(\.$user.$id == user.requireID())
+            .filter(\.$user.$id, .equal, user.__id)
             .all()
             .map {
                 try $0.bridged()
@@ -189,30 +159,22 @@ extension UserCollection {
     }
 }
 
-// MARK: CV
 extension UserCollection {
     func readResume(_ req: Request) async throws -> User.DTO {
-        guard let id = req.parameters.get(restfulIDKey, as: String.self) else {
-            throw Abort(.badRequest)
-        }
+        let queries = User.Queries.init(emb: "exp.edu.sns.proj.skill")
 
-        let resume = try await req.user.formatted(by: id)
-
-        return try resume.bridged()
+        return try await identified(on: req, queries: queries).bridged()
     }
 }
 
-// MARK: Social Networking
 extension UserCollection {
-    func createSocialNetworking(_ request: Request) async throws -> SocialNetworking.DTO {
-        let serializedObject = try request.content.decode(SocialNetworking.DTO.self)
+    func createSocialNetworking(_ req: Request) async throws -> SocialNetworking.DTO {
+        var newValue = try req.content.decode(SocialNetworking.DTO.self)
+        newValue.userId = try req.owner.__id
 
-        let model = try SocialNetworking.fromBridgedDTO(serializedObject)
-        model.$user.id = try request.auth.require(User.self).requireID()
+        let model = try SocialNetworking.fromBridgedDTO(newValue)
 
-        try await model.save(on: request.db)
-
-        try await model.$service.load(on: request.db)
+        try await req.socialNetworking.create(model)
 
         return try model.bridged()
     }
