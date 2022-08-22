@@ -7,7 +7,6 @@ The ultimate tool for building books.
 from __future__ import absolute_import, print_function
 
 import argparse
-from itertools import product
 import os
 import subprocess
 import sys
@@ -83,10 +82,12 @@ Looking at '%s'.
 def generate_xcodeproj(config):
     print("Generate {} as an Xcode project".format(PRODUCT_NAME))
     os.chdir(PACKAGE_DIR)
+    
     popenargs = ["swift", "package", "generate-xcodeproj"]
 
     if config:
         popenargs.extend(["--xcconfig-overrides", config])
+    
     check_call(popenargs)
 
 
@@ -175,7 +176,23 @@ def get_swiftpm_invocation(toolchain, action, configuration):
     return popenargs
 
 
-def run_tests(toolchain, configuration, verbose):
+def run_build(toolchain, product, configuration, static_swift_stdlib, verbose):
+    popenargs = get_swiftpm_invocation(toolchain, "build", configuration)
+    
+    if verbose:
+        popenargs.append("--verbose")
+    
+    print("Planing build product " + PRODUCT_NAME)
+
+    popenargs.extend(["--product", product])
+    
+    if static_swift_stdlib:
+        popenargs.append("--static-swift-stdlib")
+    
+    check_call(popenargs, verbose)
+
+
+def run_tests(toolchain, configuration, parallel, verbose):
     if verbose:
         print("Planning run tests")
     print("Running tests for product {}".format(PRODUCT_NAME))
@@ -183,25 +200,29 @@ def run_tests(toolchain, configuration, verbose):
     success = run_xctests(
         toolchain=toolchain,
         configuration=configuration,
+        parallel=parallel,
         verbose=verbose,
     )
 
     return success
 
 
-def run_xctests(toolchain, configuration, verbose):
-    swiftpm_call = get_swiftpm_invocation(
+def run_xctests(toolchain, configuration, parallel, verbose):
+    popenargs = get_swiftpm_invocation(
         toolchain=toolchain,
         action="test",
         configuration=configuration,
     )
 
     if verbose:
-        swiftpm_call.extend(["--verbose"])
+        popenargs.append("--verbose")
 
-    swiftpm_call.extend(["--test-product", "{}PackageTests".format(PACKAGE_NAME)])
+    if parallel:
+        popenargs.append("--parallel")
+        
+    popenargs.extend(["--test-product", "{}PackageTests".format(PACKAGE_NAME)])
 
-    return call(swiftpm_call, verbose=verbose) == 0
+    return call(popenargs, verbose=verbose) == 0
 
 
 # -----------------------------------------------------------------------------
@@ -286,6 +307,12 @@ def parse_args():
         help="Path to the gyb tool (default: %(default)s).",
     )
 
+    test_group.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run the tests in parallel.",
+    )
+
     return parser.parse_args()
 
 
@@ -308,14 +335,13 @@ def main():
         sys.exit(0)
 
     try:
-        popenargs = get_swiftpm_invocation(args.toolchain, "build", args.configuration)
-        if args.verbose:
-            popenargs.append("--verbose")
-        print("Planing build product " + PRODUCT_NAME)
-        popenargs.extend(["--product", PRODUCT_NAME])
-        if args.static_swift_stdlib:
-            popenargs.append("--static-swift-stdlib")
-        check_call(popenargs, args.verbose)
+        run_build(
+            toolchain=args.toolchain,
+            product=PRODUCT_NAME,
+            configuration=args.configuration,
+            static_swift_stdlib=args.static_swift_stdlib,
+            verbose=args.verbose,
+        )
     except subprocess.CalledProcessError as e:
         printerr("FAIL: Building product failed")
         printerr("Executing: %s" % " ".join(e.cmd))
@@ -326,6 +352,7 @@ def main():
             success = run_tests(
                 toolchain=args.toolchain,
                 configuration=args.configuration,
+                parallel=args.parallel,
                 verbose=args.verbose,
             )
             if not success:
