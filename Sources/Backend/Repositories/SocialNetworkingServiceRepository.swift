@@ -22,7 +22,7 @@ extension RepositoryFactoryKey {
 
 extension Request {
 
-    var socialNetworkingService: SocialNetworkingServiceRepository {
+    var sns: SocialNetworkingServiceRepository {
         guard
             let result = registry.repository(.socialNetworkingService, self)
                 as? SocialNetworkingServiceRepository
