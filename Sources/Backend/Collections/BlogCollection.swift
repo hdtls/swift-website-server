@@ -1,5 +1,10 @@
-import Fluent
 import Vapor
+
+extension Blog {
+    struct Queries: Codable {
+        var categories: String?
+    }
+}
 
 class BlogCollection: RouteCollection {
 
@@ -64,9 +69,7 @@ class BlogCollection: RouteCollection {
     }
 
     func read(_ req: Request) async throws -> Blog.DTO {
-        guard let saved = try await query(on: req).first() else {
-            throw Abort(.notFound)
-        }
+        let saved = try await identified(on: req)
 
         var byteBuffer = try await req.fileio.collectFile(at: filepath(req, alias: saved.alias))
 
@@ -76,26 +79,15 @@ class BlogCollection: RouteCollection {
     }
 
     func readAll(_ req: Request) async throws -> [Blog.DTO] {
-        struct SupportedQueries: Decodable {
-            var categories: String?
-        }
+        let queries = try req.query.decode(Blog.Queries.self)
 
-        let queryBuilder = try req.blog.queryAll()
-        let supportedQueries = try req.query.decode(SupportedQueries.self)
-
-        if let categories = supportedQueries.categories {
-            queryBuilder.filter(BlogCategory.self, \BlogCategory.$name ~~ categories)
-        }
-
-        return try await queryBuilder.all().map {
+        return try await req.blog.readAll(queries: queries).map {
             try $0.bridged()
         }
     }
 
     func update(_ req: Request) async throws -> Blog.DTO {
-        guard let saved = try await query(on: req, owned: true).first() else {
-            throw Abort(.notFound)
-        }
+        let saved = try await identified(on: req)
 
         var newValue = try req.content.decode(Blog.DTO.self)
         newValue.userId = try req.owner.__id
@@ -130,9 +122,7 @@ class BlogCollection: RouteCollection {
     }
 
     func delete(_ req: Request) async throws -> HTTPResponseStatus {
-        let saved = try await query(on: req, owned: true).first()
-
-        guard let saved = saved else {
+        guard let saved = try? await identified(on: req) else {
             return .ok
         }
 
@@ -143,16 +133,18 @@ class BlogCollection: RouteCollection {
         return .ok
     }
 
-    private func query(on req: Request, owned: Bool = false) throws -> QueryBuilder<Blog> {
-        let builder = try req.blog.query(owned: owned)
+    private func identified(on req: Request) async throws -> Blog {
         if let id = req.parameters.get(restfulIDKey, as: Blog.IDValue.self) {
-            builder.filter(\._$id == id)
+            return try await req.blog.identified(by: id)
         } else if let alias = req.parameters.get(restfulIDKey) {
-            builder.filter(\.$alias == alias)
+            return try await req.blog.identified(by: alias)
         } else {
-            throw Abort(.badRequest)
+            if req.parameters.get(restfulIDKey) != nil {
+                throw Abort(.unprocessableEntity)
+            } else {
+                throw Abort(.internalServerError)
+            }
         }
-        return builder
     }
 
     private func filepath(_ req: Request, alias: String) -> String {

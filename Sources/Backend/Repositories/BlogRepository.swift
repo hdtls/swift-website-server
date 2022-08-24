@@ -41,6 +41,21 @@ struct BlogRepository: Repository {
         try await model.$categories.load(on: request.db)
     }
 
+    func identified(by alias: String) async throws -> Model {
+        guard let result = try await query().filter(\.$alias == alias).first() else {
+            throw Abort(.notFound)
+        }
+        return result
+    }
+
+    func readAll(owned: Bool = false, queries: Model.Queries) async throws -> [Model] {
+        let query = try queryAll(owned: owned)
+        if let sets = queries.categories {
+            query.filter(BlogCategory.self, \BlogCategory.$name ~~ sets)
+        }
+        return try await query.all()
+    }
+
     func update(_ model: Model, categories: [BlogCategory]) async throws {
         try await model.save(on: request.db)
 
