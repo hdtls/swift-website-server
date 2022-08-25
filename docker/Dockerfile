@@ -7,7 +7,7 @@ FROM swift:5.6-focal as builder
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q update \
     && apt-get -q dist-upgrade -y \
-    && apt-get -q install -y locales locales-all python3 \
+    && apt-get -q install -y locales locales-all python3 rsync \
     && rm -rf /var/lib/apt/lists/*
 
 ENV LC_ALL en_US.UTF-8

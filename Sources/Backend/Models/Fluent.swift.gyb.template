@@ -13,8 +13,7 @@ import re
 import sys
 
 MODULE_DIR = os.path.dirname(os.path.realpath(__file__))
-PACKAGE_DIR = os.path.dirname(os.path.dirname(MODULE_DIR))
-FLUENT_FILE = os.path.join(PACKAGE_DIR, "Resources", "fluent.json")
+FLUENT_FILE = os.path.join(MODULE_DIR, "fluent.json")
 
 try:
     fluent_definition = json.load(open(FLUENT_FILE))
