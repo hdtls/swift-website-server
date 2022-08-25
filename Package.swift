@@ -30,7 +30,8 @@ let package = Package(
                 .product(name: "Vapor", package: "vapor"),
             ],
             exclude: [
-                "Fluent.swift.gyb.template"
+                "Models/Fluent.swift.gyb.template",
+                "Models/fluent.json",
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of
