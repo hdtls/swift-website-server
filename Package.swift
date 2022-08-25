@@ -31,7 +31,7 @@ let package = Package(
             ],
             exclude: [
                 "Models/Fluent.swift.gyb.template",
-                "Models/fluent.json",
+                "Models/Fluent.json",
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of

@@ -1,7 +1,5 @@
 import Vapor
 
-/// In progress
-/// admin user request.
 class SocialNetworkingServiceCollection: RouteCollection {
 
     private var restfulIDKey: String = "id"
