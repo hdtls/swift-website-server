@@ -34,6 +34,19 @@ extension User {
     }
 }
 
+extension User.DTO {
+
+    mutating func beforeEncode() throws {
+        avatarUrl = avatarUrl?.bucketURLString()
+        // Chain beforeEncode to nested content.
+        projects = try projects?.map {
+            var project = $0
+            try project.beforeEncode()
+            return project
+        }
+    }
+}
+
 class UserCollection: RouteCollection {
 
     private let restfulIDKey = "id"
