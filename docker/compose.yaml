@@ -9,8 +9,6 @@
 # Learn more: https://docs.docker.com/compose/reference/
 #
 
-version: "3.7"
-
 x-mysql:
   &mysql
   MYSQL_USER: swift

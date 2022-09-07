@@ -9,8 +9,6 @@
 # Learn more: https://docs.docker.com/compose/reference/
 #
 
-version: "3.7"
-
 x-mysql: &mysql
   MYSQL_USER: swift
   MYSQL_PASSWORD: mysql
@@ -43,3 +41,4 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       LANG: C.UTF-8
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-character-set-client-handshake
+    
