@@ -27,8 +27,14 @@ class BlogCollection: RouteCollection {
             User.guardMiddleware(),
         ])
 
-        trusted.on(.POST, use: create)
-        trusted.on(.PUT, .parameter(restfulIDKey), use: update)
+        trusted.on(.POST, body: .collect(maxSize: "1mb"), use: create)
+        trusted.on(.PUT, "front-matter", .parameter(restfulIDKey), use: updateFrontMatter)
+        trusted.on(
+            .PUT,
+            .parameter(restfulIDKey),
+            body: .collect(maxSize: "1mb"),
+            use: updateBlogArticle
+        )
         trusted.on(.DELETE, .parameter(restfulIDKey), use: delete)
     }
 
@@ -86,7 +92,23 @@ class BlogCollection: RouteCollection {
         }
     }
 
-    func update(_ req: Request) async throws -> Blog.DTO {
+    func updateFrontMatter(_ req: Request) async throws -> Blog.FrontMatter {
+        let saved = try await identified(on: req)
+
+        let frontMatter = try req.content.decode(Blog.FrontMatter.self)
+
+        let categories = try frontMatter.categories.map(BlogCategory.fromBridgedDTO)
+
+        let model = Blog.fromFrontMatter(frontMatter)
+        model.id = try saved.requireID()
+        model.$user.id = try req.owner.__id
+
+        try await req.blog.update(model, categories: categories)
+
+        return try model.frontMatter
+    }
+
+    func updateBlogArticle(_ req: Request) async throws -> Blog.DTO {
         let saved = try await identified(on: req)
 
         var newValue = try req.content.decode(Blog.DTO.self)
