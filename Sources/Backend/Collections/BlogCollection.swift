@@ -62,8 +62,9 @@ class BlogCollection: RouteCollection {
         let originalBlogAlias = model.alias
 
         // Save blog file path to the database.
-        try await req.fileio.writeFile(.init(string: article), at: filepath(req, alias: model.alias))
-        model.content = "/blog/\(model.alias)"
+        let url = makeFileURL(on: req, alias: model.alias)
+        try await req.fileio.writeFile(.init(string: article), at: url.path)
+        model.content = "/\(url.relativePath)"
 
         try await req.blog.create(model, categories: categories)
 
@@ -81,7 +82,8 @@ class BlogCollection: RouteCollection {
     func read(_ req: Request) async throws -> Blog.DTO {
         let saved = try await identified(on: req)
 
-        var byteBuffer = try await req.fileio.collectFile(at: filepath(req, alias: saved.alias))
+        let url = makeFileURL(on: req, alias: saved.alias)
+        var byteBuffer = try await req.fileio.collectFile(at: url.path)
 
         var result = try saved.bridged()
         result.content = byteBuffer.readString(length: byteBuffer.readableBytes) ?? ""
@@ -128,8 +130,9 @@ class BlogCollection: RouteCollection {
         let originalBlogAlias = saved.alias
         try saved.update(with: newValue)
 
-        try await req.fileio.writeFile(.init(string: article), at: filepath(req, alias: saved.alias))
-        saved.content = "/blog/\(saved.alias)"
+        let url = makeFileURL(on: req, alias: saved.alias)
+        try await req.fileio.writeFile(.init(string: article), at: url.path)
+        saved.content = "/\(url.relativePath)"
 
         try await req.blog.update(saved, categories: categories)
 
@@ -170,13 +173,16 @@ class BlogCollection: RouteCollection {
         }
     }
 
-    private func filepath(_ req: Request, alias: String) -> String {
-        return req.application.directory.resourcesDirectory + "blog/\(alias).md"
+    private func makeFileURL(on req: Request, alias: String) -> URL {
+        var url = URL(fileURLWithPath: "blog", relativeTo: URL(fileURLWithPath: req.application.directory.resourcesDirectory))
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        url.appendPathComponent("\(alias).md")
+        return url
     }
 
     private func removeBlog(_ alias: String, on req: Request) {
         var isDirectory = ObjCBool(false)
-        let filepath = filepath(req, alias: alias)
+        let filepath = makeFileURL(on: req, alias: alias).path
         if FileManager.default.fileExists(atPath: filepath, isDirectory: &isDirectory),
             isDirectory.boolValue == false
         {
