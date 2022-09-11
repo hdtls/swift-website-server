@@ -12,11 +12,11 @@ protocol MultipartFileProtocol {
 
 extension MultipartFileProtocol {
     var contentType: HTTPMediaType? {
-        return self.extension.flatMap({ HTTPMediaType.fileExtension($0.lowercased()) })
+        return self.extension.flatMap { HTTPMediaType.fileExtension($0.lowercased()) }
     }
 
     var `extension`: String? {
-        let parts = filename.split(separator: ".")
+        let parts = self.filename.split(separator: ".")
         if parts.count > 1 {
             return parts.last.map(String.init)
         }
@@ -49,10 +49,8 @@ struct MultipartImage: Codable, MultipartImageProtocol {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let data = try container.decode(Data.self, forKey: .data)
-        var buffer = ByteBufferAllocator().buffer(capacity: 0)
-        buffer.writeBytes(data)
         let filename = try container.decode(String.self, forKey: .filename)
-        self.init(data: buffer, filename: filename)
+        self.init(data: .init(data: data), filename: filename)
     }
 
     /// `Encodable` conformance.
@@ -104,4 +102,9 @@ extension MultipartImage: MultipartPartConvertible {
 
 struct MultipartFileCoding: Content {
     let url: String
+}
+
+struct MultipartFormData: Content {
+    var image: MultipartImage?
+    var file: MultipartFile?
 }

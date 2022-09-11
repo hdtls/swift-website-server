@@ -3,8 +3,8 @@ import Vapor
 /// Register your application's routes here.
 func routes(_ app: Application) throws {
 
-    try app.register(collection: FileCollection.init(type: .files))
-    try app.register(collection: FileCollection.init(type: .images))
+    try app.register(collection: FileCollection.init(type: .file))
+    try app.register(collection: FileCollection.init(type: .image))
     try app.register(collection: UserCollection.init())
     try app.register(collection: EducationCollection.init())
     try app.register(collection: ExpCollection.init())

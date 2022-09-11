@@ -62,11 +62,8 @@ class BlogCollection: RouteCollection {
         let originalBlogAlias = model.alias
 
         // Save blog file path to the database.
-        model.content = try await req.fileio.writeFile(
-            .init(string: article),
-            path: self.filepath(req, alias: model.alias),
-            relative: ""
-        ).get()
+        try await req.fileio.writeFile(.init(string: article), at: filepath(req, alias: model.alias))
+        model.content = "/blog/\(model.alias)"
 
         try await req.blog.create(model, categories: categories)
 
@@ -131,11 +128,8 @@ class BlogCollection: RouteCollection {
         let originalBlogAlias = saved.alias
         try saved.update(with: newValue)
 
-        saved.content = try await req.fileio.writeFile(
-            .init(string: article),
-            path: self.filepath(req, alias: saved.alias),
-            relative: ""
-        ).get()
+        try await req.fileio.writeFile(.init(string: article), at: filepath(req, alias: saved.alias))
+        saved.content = "/blog/\(saved.alias)"
 
         try await req.blog.update(saved, categories: categories)
 

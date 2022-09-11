@@ -2,15 +2,10 @@ import Vapor
 
 class FileCollection: RouteCollection {
 
-    enum MediaType: String {
-        case images
-        case files
-    }
-
     let type: MediaType
     let maximumBodySize: ByteCount
 
-    init(type: MediaType, maximumBodySize: ByteCount = "100mb") {
+    init(type: MediaType, maximumBodySize: ByteCount = "10mb") {
         self.type = type
         self.maximumBodySize = maximumBodySize
     }
@@ -27,18 +22,14 @@ class FileCollection: RouteCollection {
         trusted.on(.POST, body: .collect(maxSize: maximumBodySize), use: create)
     }
 
-    func create(_ req: Request) throws -> EventLoopFuture<MultipartFileCoding> {
+    func create(_ req: Request) async throws -> MultipartFileCoding {
         switch type {
-            case .images:
-                return try uploadImageFile(req)
-                    .map {
-                        MultipartFileCoding.init(url: $0)
-                    }
-            default:
-                return try uploadFile(req, relative: req.application.directory.publicDirectory)
-                    .map {
-                        MultipartFileCoding.init(url: $0)
-                    }
+            case .image:
+                let path = try await saveFile(from: req, as: .image)
+                return MultipartFileCoding(url: path)
+            case .file:
+                let path = try await saveFile(from: req, as: .file)
+                return MultipartFileCoding(url: path)
         }
     }
 }

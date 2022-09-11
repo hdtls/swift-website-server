@@ -132,7 +132,7 @@ class UserCollection: RouteCollection {
 
     func patch(_ req: Request) async throws -> User.DTO {
         let saved = try await req.user.identified(by: req.owner.__id)
-        saved.avatarUrl = try await uploadImageFile(req).get()
+        saved.avatarUrl = try await saveFile(from: req, as: .image)
 
         try await req.user.update(saved)
 
