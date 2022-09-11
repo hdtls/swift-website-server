@@ -44,6 +44,12 @@ extension User.DTO {
             try project.beforeEncode()
             return project
         }
+        
+        blog = try blog?.map {
+            var blog = $0
+            try blog.beforeEncode()
+            return blog
+        }
     }
 }
 

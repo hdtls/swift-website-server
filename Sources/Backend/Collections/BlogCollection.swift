@@ -6,6 +6,13 @@ extension Blog {
     }
 }
 
+extension Blog.DTO {
+    
+    mutating func beforeEncode() throws {
+        artworkUrl = artworkUrl?.bucketURLString()
+    }
+}
+
 class BlogCollection: RouteCollection {
 
     private let restfulIDKey = "id"
