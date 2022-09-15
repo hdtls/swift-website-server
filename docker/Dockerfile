@@ -1,7 +1,7 @@
 # ================================
 # Build image
 # ================================
-FROM swift:5.6-focal as builder
+FROM swift:5.7-jammy as builder
 
 # Install updates and set locales to en_US.UTF-8.
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
@@ -49,7 +49,7 @@ RUN find -L "$(swift build --package-path /build -c release --show-bin-path)/" -
 # ================================
 # Run image
 # ================================
-FROM ubuntu:focal
+FROM ubuntu:jammy
 
 # Make sure all system packages are up to date.
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
