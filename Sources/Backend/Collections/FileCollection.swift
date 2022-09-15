@@ -22,14 +22,8 @@ class FileCollection: RouteCollection {
         trusted.on(.POST, body: .collect(maxSize: maximumBodySize), use: create)
     }
 
-    func create(_ req: Request) async throws -> MultipartFileCoding {
-        switch type {
-            case .image:
-                let path = try await saveFile(from: req, as: .image)
-                return MultipartFileCoding(url: path)
-            case .file:
-                let path = try await saveFile(from: req, as: .file)
-                return MultipartFileCoding(url: path)
-        }
+    func create(_ req: Request) async throws -> [String : String] {
+        let path = try await saveFile(from: req, as: type)
+        return ["url" : path]
     }
 }

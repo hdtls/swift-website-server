@@ -1,59 +1,51 @@
 import Fluent
 
 extension Project {
-
+    
     static let migration: Migration = .init()
+    
+    class Migration: Fluent.AsyncMigration {
+        
+        func prepare(on database: Database) async throws {
+            let projectKinds = try await database.enum(ProjKind.schema)
+                .case(ProjKind.app.rawValue)
+                .case(ProjKind.website.rawValue)
+                .case(ProjKind.library.rawValue)
+                .create()
 
-    class Migration: Fluent.Migration {
+            let projectVisibilities = try await database.enum(ProjVisibility.schema)
+                .case(ProjVisibility.private.rawValue)
+                .case(ProjVisibility.public.rawValue)
+                .create()
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            var kindBuilder = database.enum(ProjKind.schema)
-            ProjKind.allCases.forEach({
-                kindBuilder = kindBuilder.case($0.rawValue)
-            })
-
-            var visibilityBuilder = database.enum(ProjVisibility.schema)
-            ProjVisibility.allCases.forEach({
-                visibilityBuilder = visibilityBuilder.case($0.rawValue)
-            })
-
-            return kindBuilder.create()
-                .and(visibilityBuilder.create())
-                .flatMap({
-                    database.schema(schema)
-                        .field(.id, .int, .identifier(auto: true))
-                        .field(FieldKeys.user, .int, .references(User.schema, .id))
-                        .field(FieldKeys.name, .string, .required)
-                        .field(FieldKeys.note, .string)
-                        .field(FieldKeys.genres, .array(of: .string))
-                        .field(FieldKeys.summary, .sql(raw: "VARCHAR(1024)"), .required)
-                        .field(FieldKeys.artworkUrl, .string)
-                        .field(FieldKeys.backgroundImageUrl, .string)
-                        .field(FieldKeys.promoImageUrl, .string)
-                        .field(FieldKeys.screenshotUrls, .array(of: .string))
-                        .field(FieldKeys.padScreenshotUrls, .array(of: .string))
-                        .field(FieldKeys.kind, $0.0, .required)
-                        .field(FieldKeys.visibility, $0.1, .required)
-                        .field(FieldKeys.trackViewUrl, .string)
-                        .field(FieldKeys.trackId, .string)
-                        .field(FieldKeys.startDate, .string, .required)
-                        .field(FieldKeys.endDate, .string, .required)
-                        .field(FieldKeys.isOpenSource, .bool, .required)
-                        .field(.createdAt, .datetime)
-                        .field(.updatedAt, .datetime)
-                        .create()
-                })
+            try await database.schema(schema)
+                .field(.id, .int, .identifier(auto: true))
+                .field(FieldKeys.user, .int, .references(User.schema, .id))
+                .field(FieldKeys.name, .string, .required)
+                .field(FieldKeys.note, .string)
+                .field(FieldKeys.genres, .array(of: .string))
+                .field(FieldKeys.summary, .sql(raw: "VARCHAR(1024)"), .required)
+                .field(FieldKeys.artworkUrl, .string)
+                .field(FieldKeys.backgroundImageUrl, .string)
+                .field(FieldKeys.promoImageUrl, .string)
+                .field(FieldKeys.screenshotUrls, .array(of: .string))
+                .field(FieldKeys.padScreenshotUrls, .array(of: .string))
+                .field(FieldKeys.kind, projectKinds, .required)
+                .field(FieldKeys.visibility, projectVisibilities, .required)
+                .field(FieldKeys.trackViewUrl, .string)
+                .field(FieldKeys.trackId, .string)
+                .field(FieldKeys.startDate, .string, .required)
+                .field(FieldKeys.endDate, .string, .required)
+                .field(FieldKeys.isOpenSource, .bool, .required)
+                .field(.createdAt, .datetime)
+                .field(.updatedAt, .datetime)
+                .create()
         }
-
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(schema)
-                .delete()
-                .flatMap({
-                    database.enum(ProjKind.schema).delete()
-                })
-                .flatMap({
-                    database.enum(ProjVisibility.schema).delete()
-                })
+        
+        func revert(on database: Database) async throws {
+            try await database.schema(schema).delete()
+            try await database.enum(ProjKind.schema).delete()
+            try await database.enum(ProjVisibility.schema).delete()
         }
     }
 }

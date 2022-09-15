@@ -90,7 +90,7 @@ def filtered_available_properties(field_properties):
 
 final class ${obj_getClass(fluent_definition)}: Fluent.Model {
 
-    static var schema: String = "${fluent_definition[EMIT_KIND]["schema"]}"
+    static let schema: String = "${fluent_definition[EMIT_KIND]["schema"]}"
 % for field in obj_getProperties(fluent_definition):
 
 %   if property_getFieldType(field) == "ID":

@@ -100,10 +100,6 @@ extension MultipartImage: MultipartPartConvertible {
     }
 }
 
-struct MultipartFileCoding: Content {
-    let url: String
-}
-
 struct MultipartFormData: Content {
     var image: MultipartImage?
     var file: MultipartFile?

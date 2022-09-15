@@ -34,6 +34,7 @@ let package = Package(
                 "Models/Fluent.json",
             ],
             swiftSettings: [
+                .unsafeFlags(["-warn-concurrency"]),
                 // Enable better optimizations when building in Release configuration. Despite the use of
                 // the `.unsafeFlags` construct required by SwiftPM, this flag is recommended for Release
                 // builds. See <https://github.com/swift-server/guides#building-for-production> for details.

@@ -69,9 +69,9 @@ enum ImageSerializer: String, ImageSerializing {
     }
 }
 
-class ImageSerializerFactory {
+class ImageSerializerFactory: @unchecked Sendable {
 
-    static var `default`: ImageSerializerFactory = .init()
+    static let `default`: ImageSerializerFactory = .init()
 
     private let _hashTable: [UInt8: ImageSerializing] = [
         //    0x38 : "psd",
