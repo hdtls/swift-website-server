@@ -22,8 +22,8 @@ class FileCollection: RouteCollection {
         trusted.on(.POST, body: .collect(maxSize: maximumBodySize), use: create)
     }
 
-    func create(_ req: Request) async throws -> [String : String] {
+    func create(_ req: Request) async throws -> FileURL {
         let path = try await saveFile(from: req, as: type)
-        return ["url" : path]
+        return FileURL(url: path)
     }
 }

@@ -39,7 +39,7 @@ jobs:
       - name: Run tests
         env:
           MYSQL_HOST: mysql
-        run: python build-script.py --test
+        run: python build-script.py --test --configuration release --sanitize thread
 
   push_to_registry:
     if: startsWith(github.ref, 'refs/tags/') || startsWith(github.ref, 'refs/heads/')

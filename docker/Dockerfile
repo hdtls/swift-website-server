@@ -28,7 +28,7 @@ RUN swift package resolve
 COPY . .
 
 # Planning build
-RUN python3 build-script.py --configuration release --static-swift-stdlib
+RUN python3 build-script.py --build --configuration release --static-swift-stdlib
 
 # Makedir
 # RUN mkdir -p Public Resources

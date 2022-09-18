@@ -38,7 +38,7 @@ class FileCollectionTests: XCTestCase {
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let content = try $0.content.decode(MultipartFileCoding.self)
+                let content = try $0.content.decode(FileURL.self)
                 XCTAssertNotNil(content.url)
             }
         )
@@ -56,7 +56,7 @@ class FileCollectionTests: XCTestCase {
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let content = try $0.content.decode(MultipartFileCoding.self)
+                let content = try $0.content.decode(FileURL.self)
                 XCTAssertNotNil(content.url)
                 url = content.url
             }

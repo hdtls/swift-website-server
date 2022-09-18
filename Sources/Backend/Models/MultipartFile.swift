@@ -104,3 +104,7 @@ struct MultipartFormData: Content {
     var image: MultipartImage?
     var file: MultipartFile?
 }
+
+struct FileURL: Content {
+    let url: String
+}
