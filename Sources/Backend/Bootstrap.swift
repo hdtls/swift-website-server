@@ -1,8 +1,8 @@
 import FluentMySQLDriver
-import Vapor
+@_exported import Vapor
 
-/// Called before your application initializes.
-func bootstrap(_ app: Application) throws {
+/// Bootstrap application with default configuration.
+public func bootstrap(_ app: Application) throws {
 
     // JSON configuration
     let encoder = JSONEncoder()
@@ -19,7 +19,6 @@ func bootstrap(_ app: Application) throws {
 
     var tlsConfiguration = TLSConfiguration.makeClientConfiguration()
     tlsConfiguration.certificateVerification = .none
-
     app.databases.use(
         .mysql(
             hostname: Environment.get("MYSQL_HOST") ?? "localhost",
@@ -32,6 +31,7 @@ func bootstrap(_ app: Application) throws {
         as: .mysql
     )
 
+    // Add migrations
     app.migrations.add(User.migration)
     app.migrations.add(Token.migration)
     app.migrations.add(Experience.migration)
@@ -46,6 +46,7 @@ func bootstrap(_ app: Application) throws {
     app.migrations.add(Linker<BlogCategory, Blog>.migration)
     app.migrations.add(Linker<Industry, Experience>.migration)
 
+    // Register repositories
     app.registry.use(BlogCategoryRepository.init, as: .blogCategory)
     app.registry.use(BlogRepository.init, as: .blog)
     app.registry.use(EducationRepository.init, as: .education)
@@ -57,5 +58,18 @@ func bootstrap(_ app: Application) throws {
     app.registry.use(SocialNetworkingServiceRepository.init, as: .socialNetworkingService)
     app.registry.use(UserRepository.init, as: .user)
 
-    try routes(app)
+    // Register routes
+    try app.routes.register(collection: FileCollection.init(type: .file))
+    try app.routes.register(collection: FileCollection.init(type: .image))
+    try app.routes.register(collection: UserCollection.init())
+    try app.routes.register(collection: EducationCollection.init())
+    try app.routes.register(collection: ExpCollection.init())
+    try app.routes.register(collection: LogCollection.init())
+    try app.routes.register(collection: SocialNetworkingServiceCollection.init())
+    try app.routes.register(collection: SocialNetworkingCollection.init())
+    try app.routes.register(collection: IndustryCollection.init())
+    try app.routes.register(collection: SkillCollection.init())
+    try app.routes.register(collection: ProjectCollection.init())
+    try app.routes.register(collection: BlogCollection.init())
+    try app.routes.register(collection: BlogCategoryCollection.init())
 }

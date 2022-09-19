@@ -1,13 +1,14 @@
-import Vapor
+import Backend
 
-final public class App {
+@main
+struct App {
 
-    public static func main() throws {
+    static func main() async throws {
         let app = try Application(.detect())
         try LoggingSystem.bootstrap(from: &app.environment)
         defer { app.shutdown() }
         try bootstrap(app)
-        try app.autoMigrate().wait()
+        try await app.autoMigrate()
         try app.run()
     }
 }
