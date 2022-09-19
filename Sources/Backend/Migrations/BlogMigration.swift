@@ -4,10 +4,10 @@ extension Blog {
 
     static let migration: Migration = .init()
 
-    class Migration: Fluent.Migration {
+    class Migration: AsyncMigration {
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Blog.schema)
+        func prepare(on database: Database) async throws {
+            try await database.schema(Blog.schema)
                 .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.alias, .string, .required)
                 .unique(on: FieldKeys.alias)
@@ -22,8 +22,8 @@ extension Blog {
                 .create()
         }
 
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Blog.schema).delete()
+        func revert(on database: Database) async throws {
+            try await database.schema(Blog.schema).delete()
         }
     }
 }

@@ -4,10 +4,10 @@ extension Skill {
 
     static let migration: Migration = .init()
 
-    class Migration: Fluent.Migration {
+    class Migration: AsyncMigration {
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(schema)
+        func prepare(on database: Database) async throws {
+            try await database.schema(schema)
                 .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.professional, .array(of: .string))
                 .field(FieldKeys.workflow, .array(of: .string))
@@ -17,8 +17,8 @@ extension Skill {
                 .create()
         }
 
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(schema).delete()
+        func revert(on database: Database) async throws {
+            try await database.schema(schema).delete()
         }
     }
 }

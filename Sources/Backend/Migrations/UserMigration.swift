@@ -4,10 +4,10 @@ extension User {
 
     static let migration: Migration = .init()
 
-    class Migration: Fluent.Migration {
+    class Migration: AsyncMigration {
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(User.schema)
+        func prepare(on database: Database) async throws {
+            try await database.schema(User.schema)
                 .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.username, .string, .required)
                 .unique(on: FieldKeys.username)
@@ -25,8 +25,8 @@ extension User {
                 .create()
         }
 
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(User.schema).delete()
+        func revert(on database: Database) async throws {
+            try await database.schema(User.schema).delete()
         }
     }
 }

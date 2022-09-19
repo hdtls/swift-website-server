@@ -4,7 +4,7 @@ extension Project {
     
     static let migration: Migration = .init()
     
-    class Migration: Fluent.AsyncMigration {
+    class Migration: AsyncMigration {
         
         func prepare(on database: Database) async throws {
             let projectKinds = try await database.enum(ProjKind.schema)

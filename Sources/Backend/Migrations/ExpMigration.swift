@@ -4,10 +4,10 @@ extension Experience {
 
     static let migration: Migration = .init()
 
-    class Migration: Fluent.Migration {
+    class Migration: AsyncMigration {
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(schema)
+        func prepare(on database: Database) async throws {
+            try await database.schema(schema)
                 .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.title, .string, .required)
                 .field(FieldKeys.companyName, .string, .required)
@@ -23,8 +23,8 @@ extension Experience {
                 .create()
         }
 
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(schema).delete()
+        func revert(on database: Database) async throws {
+            try await database.schema(schema).delete()
         }
     }
 }

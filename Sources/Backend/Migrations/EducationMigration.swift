@@ -4,10 +4,10 @@ extension Education {
 
     static let migration: Migration = .init()
 
-    class Migration: Fluent.Migration {
+    class Migration: AsyncMigration {
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Education.schema)
+        func prepare(on database: Database) async throws {
+            try await database.schema(Education.schema)
                 .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.user, .int, .references(User.schema, .id))
                 .field(FieldKeys.school, .string, .required)
@@ -24,8 +24,8 @@ extension Education {
                 .create()
         }
 
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(Education.schema).delete()
+        func revert(on database: Database) async throws {
+            try await database.schema(Education.schema).delete()
         }
     }
 }

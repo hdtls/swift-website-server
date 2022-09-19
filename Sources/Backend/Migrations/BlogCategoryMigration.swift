@@ -4,10 +4,10 @@ extension BlogCategory {
 
     static let migration: Migration = .init()
 
-    class Migration: Fluent.Migration {
+    class Migration: AsyncMigration {
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(BlogCategory.schema)
+        func prepare(on database: Database) async throws {
+            try await database.schema(BlogCategory.schema)
                 .field(.id, .int, .identifier(auto: true))
                 .field(FieldKeys.name, .string, .required)
                 .unique(on: FieldKeys.name)
@@ -16,8 +16,8 @@ extension BlogCategory {
                 .create()
         }
 
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(BlogCategory.schema).delete()
+        func revert(on database: Database) async throws {
+            try await database.schema(BlogCategory.schema).delete()
         }
     }
 }

@@ -6,18 +6,18 @@ extension Linker {
         .init()
     }
 
-    class Migration: Fluent.Migration {
+    class Migration: AsyncMigration {
 
-        func prepare(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(schema)
+        func prepare(on database: Database) async throws {
+            try await database.schema(schema)
                 .field(.id, .int, .identifier(auto: true))
                 .field("from", .int, .references(From.schema, .id))
                 .field("to", .int, .references(To.schema, .id))
                 .create()
         }
 
-        func revert(on database: Database) -> EventLoopFuture<Void> {
-            database.schema(schema).delete()
+        func revert(on database: Database) async throws {
+            try await database.schema(schema).delete()
         }
     }
 }
