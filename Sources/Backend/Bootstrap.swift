@@ -46,8 +46,6 @@ func bootstrap(_ app: Application) throws {
     app.migrations.add(Linker<BlogCategory, Blog>.migration)
     app.migrations.add(Linker<Industry, Experience>.migration)
 
-    try app.autoMigrate().wait()
-
     app.registry.use(BlogCategoryRepository.init, as: .blogCategory)
     app.registry.use(BlogRepository.init, as: .blog)
     app.registry.use(EducationRepository.init, as: .education)

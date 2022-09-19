@@ -7,6 +7,7 @@ final public class App {
         try LoggingSystem.bootstrap(from: &app.environment)
         defer { app.shutdown() }
         try bootstrap(app)
+        try app.autoMigrate().wait()
         try app.run()
     }
 }

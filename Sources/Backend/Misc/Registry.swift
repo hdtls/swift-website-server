@@ -23,7 +23,7 @@ struct Registry {
         self.storage = [:]
     }
 
-    #if compiler(>=5.7)
+    #if swift(>=5.7)
     private var storage: [RepositoryFactoryKey: ((Request) -> any Repository)]
 
     func repository(_ id: RepositoryFactoryKey, _ req: Request) -> any Repository {
