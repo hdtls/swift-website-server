@@ -32,7 +32,7 @@ services:
       - CAP_NET_RAW
       - CAP_NET_BIND_SERVICE
     depends_on: [db]
-    command: python3 build-script.py --configuration release --test
+    command: python3 build-script.py --test --parallel
 
   db:
     image: mysql:latest
@@ -41,4 +41,3 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       LANG: C.UTF-8
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-character-set-client-handshake
-    

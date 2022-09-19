@@ -4,104 +4,225 @@ import XCTVapor
 
 class SocialNetworkingCollectionTests: XCTestCase {
 
-    let path = SocialNetworking.schema
-    var app: Application!
+    typealias Model = SocialNetworking.DTO
+    private let uri = SocialNetworking.schema
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
+    func testAuthorizeRequire() throws {
+        let app = Application(.testing)
         try bootstrap(app)
-    }
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
-
-    func testCreate() {
-        var expected = SocialNetworking.DTO.generate()
-        expected.serviceId = app.requestSocialNetworkingService(.generate()).id
-        app.requestSocialNetworking(expected)
-    }
-
-    func testAuthorizeRequire() {
         XCTAssertNoThrow(
-            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
-                .test(.GET, path, afterResponse: assertHttpOk)
-                .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
-                .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
+            try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
+                .test(.GET, uri, afterResponse: assertHTTPStatusEqualToOk)
+                .test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.DELETE, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
         )
     }
 
-    func testQueryWithInvalidID() {
-        XCTAssertNoThrow(
-            try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
-        )
-    }
+    func testCreateSocialNetworking() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testQueryWithSocialID() throws {
-        let socialNetworking = app.requestSocialNetworking()
+        var expected = Model.generate()
 
         try app.test(
-            .GET,
-            path + "/\(socialNetworking.id)",
-            afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-
-                let coding = try $0.content.decode(SocialNetworking.DTO.self)
-                XCTAssertEqual(coding, socialNetworking)
-            }
-        )
-    }
-
-    func testUpdate() throws {
-        var socialNetworking = app.requestSocialNetworking()
-        socialNetworking.url = .random(length: 16)
-
-        try app.test(
-            .PUT,
-            path + "/\(socialNetworking.id)",
-            headers: app.login().headers,
+            .POST,
+            SocialNetworking.schema + "/services",
             beforeRequest: {
-                try $0.content.encode(socialNetworking)
+                try $0.content.encode(SocialNetworkingService.DTO.generate())
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-
-                let coding = try $0.content.decode(SocialNetworking.DTO.self)
-                XCTAssertEqual(coding.id, socialNetworking.id)
-                XCTAssertEqual(coding.url, socialNetworking.url)
-                XCTAssertEqual(coding.service, socialNetworking.service)
+                let model = try $0.content.decode(SocialNetworkingService.DTO.self)
+                expected.serviceId = model.id
+                expected.service = model
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: app.login().headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
             }
         )
     }
 
-    func testDelete() throws {
-        var expected = SocialNetworking.DTO.generate()
-        expected.serviceId = app.requestSocialNetworkingService(.generate()).id
-        let socialNetworking = app.requestSocialNetworking(expected)
+    func testQuerySocialNetworkingWithInvalidID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        XCTAssertNoThrow(
+            try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+        )
+    }
+
+    func testQuerySocialNetworkingWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var expected = Model.generate()
 
         try app.test(
-            .DELETE,
-            path + "/\(socialNetworking.id)",
-            headers: app.login().headers,
+            .POST,
+            SocialNetworking.schema + "/services",
+            beforeRequest: {
+                try $0.content.encode(SocialNetworkingService.DTO.generate())
+            },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(SocialNetworkingService.DTO.self)
+                expected.serviceId = model.id
+                expected.service = model
             }
-        ).test(
-            .DELETE,
-            path + "/\(socialNetworking.id)",
-            headers: app.login().headers,
-            afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-            }
-        ).test(
-            .DELETE,
-            path + "/invalid",
-            headers: app.login().headers,
-            afterResponse: assertHttpUnprocessableEntity
         )
+        .test(
+            .POST,
+            uri,
+            headers: app.login().headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .GET,
+            uri + "/\(expected.id)",
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                XCTAssertEqual(model, expected)
+            }
+        )
+    }
+
+    func testUpdateSocialNetworking() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var original = Model.generate()
+        var expected = Model.generate()
+
+        let headers = app.login().headers
+
+        try app.test(
+            .POST,
+            SocialNetworking.schema + "/services",
+            beforeRequest: {
+                try $0.content.encode(SocialNetworkingService.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(SocialNetworkingService.DTO.self)
+                original.serviceId = model.id
+                original.service = model
+                expected.serviceId = model.id
+                expected.service = model
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .PUT,
+            uri + "/\(original.id)",
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
+                XCTAssertEqual(expected.id, original.id)
+            }
+        )
+    }
+
+    func testDeleteSocialNetowrking() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        var expected = Model.generate()
+
+        let headers = app.login().headers
+
+        try app.test(
+            .POST,
+            SocialNetworking.schema + "/services",
+            beforeRequest: {
+                try $0.content.encode(SocialNetworkingService.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(SocialNetworkingService.DTO.self)
+                expected.serviceId = model.id
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .DELETE,
+            uri + "/\(expected.id)",
+            headers: headers,
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(.GET, uri + "/\(expected.id)", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 }

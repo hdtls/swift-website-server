@@ -4,120 +4,185 @@ import XCTest
 @testable import Backend
 
 class ProjectCollectionTests: XCTestCase {
-    let path = "projects"
-    var app: Application!
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
-        try bootstrap(app)
-    }
-
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
+    private typealias Model = Project.DTO
+    private let uri = Project.schema
 
     func testAuthorizeRequire() throws {
-        try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-            .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
-            .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
-            .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
+            .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
+            .test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
+            .test(.DELETE, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
     }
 
-    func testCreate() throws {
-        app.requestProject(.generate())
-    }
+    func testCreateProject() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testQueryWithInvalidWorkID() throws {
-        try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
-    }
-
-    func testQueryWithWorkID() throws {
-        let proj = app.requestProject()
+        var expected = Model.generate()
 
         try app.test(
-            .GET,
-            path + "/\(proj.id)",
-            afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-
-                let coding = try $0.content.decode(Project.DTO.self)
-                XCTAssertNotNil(coding.id)
-                XCTAssertEqual(coding.name, proj.name)
-                XCTAssertEqual(coding.note, proj.note)
-                XCTAssertEqual(coding.genres, proj.genres)
-                XCTAssertEqual(coding.summary, proj.summary)
-                XCTAssertEqual(coding.artworkUrl, proj.artworkUrl)
-                XCTAssertEqual(coding.backgroundImageUrl, proj.backgroundImageUrl)
-                XCTAssertEqual(coding.promoImageUrl, proj.promoImageUrl)
-                XCTAssertEqual(coding.screenshotUrls, proj.screenshotUrls)
-                XCTAssertEqual(coding.padScreenshotUrls, proj.padScreenshotUrls)
-                XCTAssertEqual(coding.kind, proj.kind)
-                XCTAssertEqual(coding.visibility, proj.visibility)
-                XCTAssertEqual(coding.trackViewUrl, proj.trackViewUrl)
-                XCTAssertEqual(coding.trackId, proj.trackId)
-                XCTAssertEqual(coding.startDate, proj.startDate)
-                XCTAssertEqual(coding.endDate, proj.endDate)
-                XCTAssertEqual(coding.isOpenSource, proj.isOpenSource)
-                XCTAssertNotNil(coding.userId)
-            }
-        )
-    }
-
-    func testUpdate() throws {
-        let proj = app.requestProject()
-        let expected = Project.DTO.generate()
-
-        try app.test(
-            .PUT,
-            path + "/\(proj.id)",
+            .POST,
+            uri,
             headers: app.login().headers,
             beforeRequest: {
                 try $0.content.encode(expected)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-
-                let coding = try $0.content.decode(Project.DTO.self)
-                XCTAssertNotNil(coding.id)
-                XCTAssertNotNil(coding.userId)
-                XCTAssertEqual(coding.name, expected.name)
-                XCTAssertEqual(coding.note, expected.note)
-                XCTAssertEqual(coding.genres, expected.genres)
-                XCTAssertEqual(coding.summary, expected.summary)
-                XCTAssertEqual(coding.artworkUrl, expected.artworkUrl)
-                XCTAssertEqual(coding.backgroundImageUrl, expected.backgroundImageUrl)
-                XCTAssertEqual(coding.promoImageUrl, expected.promoImageUrl)
-                XCTAssertEqual(coding.screenshotUrls, expected.screenshotUrls)
-                XCTAssertEqual(coding.padScreenshotUrls, expected.padScreenshotUrls)
-                XCTAssertEqual(coding.kind, expected.kind)
-                XCTAssertEqual(coding.visibility, expected.visibility)
-                XCTAssertEqual(coding.trackViewUrl, expected.trackViewUrl)
-                XCTAssertEqual(coding.trackId, expected.trackId)
-                XCTAssertEqual(coding.startDate, expected.startDate)
-                XCTAssertEqual(coding.isOpenSource, expected.isOpenSource)
-                XCTAssertEqual(coding.endDate, expected.endDate)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
             }
         )
     }
 
-    func testDeleteWithInvalidWorkID() throws {
+    func testQueryProjectWithInvalidID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+    }
+
+    func testQueryProjectWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var expected = Model.generate()
+
         try app.test(
-            .DELETE,
-            path + "/invalid",
+            .POST,
+            uri,
             headers: app.login().headers,
-            afterResponse: assertHttpUnprocessableEntity
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .GET,
+            uri + "/\(expected.id)",
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+
+                let model = try $0.content.decode(Model.self)
+                XCTAssertEqual(model, expected)
+            }
         )
     }
 
-    func testDelete() throws {
+    func testUpdateProject() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var original = Model.generate()
+        var expected = Model.generate()
+
+        let headers = app.login().headers
+
+        try app.test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .PUT,
+            uri + "/\(original.id)",
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
+                XCTAssertEqual(expected.id, original.id)
+            }
+        )
+    }
+
+    func testDeleteProjectWithInvalidID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         try app.test(
             .DELETE,
-            path + "/\(app.requestProject(.generate()).id)",
+            uri + "/invalid",
             headers: app.login().headers,
-            afterResponse: assertHttpOk
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
         )
+    }
+
+    func testDeleteProject() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        var expected = Model.generate()
+
+        let headers = app.login().headers
+
+        try app.test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .DELETE,
+            uri + "/\(expected.id)",
+            headers: headers,
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(.GET, uri + "/\(expected.id)", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 }

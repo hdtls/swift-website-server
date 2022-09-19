@@ -4,101 +4,234 @@ import XCTVapor
 
 class ExpCollectionTests: XCTestCase {
 
-    let path = Experience.schema
+    private typealias Model = Experience.DTO
+    private let uri = Experience.schema
 
-    var app: Application!
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
+    func testAuthorizeRequire() throws {
+        let app = Application(.testing)
         try bootstrap(app)
-    }
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
-
-    func testAuthorizeRequire() {
         XCTAssertNoThrow(
-            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
-                .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
-                .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
+            try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
+                .test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.DELETE, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
         )
     }
 
-    func testCreate() {
-        var expected = Experience.DTO.generate()
-        expected.industries = [app.requestIndustry(.generate())]
-        app.requestJobExperience(expected)
-    }
+    func testCreateExperience() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testQueryWithInvalidWorkID() {
-        XCTAssertNoThrow(
-            try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
-        )
-    }
-
-    func testQueryWithWorkID() throws {
-        let exp = app.requestJobExperience()
+        var expected = Model.generate()
         try app.test(
-            .GET,
-            path + "/\(exp.id)",
-            afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-
-                let coding = try $0.content.decode(Experience.DTO.self)
-                XCTAssertEqual(coding, exp)
-            }
-        )
-    }
-
-    func testUpdate() throws {
-        let upgrade = Experience.DTO.generate()
-
-        try app.test(
-            .PUT,
-            path + "/\(app.requestJobExperience().id)",
-            headers: app.login().headers,
+            .POST,
+            Industry.schema,
             beforeRequest: {
-                try $0.content.encode(upgrade)
+                try $0.content.encode(Industry.DTO.generate())
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Experience.DTO.self)
-
-                XCTAssertNotNil(coding.id)
-                XCTAssertNotNil(coding.userId)
-                XCTAssertEqual(coding.title, upgrade.title)
-                XCTAssertEqual(coding.companyName, upgrade.companyName)
-                XCTAssertEqual(coding.location, upgrade.location)
-                XCTAssertEqual(coding.startDate, upgrade.startDate)
-                XCTAssertEqual(coding.endDate, upgrade.endDate)
-                XCTAssertEqual(coding.headline, upgrade.headline)
-                XCTAssertEqual(coding.responsibilities, upgrade.responsibilities)
+                let model = try $0.content.decode(Industry.DTO.self)
+                expected.industries = [model]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: app.login().headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
             }
         )
     }
 
-    func testDeleteWithInvalidWorkID() throws {
-        try app.test(
-            .DELETE,
-            path + "/invalid",
-            headers: app.login().headers,
-            afterResponse: assertHttpUnprocessableEntity
+    func testQueryExperienceWithInvalidWorkID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        XCTAssertNoThrow(
+            try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
         )
     }
 
-    func testDelete() throws {
-        let exp = app.requestJobExperience(.generate())
+    func testQueryExperienceWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var expected = Model.generate()
+        try app.test(
+            .POST,
+            Industry.schema,
+            beforeRequest: {
+                try $0.content.encode(Industry.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Industry.DTO.self)
+                expected.industries = [model]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: app.login().headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .GET,
+            uri + "/\(expected.id)",
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+
+                let model = try $0.content.decode(Model.self)
+                XCTAssertEqual(model, expected)
+            }
+        )
+    }
+
+    func testUpdateExperience() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var original = Model.generate()
+        var expected = Model.generate()
+
+        let headers = app.login().headers
+
+        try app.test(
+            .POST,
+            Industry.schema,
+            beforeRequest: {
+                try $0.content.encode(Industry.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Industry.DTO.self)
+                expected.industries = [model]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .PUT,
+            uri + "/\(original.id)",
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
+                XCTAssertEqual(expected.id, original.id)
+            }
+        )
+    }
+
+    func testDeleteExperienceWithInvalidID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
         try app.test(
             .DELETE,
-            path + "/\(exp.id)",
+            uri + "/invalid",
             headers: app.login().headers,
-            afterResponse: assertHttpOk
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
         )
+    }
+
+    func testDeleteExperienceWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        var expected = Model.generate()
+
+        let headers = app.login().headers
+
+        try app.test(
+            .POST,
+            Industry.schema,
+            beforeRequest: {
+                try $0.content.encode(Industry.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Industry.DTO.self)
+                expected.industries = [model]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .DELETE,
+            uri + "/\(expected.id)",
+            headers: headers,
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(.GET, uri + "/\(expected.id)", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 }

@@ -4,17 +4,16 @@ import XCTVapor
 
 class LogCollectionTests: XCTestCase {
 
-    let path = "authorize/basic"
-    var app: Application!
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
-        try bootstrap(app)
-    }
+    private let path = "authorize/basic"
 
     func testLoginWithWrongMsg() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         app.registerUserWithLegacy(.generate())
 
         let wrongPasswordHeader = HTTPHeaders.init(
@@ -31,7 +30,8 @@ class LogCollectionTests: XCTestCase {
             afterResponse: {
                 XCTAssertEqual($0.status, .unauthorized)
             }
-        ).test(
+        )
+        .test(
             .POST,
             path,
             headers: wrongUsernameHeader,
@@ -42,24 +42,13 @@ class LogCollectionTests: XCTestCase {
     }
 
     func testLogin() throws {
-        let userCreation = User.Creation.generate()
-        app.registerUserWithLegacy(userCreation)
-
-        let credentials = "\(userCreation.username):\(userCreation.password)".data(using: .utf8)!
-            .base64EncodedString()
-
-        let headers = HTTPHeaders.init(
-            dictionaryLiteral: (
-                "Authorization", "Basic \(credentials)"
-            )
-        )
-        try app.test(
-            .POST,
-            path,
-            headers: headers,
-            afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-            }
-        )
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        app.login()
     }
 }

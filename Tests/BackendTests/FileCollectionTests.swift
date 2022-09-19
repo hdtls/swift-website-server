@@ -4,34 +4,34 @@ import XCTVapor
 
 class FileCollectionTests: XCTestCase {
 
-    let file = File(data: "HELLO WORLD!!!", filename: "hello.txt")
-    let path = "files"
+    private let file = File(data: "HELLO WORLD!!!", filename: "hello.txt")
+    private let uri = "files"
 
-    var app: Application!
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
+    func testAuthorizeRequire() throws {
+        let app = Application(.testing)
         try bootstrap(app)
-    }
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
-
-    func testAuthorizeRequire() {
         XCTAssertNoThrow(
-            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path + "/1", afterResponse: assertHttpNotFound)
+            try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.GET, uri + "/1", afterResponse: assertHTTPStatusEqualToNotFound)
         )
     }
 
-    func testCreate() throws {
+    func testCreateFile() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         try app.test(
             .POST,
-            path,
+            uri,
             headers: app.login().headers,
             beforeRequest: {
                 try $0.content.encode(["file": file], as: .formData)
@@ -44,12 +44,19 @@ class FileCollectionTests: XCTestCase {
         )
     }
 
-    func testQuery() throws {
+    func testQueryFile() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
         var url: String!
 
         try app.test(
             .POST,
-            path,
+            uri,
             headers: app.login().headers,
             beforeRequest: {
                 try $0.content.encode(["file": file], as: .formData)
@@ -61,8 +68,7 @@ class FileCollectionTests: XCTestCase {
                 url = content.url
             }
         )
-
-        try app.test(
+        .test(
             .GET,
             URL(string: url)!.path,
             afterResponse: {

@@ -368,7 +368,7 @@ def main():
                 parallel=args.parallel,
                 static_stdlib=args.static_swift_stdlib,
                 verbose=args.verbose,
-            )
+            ) == 0
             if success:
                 print("All tests passed!")
             else:

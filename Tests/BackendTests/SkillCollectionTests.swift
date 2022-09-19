@@ -4,125 +4,196 @@ import XCTVapor
 
 class SkillCollectionTests: XCTestCase {
 
-    let path = Skill.schema
-    var app: Application!
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
-        try bootstrap(app)
-    }
-
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
+    private typealias Model = Skill.DTO
+    private let uri = Skill.schema
 
     func testAuthorizeRequire() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         XCTAssertNoThrow(
-            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
-                .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
-                .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
+            try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+                .test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.DELETE, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
         )
     }
 
-    func testCreate() throws {
-        app.requestSkill(.generate())
-    }
+    func testCreateSkill() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testCreateWithoutWorkflow() throws {
-        var expected = Skill.DTO.generate()
-        expected.workflow = nil
-        app.requestSkill(expected)
-    }
+        var expected = Model.generate()
+        let headers = app.login().headers
 
-    func testCreateWithInvalidDataType() throws {
-        let json = ["id": "0", "professional": ""]
         try app.test(
             .POST,
-            path,
-            headers: app.login().headers,
+            uri,
+            headers: headers,
             beforeRequest: {
-                try $0.content.encode(json)
+                try $0.content.encode(expected)
             },
             afterResponse: {
-                XCTAssertEqual($0.status, .badRequest)
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                XCTAssertEqual(model, expected)
             }
         )
     }
 
-    func testQuery() throws {
-        let saved = app.requestSkill()
+    func testQuerySkillWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var expected = Model.generate()
+        let headers = app.login().headers
 
         try app.test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
             .GET,
-            path + "/\(saved.id)",
+            uri + "/\(expected.id)",
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Skill.DTO.self)
-
-                XCTAssertEqual(coding.id, saved.id)
-                XCTAssertEqual(coding.professional, saved.professional)
-                XCTAssertEqual(coding.workflow, saved.workflow)
+                let model = try $0.content.decode(Model.self)
+                XCTAssertEqual(model, expected)
             }
         )
     }
 
-    func testQueryWithInvalidID() throws {
-        try app.test(.GET, path + "/invalid", afterResponse: assertHttpUnprocessableEntity)
+    func testQuerySkillWithInvalidID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
     }
 
-    func testUpdate() throws {
-        var saved = app.requestSkill()
-        saved.professional.append(.random(length: 12))
+    func testUpdateSkill() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var original = Model.generate()
+        let headers = app.login().headers
+        var expected = original
+        expected.professional.append(.random(length: 12))
 
         try app.test(
-            .PUT,
-            path + "/\(saved.id)",
-            headers: app.login().headers,
+            .POST,
+            uri,
+            headers: headers,
             beforeRequest: {
-                try $0.content.encode(saved)
+                try $0.content.encode(original)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Skill.DTO.self)
-
-                XCTAssertEqual(coding.id, saved.id)
-                XCTAssertEqual(coding.professional, saved.professional)
-                XCTAssertEqual(coding.workflow, saved.workflow)
+                original = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .PUT,
+            uri + "/\(original.id)",
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                XCTAssertEqual(model, expected)
+                XCTAssertEqual(expected.id, original.id)
             }
         )
     }
 
-    func testUpdateWithInvalidID() throws {
+    func testUpdateSkillWithInvalidID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         try app.test(
             .PUT,
-            path + "/invalid",
+            uri + "/invalid",
             headers: app.login().headers,
             beforeRequest: {
-                try $0.content.encode(Skill.DTO.generate())
+                try $0.content.encode(Model.generate())
             },
-            afterResponse: assertHttpUnprocessableEntity
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
         )
     }
 
-    func testDelete() throws {
-        try app.test(
-            .DELETE,
-            path + "/\(app.requestSkill(.generate()).id)",
-            headers: app.login().headers,
-            afterResponse: assertHttpOk
-        )
-    }
+    func testDeleteSkillWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        var expected = Model.generate()
+        let headers = app.login().headers
 
-    func testDeleteWithInvalidID() throws {
         try app.test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
             .DELETE,
-            path + "/invalid",
-            headers: app.login().headers,
-            afterResponse: assertHttpUnprocessableEntity
+            uri + "/\(expected.id)",
+            headers: headers,
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .GET,
+            uri + "/\(expected.id)",
+            afterResponse: assertHTTPStatusEqualToNotFound
+        )
+        .test(
+            .DELETE,
+            uri + "/invalid",
+            headers: headers,
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
         )
     }
 }

@@ -4,28 +4,29 @@ import XCTVapor
 
 class UserCollectionTests: XCTestCase {
 
-    let path = User.schema
-    var app: Application!
+    private let uri = User.schema
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
+    func testAuthorizeRequire() throws {
+        let app = Application(.testing)
         try bootstrap(app)
-    }
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
-
-    func testAuthorizeRequire() {
         XCTAssertNoThrow(
-            try app.test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
+            try app.test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
         )
     }
 
-    func testCreateWithInvalidPayload() throws {
+    func testCreateUserWithInvalidPayload() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         let json = [
             "firstName": "1",
             "lastName": "2",
@@ -35,7 +36,7 @@ class UserCollectionTests: XCTestCase {
 
         try app.test(
             .POST,
-            path,
+            uri,
             beforeRequest: {
                 var payload = json
                 payload["username"] = nil
@@ -47,7 +48,7 @@ class UserCollectionTests: XCTestCase {
         )
         .test(
             .POST,
-            path,
+            uri,
             beforeRequest: {
                 var payload = json
                 payload["firstName"] = nil
@@ -60,7 +61,7 @@ class UserCollectionTests: XCTestCase {
         )
         .test(
             .POST,
-            path,
+            uri,
             beforeRequest: {
                 var payload = json
                 payload["lastName"] = nil
@@ -73,7 +74,7 @@ class UserCollectionTests: XCTestCase {
         )
         .test(
             .POST,
-            path,
+            uri,
             beforeRequest: {
                 var payload = json
                 payload["password"] = nil
@@ -81,33 +82,46 @@ class UserCollectionTests: XCTestCase {
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .badRequest)
-                //            XCTAssertContains($0.body.string, "Value required for key 'password'")
             }
         )
     }
 
-    func testCreateWithInvalidPassword() throws {
+    func testCreateUserWithInvalidPassword() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         try app.test(
             .POST,
-            path,
+            uri,
             beforeRequest: {
                 var invalid = User.Creation.generate()
 
                 invalid.password = "111"
                 try $0.content.encode(invalid)
             },
-            afterResponse: assertHttpBadRequest
+            afterResponse: assertHTTPStatusEqualToBadRequest
         )
     }
 
-    func testCreateWithConflictUsername() throws {
+    func testUniqueUsername() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         let userCreation = User.Creation.generate()
 
         app.registerUserWithLegacy(userCreation)
 
         try app.test(
             .POST,
-            path,
+            uri,
             beforeRequest: {
                 try $0.content.encode(userCreation)
             },
@@ -117,47 +131,65 @@ class UserCollectionTests: XCTestCase {
         )
     }
 
-    func testCreate() throws {
+    func testCreateUser() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         app.registerUserWithLegacy(.generate())
     }
 
-    func testQueryWithUserIDThatDoesNotExsit() throws {
-        try app.test(.GET, path + "/notfound", afterResponse: assertHttpNotFound)
-            .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
+    func testQueryUserWithUserIDThatDoesNotExsit() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        try app.test(.GET, uri + "/notfound", afterResponse: assertHTTPStatusEqualToNotFound)
+            .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 
-    func testQueryWithUserID() throws {
-        var user = app.registerUserWithLegacy()
+    func testQueryUserWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        let expected = app.registerUserWithLegacy()
 
         try app.test(
             .GET,
-            path + "/\(user.username)",
+            uri + "/\(expected.username)",
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                user = try! $0.content.decode(User.DTO.self)
-                XCTAssertNotNil(user.id)
-                XCTAssertEqual(user.username, user.username)
-                XCTAssertEqual(user.firstName, user.firstName)
-                XCTAssertEqual(user.lastName, user.lastName)
-                XCTAssertNil(user.phone)
-                XCTAssertNil(user.emailAddress)
-                XCTAssertNil(user.aboutMe)
-                XCTAssertNil(user.location)
-                XCTAssertNil(user.social)
-                XCTAssertNil(user.education)
-                XCTAssertNil(user.experiences)
+                let model = try $0.content.decode(User.DTO.self)
+                XCTAssertEqual(model, expected)
             }
         )
     }
 
-    func testQueryWithUserIDAndQueryParameters() throws {
+    func testQueryUserWithUserIDAndQueryParameters() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         let userCreation = app.login().user
 
         let query = "?emb=sns.edu.exp.skill.proj.blog"
         try app.test(
             .GET,
-            path + "/\(userCreation.username)\(query)",
+            uri + "/\(userCreation.username)\(query)",
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
@@ -180,20 +212,115 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryWithUserIDAndQueryParametersAfterAddChildrens() throws {
-        let userCreation = app.login().user
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-        app.requestSocialNetworking()
-        app.requestJobExperience()
-        app.requestEducation()
-        app.requestProject()
-        app.requestSkill()
-        app.requestBlog()
+        let msg = app.login()
+        let userCreation = msg.user
+        let headers = msg.headers
+
+        var sns: SocialNetworkingService.DTO = .generate()
+        var industry: Industry.DTO = .generate()
+
+        try app.test(
+            .POST,
+            SocialNetworking.schema + "/services",
+            beforeRequest: {
+                try $0.content.encode(SocialNetworkingService.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                sns = try $0.content.decode(SocialNetworkingService.DTO.self)
+            }
+        )
+        .test(
+            .POST,
+            SocialNetworking.schema,
+            headers: headers,
+            beforeRequest: {
+                var payload = SocialNetworking.DTO.generate()
+                payload.serviceId = sns.id
+                try $0.content.encode(payload)
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Industry.schema,
+            beforeRequest: {
+                try $0.content.encode(Industry.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                industry = try $0.content.decode(Industry.DTO.self)
+            }
+        )
+        .test(
+            .POST,
+            Experience.schema,
+            headers: headers,
+            beforeRequest: {
+                var payload = Experience.DTO.generate()
+                payload.industries = [industry]
+                try $0.content.encode(payload)
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Education.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Education.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Skill.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Skill.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Project.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Project.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(BlogCategory.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Blog.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Blog.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+
 
         let query = "?emb=sns.edu.exp.skill.proj.blog"
 
         try app.test(
             .GET,
-            path + "/\(userCreation.username)\(query)",
+            uri + "/\(userCreation.username)\(query)",
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 let user = try $0.content.decode(User.DTO.self)
@@ -215,10 +342,17 @@ class UserCollectionTests: XCTestCase {
         )
     }
 
-    func testQueryAll() throws {
+    func testQueryAllUsers() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         try app.test(
             .GET,
-            path,
+            uri,
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
                 XCTAssertNoThrow(try $0.content.decode([User.DTO].self))
@@ -227,19 +361,114 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryAllWithQueryParametersAfterAddChildrens() throws {
-        let userCreation = app.login().user
-        app.requestSocialNetworking()
-        app.requestJobExperience()
-        app.requestEducation()
-        app.requestProject()
-        app.requestSkill()
-        app.requestBlog()
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        let msg = app.login()
+        let userCreation = msg.user
+        let headers = msg.headers
+
+        var sns: SocialNetworkingService.DTO = .generate()
+        var industry: Industry.DTO = .generate()
+
+        try app.test(
+            .POST,
+            SocialNetworking.schema + "/services",
+            beforeRequest: {
+                try $0.content.encode(SocialNetworkingService.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                sns = try $0.content.decode(SocialNetworkingService.DTO.self)
+            }
+        )
+        .test(
+            .POST,
+            SocialNetworking.schema,
+            headers: headers,
+            beforeRequest: {
+                var payload = SocialNetworking.DTO.generate()
+                payload.serviceId = sns.id
+                try $0.content.encode(payload)
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Industry.schema,
+            beforeRequest: {
+                try $0.content.encode(Industry.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                industry = try $0.content.decode(Industry.DTO.self)
+            }
+        )
+        .test(
+            .POST,
+            Experience.schema,
+            headers: headers,
+            beforeRequest: {
+                var payload = Experience.DTO.generate()
+                payload.industries = [industry]
+                try $0.content.encode(payload)
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Education.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Education.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Skill.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Skill.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Project.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Project.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(BlogCategory.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            Blog.schema,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(Blog.DTO.generate())
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
 
         let query = "?emb=sns.edu.exp.skill.proj.blog"
 
         try app.test(
             .GET,
-            path + query,
+            uri + query,
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
@@ -268,8 +497,16 @@ class UserCollectionTests: XCTestCase {
         )
     }
 
-    func testUpdate() throws {
-        var userCreation = app.login().user
+    func testUpdateUser() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        let msg = app.login()
+        var userCreation = msg.user
         userCreation.firstName = .random(length: 7)
         userCreation.lastName = .random(length: 8)
         userCreation.phone = .random(length: 11)
@@ -278,8 +515,8 @@ class UserCollectionTests: XCTestCase {
 
         try app.test(
             .PUT,
-            path + "/\(userCreation.username)",
-            headers: app.login().headers,
+            uri + "/\(userCreation.username)",
+            headers: msg.headers,
             beforeRequest: {
 
                 try $0.content.encode(userCreation)
@@ -304,26 +541,37 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryBlogThatAssociatedWithSpecialUser() throws {
-        let blog = app.requestBlog(.generate())
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        let msg = app.login()
+        var expected = Blog.DTO.generate()
 
         try app.test(
+            .POST,
+            Blog.schema,
+            headers: msg.headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Blog.DTO.self)
+            }
+        )
+        .test(
             .GET,
-            path + "/\(app.login().user.username)" + "/blog",
+            uri + "/\(msg.user.username)" + "/blog",
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let serializedBlog = try $0.content.decode([Blog.DTO].self).filter({
-                    $0.id == blog.id
-                }).first
-
-                XCTAssertNotNil(serializedBlog)
-                XCTAssertEqual(serializedBlog?.id, blog.id)
-                XCTAssertEqual(serializedBlog?.alias, blog.alias)
-                XCTAssertEqual(serializedBlog?.title, blog.title)
-                XCTAssertEqual(serializedBlog?.artworkUrl, blog.artworkUrl)
-                XCTAssertEqual(serializedBlog?.excerpt, blog.excerpt)
-                XCTAssertEqual(serializedBlog?.tags, blog.tags)
-                XCTAssertEqual(serializedBlog?.userId, blog.userId)
+                let models = try $0.content.decode([Blog.DTO].self)
+                expected.content = nil
+                XCTAssertTrue(models.contains(expected))
             }
         )
     }

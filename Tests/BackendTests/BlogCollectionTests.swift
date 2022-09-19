@@ -4,45 +4,96 @@ import XCTVapor
 
 class BlogCollectionTests: XCTestCase {
 
-    let path = Blog.schema
-    var app: Application!
+    private typealias Model = Blog.DTO
+    private let uri = Blog.schema
 
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
+    func testAuthorizeRequire() throws {
+        let app = Application(.testing)
         try bootstrap(app)
-    }
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
-
-    func testAuthorizeRequire() {
         XCTAssertNoThrow(
-            try app.test(.POST, path, afterResponse: assertHttpUnauthorized)
-                .test(.GET, path, afterResponse: assertHttpOk)
-                .test(.GET, path + "/0", afterResponse: assertHttpNotFound)
-                .test(.PUT, path + "/1", afterResponse: assertHttpUnauthorized)
-                .test(.DELETE, path + "/1", afterResponse: assertHttpUnauthorized)
+            try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.GET, uri, afterResponse: assertHTTPStatusEqualToOk)
+                .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
+                .test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
+                .test(.DELETE, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
         )
     }
 
-    func testCreate() throws {
-        app.requestBlog(.generate())
-    }
+    func testCreateBlog() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testCreateWithoutContent() throws {
-        var blog = Blog.DTO.generate()
-        blog.content = nil
+        var category = BlogCategory.DTO.generate()
+        var expected = Model.generate()
 
         try app.test(
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(category)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                category = try $0.content.decode(BlogCategory.DTO.self)
+                expected.categories = [category]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: app.login().headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
+            }
+        )
+    }
+
+    func testCreateBlogWithoutContent() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var category = BlogCategory.DTO.generate()
+        var expected = Model.generate()
+        expected.content = nil
+
+        try app.test(
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(category)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                category = try $0.content.decode(BlogCategory.DTO.self)
+                expected.categories = [category]
+            }
+        )
+        .test(
             .POST,
             Blog.schema,
             headers: app.login().headers,
             beforeRequest: {
-                try $0.content.encode(blog)
+                try $0.content.encode(expected)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .unprocessableEntity)
@@ -51,205 +102,380 @@ class BlogCollectionTests: XCTestCase {
         )
     }
 
-    func testQueryWithIDThatDoesNotExsit() throws {
-        XCTAssertNoThrow(try app.test(.GET, path + "/0", afterResponse: assertHttpNotFound))
+    func testQueryBlogWithIDThatDoesNotExsit() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        XCTAssertNoThrow(try app.test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound))
     }
 
-    func testQueryWithID() throws {
-        let blog = app.requestBlog()
+    func testQueryBlogWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var category = BlogCategory.DTO.generate()
+        var expected = Model.generate()
 
         try app.test(
-            .GET,
-            path + "/\(blog.id)",
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(category)
+            },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Blog.DTO.self)
-                XCTAssertEqual(coding, blog)
+                category = try $0.content.decode(BlogCategory.DTO.self)
+                expected.categories = [category]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: app.login().headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .GET,
+            uri + "/\(expected.id)",
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                XCTAssertEqual(model, expected)
             }
         )
     }
 
-    func testUpdate() throws {
-        var blog = app.requestBlog()
-        blog.title = .random(length: 8)
-        blog.excerpt = .random(length: 4)
-        blog.tags = [.random(length: 4)]
-        blog.content = .random(length: 23)
+    func testUpdateBlog() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var category = BlogCategory.DTO.generate()
+        var original = Model.generate()
+        var expected = original
+        expected.title = .random(length: 8)
+        expected.excerpt = .random(length: 4)
+        expected.tags = [.random(length: 4)]
+        expected.content = .random(length: 23)
+
+        let headers = app.login().headers
 
         try app.test(
-            .PUT,
-            path + "/\(blog.id)",
-            headers: app.login().headers,
+            .POST,
+            BlogCategory.schema,
             beforeRequest: {
-                try $0.content.encode(blog)
+                try $0.content.encode(category)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Blog.DTO.self)
-                XCTAssertEqual(coding.id, blog.id)
-                XCTAssertEqual(coding.alias, blog.alias)
-                XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-                XCTAssertEqual(coding.content, blog.content)
-                XCTAssertEqual(coding.excerpt, blog.excerpt)
-                XCTAssertEqual(coding.tags, blog.tags)
-                XCTAssertEqual(coding.title, blog.title)
-                XCTAssertEqual(coding.userId, blog.userId)
-                XCTAssertEqual(coding.categories, blog.categories)
+                category = try $0.content.decode(BlogCategory.DTO.self)
+                expected.categories = [category]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .PUT,
+            uri + "/\(original.id)",
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
+                XCTAssertEqual(expected.id, original.id)
             }
         )
     }
 
     func testUpdateBlogWithNewCategory() throws {
-        var blog = app.requestBlog()
-        let category = app.requestBlogCategory(.generate())
-        blog.categories.append(category)
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var category = BlogCategory.DTO.generate()
+        var original = Model.generate()
+        var expected = original
+        expected.title = .random(length: 8)
+        expected.excerpt = .random(length: 4)
+        expected.tags = [.random(length: 4)]
+        expected.content = .random(length: 23)
+
+        let headers = app.login().headers
 
         try app.test(
-            .PUT,
-            path + "/\(blog.id)",
-            headers: app.login().headers,
+            .POST,
+            BlogCategory.schema,
             beforeRequest: {
-                try $0.content.encode(blog)
+                try $0.content.encode(category)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Blog.DTO.self)
-                XCTAssertEqual(coding.id, blog.id)
-                XCTAssertEqual(coding.alias, blog.alias)
-                XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-                XCTAssertEqual(coding.content, blog.content)
-                XCTAssertEqual(coding.excerpt, blog.excerpt)
-                XCTAssertEqual(coding.tags, blog.tags)
-                XCTAssertEqual(coding.title, blog.title)
-                XCTAssertEqual(coding.userId, blog.userId)
-                XCTAssertEqual(coding.categories.count, blog.categories.count)
+                category = try $0.content.decode(BlogCategory.DTO.self)
+                expected.categories = [category]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(BlogCategory.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(BlogCategory.DTO.self)
+                expected.categories = [model]
+            }
+        )
+        .test(
+            .PUT,
+            uri + "/\(original.id)",
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
+                XCTAssertEqual(expected.id, original.id)
             }
         )
     }
 
     func testUpdateBlogWithRemoveCategory() throws {
-        let categories = [
-            app.requestBlogCategory(.generate()),
-            app.requestBlogCategory(.generate()),
-            app.requestBlogCategory(.generate()),
-        ]
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-        var blog: Blog.DTO = .generate()
-        blog.categories += categories
+        var original = Model.generate()
+        var expected = Model.generate()
 
-        blog = app.requestBlog(blog)
+        let headers = app.login().headers
 
         try app.test(
-            .PUT,
-            path + "/\(blog.id)",
-            headers: app.login().headers,
+            .POST,
+            BlogCategory.schema,
             beforeRequest: {
-                _ = blog.categories.removeLast()
-                try $0.content.encode(blog)
+                try $0.content.encode(BlogCategory.DTO.generate())
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Blog.DTO.self)
-                XCTAssertEqual(coding.id, blog.id)
-                XCTAssertEqual(coding.alias, blog.alias)
-                XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-                XCTAssertEqual(coding.content, blog.content)
-                XCTAssertEqual(coding.excerpt, blog.excerpt)
-                XCTAssertEqual(coding.tags, blog.tags)
-                XCTAssertEqual(coding.title, blog.title)
-                XCTAssertEqual(coding.userId, blog.userId)
-                XCTAssertEqual(coding.categories.count, 2)
+                let model = try $0.content.decode(BlogCategory.DTO.self)
+                original.categories.append(model)
+            }
+        )
+        .test(
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(BlogCategory.DTO.generate())
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(BlogCategory.DTO.self)
+                original.categories.append(model)
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
+                expected = original
+                _ = expected.categories.removeLast()
             }
         )
         .test(
             .PUT,
-            path + "/" + blog.alias,
-            headers: app.login().headers,
+            uri + "/\(original.id)",
+            headers: headers,
             beforeRequest: {
-                _ = blog.categories.removeLast()
-                try $0.content.encode(blog)
+                try $0.content.encode(expected)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(Blog.DTO.self)
-                XCTAssertEqual(coding.id, blog.id)
-                XCTAssertEqual(coding.alias, blog.alias)
-                XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-                XCTAssertEqual(coding.content, blog.content)
-                XCTAssertEqual(coding.excerpt, blog.excerpt)
-                XCTAssertEqual(coding.tags, blog.tags)
-                XCTAssertEqual(coding.title, blog.title)
-                XCTAssertEqual(coding.userId, blog.userId)
-                XCTAssertEqual(coding.categories.count, 1)
+                let model = try $0.content.decode(Model.self)
+                XCTAssertEqual(model, expected)
+                _ = original.categories.removeLast()
+                XCTAssertEqual(original, expected)
             }
         )
     }
 
     func testUpdateBlogAlias() throws {
-        var blog = app.requestBlog()
-        blog.alias = .random(length: 14)
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
+        var category = BlogCategory.DTO.generate()
+        var original = Model.generate()
+        var expected = original
+        expected.alias = .random(length: 14)
+
+        let headers = app.login().headers
 
         try app.test(
-            .PUT,
-            path + "/\(blog.id)",
-            headers: app.login().headers,
+            .POST,
+            BlogCategory.schema,
             beforeRequest: {
-                try $0.content.encode(blog)
+                try $0.content.encode(category)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-
-                let coding = try $0.content.decode(Blog.DTO.self)
-                XCTAssertEqual(coding.id, blog.id)
-                XCTAssertEqual(coding.alias, blog.alias)
-                XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-                XCTAssertEqual(coding.content, blog.content)
-                XCTAssertEqual(coding.excerpt, blog.excerpt)
-                XCTAssertEqual(coding.tags, blog.tags)
-                XCTAssertEqual(coding.title, blog.title)
-                XCTAssertEqual(coding.userId, blog.userId)
-                XCTAssertEqual(coding.categories.count, blog.categories.count)
+                category = try $0.content.decode(BlogCategory.DTO.self)
+                original.categories = [category]
+            }
+        )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
             }
         )
         .test(
             .PUT,
-            path + "/" + blog.alias,
-            headers: app.login().headers,
+            uri + "/\(original.id)",
+            headers: headers,
             beforeRequest: {
-                try $0.content.encode(blog)
+                try $0.content.encode(expected)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
 
-                let coding = try $0.content.decode(Blog.DTO.self)
-                XCTAssertEqual(coding.id, blog.id)
-                XCTAssertEqual(coding.alias, blog.alias)
-                XCTAssertEqual(coding.artworkUrl, blog.artworkUrl)
-                XCTAssertEqual(coding.content, blog.content)
-                XCTAssertEqual(coding.excerpt, blog.excerpt)
-                XCTAssertEqual(coding.tags, blog.tags)
-                XCTAssertEqual(coding.title, blog.title)
-                XCTAssertEqual(coding.userId, blog.userId)
-                XCTAssertEqual(coding.categories.count, blog.categories.count)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                expected.userId = model.userId
+                XCTAssertEqual(model, expected)
+                XCTAssertEqual(expected.id, original.id)
             }
         )
     }
 
-    func testDeleteWithIDThatDoesNotExsit() throws {
+    func testDeleteBlogWithIDThatDoesNotExsit() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+
         try app.test(
             .DELETE,
-            path + "/" + "0",
+            uri + "/" + "0",
             headers: app.login().headers,
-            afterResponse: assertHttpOk
+            afterResponse: assertHTTPStatusEqualToOk
         )
     }
 
-    func testDelete() throws {
+    func testDeleteBlogWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        var category = BlogCategory.DTO.generate()
+        var expected = Model.generate()
+
+        let headers = app.login().headers
+
         try app.test(
-            .DELETE,
-            path + "/\(app.requestBlog(.generate()).id)",
-            headers: app.login().headers,
-            afterResponse: assertHttpOk
+            .POST,
+            BlogCategory.schema,
+            beforeRequest: {
+                try $0.content.encode(category)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                category = try $0.content.decode(BlogCategory.DTO.self)
+                expected.categories = [category]
+            }
         )
+        .test(
+            .POST,
+            uri,
+            headers: headers,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .DELETE,
+            uri + "/\(expected.id)",
+            headers: headers,
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(.GET, uri + "\(expected.id)", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 }

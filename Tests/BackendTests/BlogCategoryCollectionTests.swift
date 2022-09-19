@@ -3,37 +3,57 @@ import XCTVapor
 @testable import Backend
 
 class BlogCategoryCollectionTests: XCTestCase {
+    
+    private typealias Model = BlogCategory.DTO
+    private let uri = BlogCategory.schema
 
-    typealias T = BlogCategory
-    var app: Application!
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-
-        app = .init(.testing)
+    func testCreateBlogCategory() throws {
+        let app = Application(.testing)
         try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        let encodable = Model.generate()
+        XCTAssertNoThrow(
+            try app.test(
+                .POST,
+                uri,
+                beforeRequest: {
+                    try $0.content.encode(encodable)
+                },
+                afterResponse: {
+                    XCTAssertEqual($0.status, .ok)
+                    let model = try $0.content.decode(Model.self)
+                    XCTAssertEqual(model.name, encodable.name)
+                }
+            )
+        )
     }
+    
+    func testUniqueBlogCategoryName() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    override func tearDown() {
-        super.tearDown()
-        app.shutdown()
-    }
-
-    func testCreate() throws {
-        app.requestBlogCategory(.generate())
-    }
-
-    func testCreateWithDuplicateName() throws {
-        let expected = app.requestBlogCategory()
-        var blogCategory = BlogCategory.DTO.generate()
-        blogCategory.name = expected.name
-
+        let encodable = Model.generate()
+        
         try app.test(
             .POST,
-            T.schema,
-            headers: app.login().headers,
+            uri,
             beforeRequest: {
-                try $0.content.encode(blogCategory)
+                try $0.content.encode(encodable)
+            },
+            afterResponse: assertHTTPStatusEqualToOk
+        )
+        .test(
+            .POST,
+            uri,
+            beforeRequest: {
+                try $0.content.encode(encodable)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .unprocessableEntity)
@@ -41,88 +61,179 @@ class BlogCategoryCollectionTests: XCTestCase {
             }
         )
     }
+    
+    func testPayloadFieldsRequirement() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testCreateWithoutName() throws {
         let json: [String: String] = [:]
         try app.test(
             .POST,
-            T.schema,
-            headers: app.login().headers,
+            uri,
             beforeRequest: {
                 try $0.content.encode(json)
             },
-            afterResponse: assertHttpBadRequest
+            afterResponse: assertHTTPStatusEqualToBadRequest
         )
     }
+    
+    func testQueryBlogCategoryWithIDThatDoesNotExsit() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testQueryWithIDThatDoesNotExsit() throws {
-        try app.test(.GET, T.schema + "/0", afterResponse: assertHttpNotFound)
+        try app.test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
     }
+    
+    func testQueryBlogCategoryWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testQueryWithID() throws {
-        let serialized = app.requestBlogCategory()
-
+        let encodable = Model.generate()
+        var expected: Model = .generate()
+        
         try app.test(
-            .GET,
-            T.schema + "/\(serialized.id)",
+            .POST,
+            uri,
+            beforeRequest: {
+                try $0.content.encode(encodable)
+            },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(T.DTO.self)
-                XCTAssertEqual(serialized, coding)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .GET,
+            uri + "/\(expected.id)",
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                XCTAssertEqual(model, expected)
             }
         )
     }
+    
+    func testQueryAllBlogCategories() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testQueryAll() throws {
-        app.requestBlogCategory()
-
+        var expected: Model = .generate()
+        
         try app.test(
-            .GET,
-            T.schema,
-            afterResponse: {
-                XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode([T.DTO].self)
-                XCTAssertNotNil(coding)
-                XCTAssertGreaterThanOrEqual(coding.count, 1)
-            }
-        )
-    }
-
-    func testUpdate() throws {
-        var expected = T.DTO.generate()
-
-        try app.test(
-            .PUT,
-            T.schema + "/\(app.requestBlogCategory().id)",
-            headers: app.login().headers,
+            .POST,
+            uri,
             beforeRequest: {
                 try $0.content.encode(expected)
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .ok)
-                let coding = try $0.content.decode(T.DTO.self)
-                expected.id = coding.id
-                XCTAssertEqual(expected, coding)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .GET,
+            uri,
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let models = try $0.content.decode([Model].self)
+                XCTAssertNotNil(models)
+                XCTAssertGreaterThanOrEqual(models.count, 1)
+                XCTAssertTrue(models.contains(expected))
             }
         )
     }
+    
+    func testUpdateBlogCategory() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testDeleteWithIDThatDoesNotExsit() throws {
+        var original: Model = .generate()
+        var expected = Model.generate()
+        
         try app.test(
-            .DELETE,
-            BlogCategory.schema + "/0",
-            headers: app.login().headers,
-            afterResponse: assertHttpOk
+            .POST,
+            uri,
+            beforeRequest: {
+                try $0.content.encode(original)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                original = try $0.content.decode(Model.self)
+            }
+        )
+        .test(
+            .PUT,
+            uri + "/\(original.id)",
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                let model = try $0.content.decode(Model.self)
+                expected.id = model.id
+                XCTAssertEqual(expected, model)
+                XCTAssertEqual(original.id, model.id)
+            }
         )
     }
+    
+    func testDeleteBlogCategoryWithIDThatDoesNotExsit() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
 
-    func testDeleteWithID() throws {
-        let serialized = app.requestBlogCategory(.generate())
         try app.test(
             .DELETE,
-            BlogCategory.schema + "/\(serialized.id)",
-            headers: app.login().headers,
-            afterResponse: assertHttpOk
+            uri + "/0",
+            afterResponse: assertHTTPStatusEqualToOk
         )
+    }
+    
+    func testDeleteBlogCategoryWithSpecifiedID() throws {
+        let app = Application(.testing)
+        try bootstrap(app)
+        try app.autoMigrate().wait()
+        defer {
+            app.shutdown()
+        }
+        
+        var expected: Model = .generate()
+        
+        try app.test(
+            .POST,
+            uri,
+            beforeRequest: {
+                try $0.content.encode(expected)
+            },
+            afterResponse: {
+                XCTAssertEqual($0.status, .ok)
+                expected = try $0.content.decode(Model.self)
+            }
+        )
+        .test(.DELETE, uri + "/\(expected.id)", afterResponse: assertHTTPStatusEqualToOk)
+        .test(.GET, uri + "/\(expected.id)", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 }
