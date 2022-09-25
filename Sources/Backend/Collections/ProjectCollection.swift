@@ -1,16 +1,5 @@
 import Vapor
 
-extension Project.DTO {
-
-    mutating func beforeEncode() throws {
-        artworkUrl = artworkUrl?.bucketURLString()
-        backgroundImageUrl = backgroundImageUrl?.bucketURLString()
-        padScreenshotUrls = padScreenshotUrls?.map { $0.bucketURLString() }
-        screenshotUrls = screenshotUrls?.map { $0.bucketURLString() }
-        promoImageUrl = promoImageUrl?.bucketURLString()
-    }
-}
-
 class ProjectCollection: RouteCollection {
 
     private let restfulIDKey = "id"
@@ -54,7 +43,9 @@ class ProjectCollection: RouteCollection {
 
     func readAll(_ req: Request) async throws -> [Project.DTO] {
         try await req.project.readAll().map {
-            try $0.bridged()
+            var models = try $0.bridged()
+            try models.beforeEncode()
+            return models
         }
     }
 

@@ -7,11 +7,11 @@ protocol BucketURLConvertible {
 extension String: BucketURLConvertible {
 
     func bucketURLString() -> String {
-        guard let bucketURL = Environment.get("IMG_BUCKET_URL") else {
+        guard let bucketURL = Environment.get("OSS_BUCKET_URL") else {
             return self
         }
 
-        guard !hasPrefix("http://") && !hasPrefix("https://") && !hasPrefix("//") else {
+        guard URL(string: self)?.scheme == nil else {
             return self
         }
         return "\(bucketURL)\(self)"

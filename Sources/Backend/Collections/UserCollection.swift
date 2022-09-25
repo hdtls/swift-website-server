@@ -34,25 +34,6 @@ extension User {
     }
 }
 
-extension User.DTO {
-
-    mutating func beforeEncode() throws {
-        avatarUrl = avatarUrl?.bucketURLString()
-        // Chain beforeEncode to nested content.
-        projects = try projects?.map {
-            var project = $0
-            try project.beforeEncode()
-            return project
-        }
-        
-        blog = try blog?.map {
-            var blog = $0
-            try blog.beforeEncode()
-            return blog
-        }
-    }
-}
-
 class UserCollection: RouteCollection {
 
     private let restfulIDKey = "id"
@@ -114,7 +95,9 @@ class UserCollection: RouteCollection {
         let queries = try req.query.decode(User.Queries.self)
 
         return try await req.user.readAll(queries: queries).map {
-            try $0.bridged()
+            var models = try $0.bridged()
+            try models.beforeEncode()
+            return models
         }
     }
 
@@ -173,7 +156,9 @@ extension UserCollection {
             .filter(\.$user.$id, .equal, user.__id)
             .all()
             .map {
-                try $0.bridged()
+                var models = try $0.bridged()
+                try models.beforeEncode()
+                return models
             }
     }
 }

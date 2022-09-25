@@ -6,13 +6,6 @@ extension Blog {
     }
 }
 
-extension Blog.DTO {
-    
-    mutating func beforeEncode() throws {
-        artworkUrl = artworkUrl?.bucketURLString()
-    }
-}
-
 class BlogCollection: RouteCollection {
 
     private let restfulIDKey = "id"
@@ -94,7 +87,9 @@ class BlogCollection: RouteCollection {
         let queries = try req.query.decode(Blog.Queries.self)
 
         return try await req.blog.readAll(queries: queries).map {
-            try $0.bridged()
+            var models = try $0.bridged()
+            try models.beforeEncode()
+            return models
         }
     }
 
