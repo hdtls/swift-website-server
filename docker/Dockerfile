@@ -1,7 +1,7 @@
 # ================================
 # Build image
 # ================================
-FROM swift:5.7-jammy as builder
+FROM swift:5.7 as builder
 
 # Install updates and set locales to en_US.UTF-8.
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
