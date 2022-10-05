@@ -17,7 +17,10 @@ func saveFile(from req: Request, as type: MediaType) async throws -> String {
                 throw Abort(.badRequest, reason: "Invalid image buffer.")
             }
 
-            var url = URL(fileURLWithPath: type.rawValue, relativeTo: URL(fileURLWithPath: req.application.directory.publicDirectory))
+            var url = URL(
+                fileURLWithPath: type.rawValue,
+                relativeTo: URL(fileURLWithPath: req.application.directory.publicDirectory)
+            )
 
             var prefix = multipartImage.filename.prefix(8)
 
@@ -37,10 +40,16 @@ func saveFile(from req: Request, as type: MediaType) async throws -> String {
                 throw Abort(.badRequest, reason: "Invalid file buffer.")
             }
 
-            let url = URL(fileURLWithPath: type.rawValue, relativeTo: URL(fileURLWithPath: req.application.directory.publicDirectory))
+            let url = URL(
+                fileURLWithPath: type.rawValue,
+                relativeTo: URL(fileURLWithPath: req.application.directory.publicDirectory)
+            )
             buffer = multipartFile.data
-            let contentHexEncodedString = Insecure.MD5.hash(data: Data(buffer: multipartFile.data)).hexEncodedString()
-            filename = multipartFile.extension != nil ? "\(contentHexEncodedString).\(multipartFile.extension!)" : contentHexEncodedString
+            let contentHexEncodedString = Insecure.MD5.hash(data: Data(buffer: multipartFile.data))
+                .hexEncodedString()
+            filename =
+                multipartFile.extension != nil
+                ? "\(contentHexEncodedString).\(multipartFile.extension!)" : contentHexEncodedString
             fileURL = url
     }
 

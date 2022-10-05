@@ -1,11 +1,11 @@
 import Fluent
 
 extension Project {
-    
+
     static let migration: Migration = .init()
-    
+
     class Migration: AsyncMigration {
-        
+
         func prepare(on database: Database) async throws {
             let projectKinds = try await database.enum(ProjKind.schema)
                 .case(ProjKind.app.rawValue)
@@ -41,7 +41,7 @@ extension Project {
                 .field(.updatedAt, .datetime)
                 .create()
         }
-        
+
         func revert(on database: Database) async throws {
             try await database.schema(schema).delete()
             try await database.enum(ProjKind.schema).delete()

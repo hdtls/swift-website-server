@@ -17,7 +17,11 @@ class SkillCollectionTests: XCTestCase {
 
         XCTAssertNoThrow(
             try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
-                .test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+                .test(
+                    .GET,
+                    uri + "/invalid",
+                    afterResponse: assertHTTPStatusEqualToUnprocessableEntity
+                )
                 .test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
                 .test(.DELETE, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
         )
@@ -91,7 +95,11 @@ class SkillCollectionTests: XCTestCase {
             app.shutdown()
         }
 
-        try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+        try app.test(
+            .GET,
+            uri + "/invalid",
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
+        )
     }
 
     func testUpdateSkill() throws {
@@ -162,7 +170,7 @@ class SkillCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         var expected = Model.generate()
         let headers = app.login().headers
 

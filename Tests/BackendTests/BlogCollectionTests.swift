@@ -110,7 +110,9 @@ class BlogCollectionTests: XCTestCase {
             app.shutdown()
         }
 
-        XCTAssertNoThrow(try app.test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound))
+        XCTAssertNoThrow(
+            try app.test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
+        )
     }
 
     func testQueryBlogWithSpecifiedID() throws {
@@ -440,7 +442,7 @@ class BlogCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         var category = BlogCategory.DTO.generate()
         var expected = Model.generate()
 

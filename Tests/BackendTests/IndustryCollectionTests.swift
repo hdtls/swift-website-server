@@ -3,10 +3,10 @@ import XCTVapor
 @testable import Backend
 
 class IndustryCollectionTests: XCTestCase {
-    
+
     private typealias Model = Industry.DTO
     private let uri = Industry.schema
-    
+
     func testCreateIndustry() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -16,7 +16,7 @@ class IndustryCollectionTests: XCTestCase {
         }
 
         var expected = Model.generate()
-        
+
         XCTAssertNoThrow(
             try app.test(
                 .POST,
@@ -33,7 +33,7 @@ class IndustryCollectionTests: XCTestCase {
             )
         )
     }
-    
+
     func testUniqueIndustryTitle() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -43,7 +43,7 @@ class IndustryCollectionTests: XCTestCase {
         }
 
         var expected = Model.generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -68,7 +68,7 @@ class IndustryCollectionTests: XCTestCase {
             }
         )
     }
-    
+
     func testQueryIndustryWithInvalidID() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -77,9 +77,13 @@ class IndustryCollectionTests: XCTestCase {
             app.shutdown()
         }
 
-        try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+        try app.test(
+            .GET,
+            uri + "/invalid",
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
+        )
     }
-    
+
     func testQueryIndustryWithSpecifiedID() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -89,7 +93,7 @@ class IndustryCollectionTests: XCTestCase {
         }
 
         var expected = Model.generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -113,7 +117,7 @@ class IndustryCollectionTests: XCTestCase {
             }
         )
     }
-    
+
     func testQueryAllIndustries() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -123,7 +127,7 @@ class IndustryCollectionTests: XCTestCase {
         }
 
         var expected = Model.generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -148,7 +152,7 @@ class IndustryCollectionTests: XCTestCase {
             }
         )
     }
-    
+
     func testUpdateIndustry() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -159,7 +163,7 @@ class IndustryCollectionTests: XCTestCase {
 
         var original = Model.generate()
         var expected = Model.generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -182,13 +186,13 @@ class IndustryCollectionTests: XCTestCase {
                 let model = try $0.content.decode(Model.self)
                 XCTAssertNotNil(model.id)
                 expected.id = model.id
-                
+
                 XCTAssertEqual(model, expected)
                 XCTAssertEqual(expected.id, original.id)
             }
         )
     }
-    
+
     func testDeleteIndustryWithSpecifiedID() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -196,9 +200,9 @@ class IndustryCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         var expected = Model.generate()
-        
+
         try app.test(
             .POST,
             uri,

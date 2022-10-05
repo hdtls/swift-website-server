@@ -1,15 +1,15 @@
 import Vapor
 
 class LogCollection: RouteCollection {
-    
+
     func boot(routes: RoutesBuilder) throws {
         let routes = routes.grouped([
             User.authenticator()
         ])
-        
+
         let authorize = routes.grouped("authorize")
         authorize.on(.POST, "basic", use: authWithBasic)
-        
+
         let trusted = routes.grouped([
             Token.authenticator(),
             Token.guardMiddleware(),
@@ -17,7 +17,7 @@ class LogCollection: RouteCollection {
         ])
         trusted.on(.DELETE, "unauthorized", use: unauthorized)
     }
-    
+
     func authWithBasic(_ req: Request) async throws -> AuthorizedMsg {
         if req.auth.has(User.self) && req.auth.has(Token.self) {
             // If user already logged in, just return authorized msg.
@@ -33,7 +33,7 @@ class LogCollection: RouteCollection {
             return try AuthorizedMsg(user: user, token: token)
         }
     }
-    
+
     func unauthorized(_ req: Request) async throws -> HTTPResponseStatus {
         let token = try req.auth.require(Token.self)
         try await token.delete(on: req.db)

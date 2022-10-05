@@ -57,7 +57,11 @@ class ProjectCollectionTests: XCTestCase {
             app.shutdown()
         }
 
-        try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+        try app.test(
+            .GET,
+            uri + "/invalid",
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
+        )
     }
 
     func testQueryProjectWithSpecifiedID() throws {
@@ -160,7 +164,7 @@ class ProjectCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         var expected = Model.generate()
 
         let headers = app.login().headers

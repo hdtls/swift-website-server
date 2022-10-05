@@ -40,7 +40,11 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
             app.shutdown()
         }
 
-        try app.test(.GET, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+        try app.test(
+            .GET,
+            uri + "/invalid",
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
+        )
     }
 
     func testQuerySNSWithSpecifiedID() throws {
@@ -123,7 +127,11 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
             app.shutdown()
         }
 
-        try app.test(.DELETE, uri + "/invalid", afterResponse: assertHTTPStatusEqualToUnprocessableEntity)
+        try app.test(
+            .DELETE,
+            uri + "/invalid",
+            afterResponse: assertHTTPStatusEqualToUnprocessableEntity
+        )
     }
 
     func testDeleteSNSWithSpecifiedID() throws {

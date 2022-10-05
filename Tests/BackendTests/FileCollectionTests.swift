@@ -51,7 +51,7 @@ class FileCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         var url: String!
 
         try app.test(

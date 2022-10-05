@@ -169,7 +169,10 @@ class BlogCollection: RouteCollection {
     }
 
     private func makeFileURL(on req: Request, alias: String) -> URL {
-        var url = URL(fileURLWithPath: "blog", relativeTo: URL(fileURLWithPath: req.application.directory.resourcesDirectory))
+        var url = URL(
+            fileURLWithPath: "blog",
+            relativeTo: URL(fileURLWithPath: req.application.directory.resourcesDirectory)
+        )
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         url.appendPathComponent("\(alias).md")
         return url

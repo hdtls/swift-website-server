@@ -3,7 +3,7 @@ import XCTVapor
 @testable import Backend
 
 class BlogCategoryCollectionTests: XCTestCase {
-    
+
     private typealias Model = BlogCategory.DTO
     private let uri = BlogCategory.schema
 
@@ -30,7 +30,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             )
         )
     }
-    
+
     func testUniqueBlogCategoryName() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -40,7 +40,7 @@ class BlogCategoryCollectionTests: XCTestCase {
         }
 
         let encodable = Model.generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -61,7 +61,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             }
         )
     }
-    
+
     func testPayloadFieldsRequirement() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -80,7 +80,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             afterResponse: assertHTTPStatusEqualToBadRequest
         )
     }
-    
+
     func testQueryBlogCategoryWithIDThatDoesNotExsit() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -91,7 +91,7 @@ class BlogCategoryCollectionTests: XCTestCase {
 
         try app.test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
     }
-    
+
     func testQueryBlogCategoryWithSpecifiedID() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -102,7 +102,7 @@ class BlogCategoryCollectionTests: XCTestCase {
 
         let encodable = Model.generate()
         var expected: Model = .generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -124,7 +124,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             }
         )
     }
-    
+
     func testQueryAllBlogCategories() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -134,7 +134,7 @@ class BlogCategoryCollectionTests: XCTestCase {
         }
 
         var expected: Model = .generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -158,7 +158,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             }
         )
     }
-    
+
     func testUpdateBlogCategory() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -169,7 +169,7 @@ class BlogCategoryCollectionTests: XCTestCase {
 
         var original: Model = .generate()
         var expected = Model.generate()
-        
+
         try app.test(
             .POST,
             uri,
@@ -196,7 +196,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             }
         )
     }
-    
+
     func testDeleteBlogCategoryWithIDThatDoesNotExsit() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -211,7 +211,7 @@ class BlogCategoryCollectionTests: XCTestCase {
             afterResponse: assertHTTPStatusEqualToOk
         )
     }
-    
+
     func testDeleteBlogCategoryWithSpecifiedID() throws {
         let app = Application(.testing)
         try bootstrap(app)
@@ -219,9 +219,9 @@ class BlogCategoryCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         var expected: Model = .generate()
-        
+
         try app.test(
             .POST,
             uri,

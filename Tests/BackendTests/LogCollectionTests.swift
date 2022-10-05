@@ -48,7 +48,7 @@ class LogCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         app.login()
     }
 }

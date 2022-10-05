@@ -315,7 +315,6 @@ class UserCollectionTests: XCTestCase {
             afterResponse: assertHTTPStatusEqualToOk
         )
 
-
         let query = "?emb=sns.edu.exp.skill.proj.blog"
 
         try app.test(
@@ -547,7 +546,7 @@ class UserCollectionTests: XCTestCase {
         defer {
             app.shutdown()
         }
-        
+
         let msg = app.login()
         var expected = Blog.DTO.generate()
 
