@@ -3,26 +3,20 @@
         "schema": "blog",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
-                "name": "alias",
-                "type": "String"
+                "name": "alias"
             },
             {
-                "name": "title",
-                "type": "String"
+                "name": "title"
             },
             {
-                "name": "excerpt",
-                "type": "String"
+                "name": "excerpt"
             },
             {
                 "name": "content",
-                "type": "String",
                 "codable": "String?"
             },
             {
@@ -54,14 +48,11 @@
         "schema": "blog_categories",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
-                "name": "name",
-                "type": "String"
+                "name": "name"
             },
             {
                 "field_id": "Siblings",
@@ -78,22 +69,17 @@
         "schema": "education",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
-                "name": "school",
-                "type": "String"
+                "name": "school"
             },
             {
-                "name": "degree",
-                "type": "String"
+                "name": "degree"
             },
             {
-                "name": "field",
-                "type": "String"
+                "name": "field"
             },
             {
                 "name": "startYear",
@@ -131,30 +117,23 @@
         "schema": "experiences",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
-                "name": "title",
-                "type": "String"
+                "name": "title"
             },
             {
-                "name": "companyName",
-                "type": "String"
+                "name": "companyName"
             },
             {
-                "name": "location",
-                "type": "String"
+                "name": "location"
             },
             {
-                "name": "startDate",
-                "type": "String"
+                "name": "startDate"
             },
             {
-                "name": "endDate",
-                "type": "String"
+                "name": "endDate"
             },
             {
                 "name": "headline",
@@ -189,14 +168,11 @@
         "schema": "industries",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
                 "name": "title",
-                "type": "String",
                 "codable": "String?"
             },
             {
@@ -214,18 +190,14 @@
         "schema": "projects",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
-                "name": "name",
-                "type": "String"
+                "name": "name"
             },
             {
-                "name": "summary",
-                "type": "String"
+                "name": "summary"
             },
             {
                 "field_id": "Enum",
@@ -238,12 +210,10 @@
                 "type": "ProjVisibility"
             },
             {
-                "name": "startDate",
-                "type": "String"
+                "name": "startDate"
             },
             {
-                "name": "endDate",
-                "type": "String"
+                "name": "endDate"
             },
             {
                 "name": "isOpenSource",
@@ -297,10 +267,8 @@
         "schema": "skills",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
                 "name": "professional",
@@ -322,14 +290,11 @@
         "schema": "social_networking",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
-                "name": "url",
-                "type": "String"
+                "name": "url"
             },
             {
                 "field_id": "Parent",
@@ -349,14 +314,11 @@
         "schema": "social_networking_services",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
                 "name": "name",
-                "type": "String",
                 "codable": "String?"
             },
             {
@@ -372,27 +334,21 @@
         "schema": "users",
         "properties": [
             {
-                "field_id": "ID",
                 "name": "id",
-                "type": "Int?",
-                "codable": "Int"
+                "type": "Int?"
             },
             {
-                "name": "username",
-                "type": "String"
+                "name": "username"
             },
             {
                 "name": "pwd",
-                "type": "String",
                 "exclude_from_codable": true
             },
             {
-                "name": "firstName",
-                "type": "String"
+                "name": "firstName"
             },
             {
-                "name": "lastName",
-                "type": "String"
+                "name": "lastName"
             },
             {
                 "name": "avatarUrl",

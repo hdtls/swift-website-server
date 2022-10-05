@@ -75,11 +75,11 @@ def property_getName(field):
 
 def property_getAttribute(field, field_property=True):
     if field_property:
-        return field["type"]
-    return field.get("codable", field["type"])
+        return field.get("type", "String")
+    return field.get("codable", field.get("type", "String")) if property_getName(field) != "id" else field.get("type", "String")[:-1]
 
-def property_getFieldType(property):
-    return property.get("field_id", "Field")
+def property_getFieldType(field):
+    return field.get("field_id", "Field") if property_getName(field) != "id" else "ID"
 
 def is_optional(property_attribute):
     return property_attribute.endswith("?")
