@@ -16,22 +16,34 @@ x-mysql: &mysql
 
 services:
 
-  test:
+  runtime-setup:
     image: swift-blog-tests
     build:
-      context: ..
-      dockerfile: docker/Dockerfile.test
-    environment:
-      LOG_LEVEL: ${LOG_LEVEL:-debug}
-      MYSQL_HOST: db
-      <<: *mysql
+      context: .
+      dockerfile: Dockerfile.test
+
+  common:
+    &common
+    image: swift-blog-tests
+    depends_on: [ runtime-setup ]
     volumes:
       - ..:/code:z
     working_dir: /code
     cap_drop:
       - CAP_NET_RAW
       - CAP_NET_BIND_SERVICE
-    depends_on: [db]
+
+  formatting:
+    <<: *common
+    entrypoint: /bin/bash -xcl "swift-format --configuration ./.swift-format --in-place --recursive --parallel ./Sources ./Tests"
+
+  test:
+    <<: *common
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      MYSQL_HOST: db
+      <<: *mysql
+    depends_on: [formatting, db]
     command: python3 build-script.py --test
 
   db:
