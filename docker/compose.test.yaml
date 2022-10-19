@@ -33,17 +33,13 @@ services:
       - CAP_NET_RAW
       - CAP_NET_BIND_SERVICE
 
-  formatting:
-    <<: *common
-    entrypoint: /bin/bash -xcl "swift-format --configuration ./.swift-format --in-place --recursive --parallel ./Sources ./Tests"
-
   test:
     <<: *common
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       MYSQL_HOST: db
       <<: *mysql
-    depends_on: [formatting, db]
+    depends_on: [db]
     command: python3 build-script.py --test
 
   db:
