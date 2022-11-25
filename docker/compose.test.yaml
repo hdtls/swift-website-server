@@ -36,6 +36,7 @@ services:
   test:
     <<: *common
     environment:
+      OSS_BUCKET_URL: //localhost:8080
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       MYSQL_HOST: db
       <<: *mysql
