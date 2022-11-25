@@ -1,56 +1,39 @@
 name: Docker Distribution
 
 on:
-  workflow_run:
-    workflows: ["Build and Tests"]
-    types:
-      - completed
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '**/*.md'
+    branches:
+      - 'main'
+    tags:
+      - '*'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+    branches:
+      - 'main'
 
 jobs:
   release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' && (startsWith(github.ref, 'refs/tags/') || startsWith(github.ref, 'refs/heads/')) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
-      
-      - name: Prepare docker image metadata
-        id: repository
-        uses: actions/github-script@v3
-        with:
-          script: |
-            const repo = await github.repos.get(context.repo)
-            return repo.data
-            
-      - name: Prepare docker image version and tags.
-        id: prepare
-        run: |
-          DOCKER_IMAGE=${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}
-          VERSION=noop
-          
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            VERSION=nightly
-          elif [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          elif [[ $GITHUB_REF == refs/heads/* ]]; then
-            VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
-            if [ "${{ github.event.repository.default_branch }}" = "$VERSION" ]; then
-              VERSION=edge
-            fi
-          fi
-          
-          TAGS="${DOCKER_IMAGE}:${VERSION}"
 
-          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            MINOR=${VERSION%.*}
-            TAGS="$TAGS,${DOCKER_IMAGE}:${MINOR},${DOCKER_IMAGE}:latest"
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            TAGS="$TAGS,${DOCKER_IMAGE}:${{ secrets.DOCKER_REPOSITORY }}-DEVELOPMENT-SNAPSHOT-sha-${GITHUB_SHA::8}"
-          fi
-          
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=tags::${TAGS}
-          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+      - name: Setup docker metadata
+        uses: docker/metadata-action@v4
+        id: metadata
+        with:
+          images: |
+            ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}
+          tags: |
+            type=schedule,pattern=nightly
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=edge,branch=main
+            type=sha
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v2
@@ -60,24 +43,17 @@ jobs:
       
       - name: Login to registry
         uses: docker/login-action@v2
+        if: github.event_name != 'pull_request'
         with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-      
+
       - name: Build and push docker to registry
         uses: docker/build-push-action@v3
         with:
           context: .
           file: ./docker/Dockerfile
-          push: true
-          tags: ${{ steps.prepare.outputs.tags }}
-          labels: |
-            org.opencontainers.image.title=${{ fromJson(steps.repository.outputs.result).name }}
-            org.opencontainers.image.description=${{ fromJson(steps.repository.outputs.result).description }}
-            org.opencontainers.image.url=${{ fromJson(steps.repository.outputs.result).html_url }}
-            org.opencontainers.image.source=${{ fromJson(steps.repository.outputs.result).clone_url }}
-            org.opencontainers.image.version=${{ steps.prepare.outputs.version }}
-            org.opencontainers.image.created=${{ steps.prepare.outputs.created }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.licenses=${{ fromJson(steps.repository.outputs.result).license.spdx_id }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}

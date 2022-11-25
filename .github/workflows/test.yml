@@ -1,6 +1,18 @@
 name: Build and Tests
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+    branches:
+      - 'main'
+    tags:
+      - '*'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+    branches:
+      - 'main'
 
 jobs:
   test:
@@ -13,4 +25,3 @@ jobs:
         run: |
           docker compose -f docker/compose.test.yaml build
           docker compose -f docker/compose.test.yaml run --rm test
-    
