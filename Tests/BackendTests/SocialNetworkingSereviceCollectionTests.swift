@@ -6,15 +6,20 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
 
     private typealias Model = SocialNetworkingService.DTO
     private let uri = "\(SocialNetworking.schema)/services"
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
 
     func testCreateSNS() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -33,13 +38,6 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testQuerySNSWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .GET,
             uri + "/invalid",
@@ -48,13 +46,6 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testQuerySNSWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -80,13 +71,6 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testUpdateSNS() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         var expected = original
         expected.name = .random(length: 8)
@@ -120,13 +104,6 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testDeleteSNSWithInvalidServiceID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .DELETE,
             uri + "/invalid",
@@ -135,13 +112,6 @@ class SocialNetworkingSereviceCollectionTests: XCTestCase {
     }
 
     func testDeleteSNSWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(

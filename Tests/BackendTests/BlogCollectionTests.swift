@@ -7,14 +7,20 @@ class BlogCollectionTests: XCTestCase {
     private typealias Model = Blog.DTO
     private let uri = Blog.schema
 
-    func testAuthorizeRequire() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
+    var app: Application!
 
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
+
+    func testAuthorizeRequire() throws {
         XCTAssertNoThrow(
             try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
                 .test(.GET, uri, afterResponse: assertHTTPStatusEqualToOk)
@@ -25,13 +31,6 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testCreateBlog() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var category = BlogCategory.DTO.generate()
         var expected = Model.generate()
 
@@ -65,13 +64,6 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testCreateBlogWithoutContent() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var category = BlogCategory.DTO.generate()
         var expected = Model.generate()
         expected.content = nil
@@ -103,26 +95,12 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testQueryBlogWithIDThatDoesNotExsit() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
         )
     }
 
     func testQueryBlogWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var category = BlogCategory.DTO.generate()
         var expected = Model.generate()
 
@@ -162,14 +140,7 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testUpdateBlog() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
-        var category = BlogCategory.DTO.generate()
+       var category = BlogCategory.DTO.generate()
         var original = Model.generate()
         var expected = original
         expected.title = .random(length: 8)
@@ -222,14 +193,7 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testUpdateBlogWithNewCategory() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
-        var category = BlogCategory.DTO.generate()
+       var category = BlogCategory.DTO.generate()
         var original = Model.generate()
         var expected = original
         expected.title = .random(length: 8)
@@ -294,13 +258,6 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testUpdateBlogWithRemoveCategory() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         var expected = Model.generate()
 
@@ -362,13 +319,6 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testUpdateBlogAlias() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var category = BlogCategory.DTO.generate()
         var original = Model.generate()
         var expected = original
@@ -420,13 +370,6 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testDeleteBlogWithIDThatDoesNotExsit() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .DELETE,
             uri + "/" + "0",
@@ -436,13 +379,6 @@ class BlogCollectionTests: XCTestCase {
     }
 
     func testDeleteBlogWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var category = BlogCategory.DTO.generate()
         var expected = Model.generate()
 

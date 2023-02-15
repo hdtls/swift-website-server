@@ -5,28 +5,26 @@ import XCTVapor
 class UserCollectionTests: XCTestCase {
 
     private let uri = User.schema
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
         )
     }
 
     func testCreateUserWithInvalidPayload() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let json = [
             "firstName": "1",
             "lastName": "2",
@@ -87,13 +85,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testCreateUserWithInvalidPassword() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .POST,
             uri,
@@ -108,13 +99,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testUniqueUsername() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let userCreation = User.Creation.generate()
 
         app.registerUserWithLegacy(userCreation)
@@ -132,36 +116,15 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testCreateUser() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         app.registerUserWithLegacy(.generate())
     }
 
     func testQueryUserWithUserIDThatDoesNotExsit() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(.GET, uri + "/notfound", afterResponse: assertHTTPStatusEqualToNotFound)
             .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 
     func testQueryUserWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let expected = app.registerUserWithLegacy()
 
         try app.test(
@@ -177,13 +140,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryUserWithUserIDAndQueryParameters() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let userCreation = app.login().user
 
         let query = "?emb=sns.edu.exp.skill.proj.blog"
@@ -212,13 +168,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryWithUserIDAndQueryParametersAfterAddChildrens() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let msg = app.login()
         let userCreation = msg.user
         let headers = msg.headers
@@ -342,13 +291,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryAllUsers() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .GET,
             uri,
@@ -360,13 +302,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryAllWithQueryParametersAfterAddChildrens() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let msg = app.login()
         let userCreation = msg.user
         let headers = msg.headers
@@ -497,13 +432,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testUpdateUser() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let msg = app.login()
         var userCreation = msg.user
         userCreation.firstName = .random(length: 7)
@@ -540,13 +468,6 @@ class UserCollectionTests: XCTestCase {
     }
 
     func testQueryBlogThatAssociatedWithSpecialUser() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let msg = app.login()
         var expected = Blog.DTO.generate()
 

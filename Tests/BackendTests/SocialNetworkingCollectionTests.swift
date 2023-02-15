@@ -6,15 +6,20 @@ class SocialNetworkingCollectionTests: XCTestCase {
 
     typealias Model = SocialNetworking.DTO
     private let uri = SocialNetworking.schema
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
                 .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
@@ -25,13 +30,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testCreateSocialNetworking() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -65,13 +63,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testQuerySocialNetworkingWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(
                 .GET,
@@ -82,13 +73,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testQuerySocialNetworkingWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -128,13 +112,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testUpdateSocialNetworking() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         var expected = Model.generate()
 
@@ -186,13 +163,6 @@ class SocialNetworkingCollectionTests: XCTestCase {
     }
 
     func testDeleteSocialNetowrking() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         let headers = app.login().headers

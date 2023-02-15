@@ -7,15 +7,20 @@ class ProjectCollectionTests: XCTestCase {
 
     private typealias Model = Project.DTO
     private let uri = Project.schema
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
             .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
             .test(.PUT, uri + "/1", afterResponse: assertHTTPStatusEqualToUnauthorized)
@@ -23,13 +28,6 @@ class ProjectCollectionTests: XCTestCase {
     }
 
     func testCreateProject() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -50,13 +48,6 @@ class ProjectCollectionTests: XCTestCase {
     }
 
     func testQueryProjectWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .GET,
             uri + "/invalid",
@@ -65,13 +56,6 @@ class ProjectCollectionTests: XCTestCase {
     }
 
     func testQueryProjectWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -99,13 +83,6 @@ class ProjectCollectionTests: XCTestCase {
     }
 
     func testUpdateProject() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         var expected = Model.generate()
 
@@ -142,13 +119,6 @@ class ProjectCollectionTests: XCTestCase {
     }
 
     func testDeleteProjectWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .DELETE,
             uri + "/invalid",
@@ -158,13 +128,6 @@ class ProjectCollectionTests: XCTestCase {
     }
 
     func testDeleteProject() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         let headers = app.login().headers

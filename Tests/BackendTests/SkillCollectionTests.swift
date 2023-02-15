@@ -6,15 +6,20 @@ class SkillCollectionTests: XCTestCase {
 
     private typealias Model = Skill.DTO
     private let uri = Skill.schema
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
                 .test(
@@ -28,13 +33,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testCreateSkill() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
         let headers = app.login().headers
 
@@ -55,13 +53,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testQuerySkillWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
         let headers = app.login().headers
 
@@ -88,13 +79,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testQuerySkillWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .GET,
             uri + "/invalid",
@@ -103,13 +87,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testUpdateSkill() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         let headers = app.login().headers
         var expected = original
@@ -145,13 +122,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testUpdateSkillWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .PUT,
             uri + "/invalid",
@@ -164,13 +134,6 @@ class SkillCollectionTests: XCTestCase {
     }
 
     func testDeleteSkillWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
         let headers = app.login().headers
 

@@ -6,15 +6,20 @@ class IndustryCollectionTests: XCTestCase {
 
     private typealias Model = Industry.DTO
     private let uri = Industry.schema
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
 
     func testCreateIndustry() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         XCTAssertNoThrow(
@@ -35,13 +40,6 @@ class IndustryCollectionTests: XCTestCase {
     }
 
     func testUniqueIndustryTitle() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -70,13 +68,6 @@ class IndustryCollectionTests: XCTestCase {
     }
 
     func testQueryIndustryWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .GET,
             uri + "/invalid",
@@ -85,13 +76,6 @@ class IndustryCollectionTests: XCTestCase {
     }
 
     func testQueryIndustryWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -119,13 +103,6 @@ class IndustryCollectionTests: XCTestCase {
     }
 
     func testQueryAllIndustries() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -154,13 +131,6 @@ class IndustryCollectionTests: XCTestCase {
     }
 
     func testUpdateIndustry() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         var expected = Model.generate()
 
@@ -194,13 +164,6 @@ class IndustryCollectionTests: XCTestCase {
     }
 
     func testDeleteIndustryWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(

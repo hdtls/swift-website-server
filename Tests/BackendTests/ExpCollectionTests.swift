@@ -6,15 +6,20 @@ class ExpCollectionTests: XCTestCase {
 
     private typealias Model = Experience.DTO
     private let uri = Experience.schema
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
 
     func testAuthorizeRequire() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
                 .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
@@ -24,13 +29,6 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testCreateExperience() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
         try app.test(
             .POST,
@@ -62,13 +60,6 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testQueryExperienceWithInvalidWorkID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(
                 .GET,
@@ -79,13 +70,6 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testQueryExperienceWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
         try app.test(
             .POST,
@@ -124,13 +108,6 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testUpdateExperience() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         var expected = Model.generate()
 
@@ -179,13 +156,6 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testDeleteExperienceWithInvalidID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .DELETE,
             uri + "/invalid",
@@ -195,13 +165,6 @@ class ExpCollectionTests: XCTestCase {
     }
 
     func testDeleteExperienceWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         let headers = app.login().headers

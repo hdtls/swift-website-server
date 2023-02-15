@@ -6,14 +6,20 @@ class LogCollectionTests: XCTestCase {
 
     private let path = "authorize/basic"
 
-    func testLoginWithWrongMsg() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
+    var app: Application!
 
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
+
+    func testLoginWithWrongMsg() throws {
         app.registerUserWithLegacy(.generate())
 
         let wrongPasswordHeader = HTTPHeaders.init(
@@ -42,13 +48,6 @@ class LogCollectionTests: XCTestCase {
     }
 
     func testLogin() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         app.login()
     }
 }

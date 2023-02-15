@@ -7,14 +7,20 @@ class EducationCollectionTests: XCTestCase {
     private typealias Model = Education.DTO
     private let uri = Education.schema
 
-    func testAuthorizeRequire() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
+    var app: Application!
 
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() {
+        XCTAssertNotNil(app)
+        app.shutdown()
+    }
+
+    func testAuthorizeRequire() throws {
         XCTAssertNoThrow(
             try app.test(.POST, uri, afterResponse: assertHTTPStatusEqualToUnauthorized)
                 .test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
@@ -24,13 +30,6 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testCreateEducation() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         let msg = app.login()
@@ -53,13 +52,6 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testQueryEducationWithInvalidEduID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         XCTAssertNoThrow(
             try app.test(
                 .GET,
@@ -70,13 +62,6 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testQueryEducationWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         try app.test(
@@ -103,13 +88,6 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testUpdateEducation() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original = Model.generate()
         var expected = Model.generate()
 
@@ -146,13 +124,6 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testDeleteEducationWithInvalideduID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .DELETE,
             uri + "/invalid",
@@ -162,13 +133,6 @@ class EducationCollectionTests: XCTestCase {
     }
 
     func testDeleteEducationWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected = Model.generate()
 
         let headers = app.login().headers

@@ -7,13 +7,22 @@ class BlogCategoryCollectionTests: XCTestCase {
     private typealias Model = BlogCategory.DTO
     private let uri = BlogCategory.schema
 
+    var app: Application!
+
+    override func setUp() async throws {
+        app = Application(.testing)
+        try app.setUp()
+        try await app.autoMigrate()
+    }
+
+    override func tearDown() async throws {
+        XCTAssertTrue(!app.didShutdown)
+        XCTAssertNotNil(app)
+
+        app.shutdown()
+    }
+
     func testCreateBlogCategory() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
         let encodable = Model.generate()
         XCTAssertNoThrow(
             try app.test(
@@ -32,13 +41,6 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testUniqueBlogCategoryName() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let encodable = Model.generate()
 
         try app.test(
@@ -63,13 +65,6 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testPayloadFieldsRequirement() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let json: [String: String] = [:]
         try app.test(
             .POST,
@@ -82,24 +77,10 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testQueryBlogCategoryWithIDThatDoesNotExsit() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(.GET, uri + "/0", afterResponse: assertHTTPStatusEqualToNotFound)
     }
 
     func testQueryBlogCategoryWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         let encodable = Model.generate()
         var expected: Model = .generate()
 
@@ -126,13 +107,6 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testQueryAllBlogCategories() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected: Model = .generate()
 
         try app.test(
@@ -160,13 +134,6 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testUpdateBlogCategory() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var original: Model = .generate()
         var expected = Model.generate()
 
@@ -198,13 +165,6 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testDeleteBlogCategoryWithIDThatDoesNotExsit() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         try app.test(
             .DELETE,
             uri + "/0",
@@ -213,13 +173,6 @@ class BlogCategoryCollectionTests: XCTestCase {
     }
 
     func testDeleteBlogCategoryWithSpecifiedID() throws {
-        let app = Application(.testing)
-        try bootstrap(app)
-        try app.autoMigrate().wait()
-        defer {
-            app.shutdown()
-        }
-
         var expected: Model = .generate()
 
         try app.test(
