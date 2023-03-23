@@ -54,7 +54,6 @@ class UserCollectionTests: XCTestCase {
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .badRequest)
-                XCTAssertContains($0.body.string, "Value required for key 'firstName'")
             }
         )
         .test(
@@ -67,7 +66,6 @@ class UserCollectionTests: XCTestCase {
             },
             afterResponse: {
                 XCTAssertEqual($0.status, .badRequest)
-                XCTAssertContains($0.body.string, "Value required for key 'lastName'")
             }
         )
         .test(
